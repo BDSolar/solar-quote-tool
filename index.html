@@ -5,853 +5,603 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Solar + Battery Quote Builder</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 20px;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 16px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            overflow: hidden;
-        }
-
-        .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 30px;
-            text-align: center;
-        }
-
-        .header h1 {
-            font-size: 28px;
-            margin-bottom: 8px;
-        }
-
-        .header p {
-            opacity: 0.9;
-            font-size: 14px;
-        }
-
-        .content {
-            display: grid;
-            grid-template-columns: 1fr 400px;
-            gap: 0;
-        }
-
-        .form-section {
-            padding: 30px;
-            border-right: 1px solid #e5e7eb;
-        }
-
-        .quote-summary {
-            padding: 30px;
-            background: #f9fafb;
-        }
-
-        .section {
-            margin-bottom: 30px;
-        }
-
-        .section-title {
-            font-size: 18px;
-            font-weight: 600;
-            color: #1f2937;
-            margin-bottom: 16px;
-            padding-bottom: 8px;
-            border-bottom: 2px solid #667eea;
-        }
-
-        .form-group {
-            margin-bottom: 16px;
-        }
-
-        label {
-            display: block;
-            font-size: 14px;
-            font-weight: 500;
-            color: #374151;
-            margin-bottom: 6px;
-        }
-
-        input[type="text"],
-        input[type="number"],
-        select {
-            width: 100%;
-            padding: 10px 12px;
-            border: 1px solid #d1d5db;
-            border-radius: 6px;
-            font-size: 14px;
-            transition: border-color 0.2s;
-        }
-
-        input[type="text"]:focus,
-        input[type="number"]:focus,
-        select:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        }
-
-        .grid-2 {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-        }
-
-        .addon-item {
-            display: flex;
-            align-items: center;
-            padding: 10px;
-            background: #f3f4f6;
-            border-radius: 6px;
-            margin-bottom: 8px;
-        }
-
-        .addon-item input[type="checkbox"] {
-            margin-right: 10px;
-            width: 18px;
-            height: 18px;
-            cursor: pointer;
-        }
-
-        .addon-item label {
-            margin: 0;
-            flex: 1;
-            cursor: pointer;
-        }
-
-        .addon-item input[type="number"] {
-            width: 100px;
-            margin-left: 10px;
-        }
-
-        .custom-addon {
-            display: grid;
-            grid-template-columns: 1fr 120px 60px;
-            gap: 8px;
-            margin-bottom: 8px;
-        }
-
-        .custom-addon input {
-            width: 100%;
-        }
-
-        .custom-addon button {
-            background: #ef4444;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 18px;
-        }
-
-        .add-custom-btn {
-            background: #667eea;
-            color: white;
-            border: none;
-            padding: 10px 16px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 500;
-            margin-top: 8px;
-        }
-
-        .add-custom-btn:hover {
-            background: #5568d3;
-        }
-
-        .summary-card {
-            background: white;
-            border-radius: 8px;
-            padding: 20px;
-            margin-bottom: 20px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        }
-
-        .summary-title {
-            font-size: 16px;
-            font-weight: 600;
-            color: #1f2937;
-            margin-bottom: 12px;
-        }
-
-        .summary-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px 0;
-            font-size: 14px;
-            color: #4b5563;
-        }
-
-        .summary-row.total {
-            border-top: 2px solid #e5e7eb;
-            margin-top: 8px;
-            padding-top: 12px;
-            font-weight: 600;
-            font-size: 16px;
-            color: #1f2937;
-        }
-
-        .summary-row.final {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 16px;
-            margin: 16px -20px -20px -20px;
-            border-radius: 0 0 8px 8px;
-            font-size: 20px;
-            font-weight: 700;
-        }
-
-        .system-specs {
-            background: #eff6ff;
-            border-left: 4px solid #3b82f6;
-            padding: 12px;
-            border-radius: 4px;
-            font-size: 13px;
-            color: #1e40af;
-            margin-bottom: 16px;
-        }
-
-        .generate-btn {
-            width: 100%;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            padding: 16px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 16px;
-            font-weight: 600;
-            margin-top: 10px;
-        }
-
-        .generate-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 16px rgba(102, 126, 234, 0.3);
-        }
-
-        @media (max-width: 968px) {
-            .content {
-                grid-template-columns: 1fr;
-            }
-            
-            .form-section {
-                border-right: none;
-                border-bottom: 1px solid #e5e7eb;
-            }
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px; }
+        .container { max-width: 1300px; margin: 0 auto; background: white; border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); overflow: hidden; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; }
+        .header h1 { font-size: 28px; margin-bottom: 8px; }
+        .header p { opacity: 0.9; font-size: 14px; }
+        .content { display: grid; grid-template-columns: 1fr 420px; gap: 0; }
+        .form-section { padding: 30px; border-right: 1px solid #e5e7eb; }
+        .quote-summary { padding: 24px; background: #f9fafb; position: sticky; top: 0; max-height: 100vh; overflow-y: auto; }
+        .section { margin-bottom: 28px; }
+        .section-title { font-size: 17px; font-weight: 600; color: #1f2937; margin-bottom: 14px; padding-bottom: 8px; border-bottom: 2px solid #667eea; }
+        .form-group { margin-bottom: 14px; }
+        label { display: block; font-size: 13px; font-weight: 500; color: #374151; margin-bottom: 5px; }
+        input[type="text"], input[type="number"], select { width: 100%; padding: 9px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; }
+        input:focus, select:focus { outline: none; border-color: #667eea; box-shadow: 0 0 0 3px rgba(102,126,234,0.1); }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .info-box { background: #eff6ff; border-left: 4px solid #3b82f6; padding: 10px 12px; border-radius: 4px; font-size: 13px; color: #1e40af; margin: 8px 0; }
+        .warn-box { background: #fef3c7; border-left: 4px solid #f59e0b; padding: 10px 12px; border-radius: 4px; font-size: 13px; color: #92400e; margin: 8px 0; }
+        .success-box { background: #d1fae5; border-left: 4px solid #059669; padding: 10px 12px; border-radius: 4px; font-size: 13px; color: #065f46; margin: 8px 0; }
+        .addon-item { display: flex; align-items: center; padding: 10px; background: #f3f4f6; border-radius: 6px; margin-bottom: 8px; }
+        .addon-item input[type="checkbox"] { margin-right: 10px; width: 18px; height: 18px; cursor: pointer; }
+        .addon-item label { margin: 0; flex: 1; cursor: pointer; font-size: 13px; }
+        .addon-price { font-size: 12px; color: #6b7280; margin-left: 8px; white-space: nowrap; }
+        .custom-addon { display: grid; grid-template-columns: 1fr 120px 40px; gap: 8px; margin-bottom: 8px; }
+        .custom-addon button { background: #ef4444; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 18px; }
+        .add-custom-btn { background: #667eea; color: white; border: none; padding: 9px 16px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; margin-top: 8px; }
+        .add-custom-btn:hover { background: #5568d3; }
+        .battery-adj-btn { width: 30px; height: 30px; border-radius: 6px; border: 1px solid #3b82f6; background: white; color: #3b82f6; font-size: 18px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
+        .battery-adj-btn:hover { background: #3b82f6; color: white; }
+        .summary-card { background: white; border-radius: 8px; padding: 16px; margin-bottom: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .summary-title { font-size: 14px; font-weight: 600; color: #1f2937; margin-bottom: 10px; }
+        .summary-row { display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px; color: #4b5563; }
+        .summary-row.total { border-top: 2px solid #e5e7eb; margin-top: 6px; padding-top: 8px; font-weight: 600; font-size: 14px; color: #1f2937; }
+        .summary-row.rebate { color: #059669; }
+        .summary-row.final { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 14px; margin: 12px -16px -16px -16px; border-radius: 0 0 8px 8px; font-size: 18px; font-weight: 700; }
+        .system-specs { background: #eff6ff; border-left: 4px solid #3b82f6; padding: 10px 12px; border-radius: 4px; font-size: 12px; color: #1e40af; margin-bottom: 12px; line-height: 1.6; }
+        .generate-btn { width: 100%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; padding: 14px; border-radius: 8px; cursor: pointer; font-size: 15px; font-weight: 600; margin-top: 8px; }
+        .generate-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 16px rgba(102,126,234,0.3); }
+        .readonly-field { background-color: #f3f4f6 !important; }
+        @media (max-width: 968px) { .content { grid-template-columns: 1fr; } .form-section { border-right: none; border-bottom: 1px solid #e5e7eb; } .quote-summary { position: static; max-height: none; } }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>⚡ Solar + Battery Quote Builder</h1>
-            <p>Build accurate quotes for residential solar systems</p>
+<div class="container">
+    <div class="header">
+        <h1>⚡ Solar + Battery Quote Builder</h1>
+        <p>Sigenergy Residential Systems — Build accurate quotes in minutes</p>
+    </div>
+    <div class="content">
+        <div class="form-section">
+            <div class="section">
+                <div class="section-title">Customer Information</div>
+                <div class="form-group"><label>Customer Name</label><input type="text" id="customerName" placeholder="Enter customer name"></div>
+                <div class="form-group"><label>Installation Address</label><input type="text" id="installAddress" placeholder="Enter installation address"></div>
+            </div>
+            <div class="section">
+                <div class="section-title">System Configuration</div>
+                <div class="form-group"><label>Phase Type</label><select id="phaseType"><option value="single_phase">Single Phase</option><option value="three_phase">Three Phase</option></select></div>
+                <div class="form-group"><label>Solar Panel</label><select id="panelSelect"></select></div>
+                <div class="form-group"><label>Panel Configuration</label><select id="panelInputMode"><option value="panels">Enter Number of Panels</option><option value="kw">Enter System Size (kW)</option></select></div>
+                <div class="grid-2">
+                    <div class="form-group" id="panelCountGroup"><label>Number of Panels</label><input type="number" id="panelCount" value="20" min="0"></div>
+                    <div class="form-group" id="systemSizeGroup" style="display:none;"><label>System Size (kW)</label><input type="number" id="systemSizeInput" value="9" min="0" step="0.1"></div>
+                </div>
+                <div class="info-box"><strong id="systemCalc">System: 9.00 kW (20 panels)</strong></div>
+            </div>
+            <div class="section">
+                <div class="section-title">Battery Configuration</div>
+                <div class="form-group"><label>Desired Battery Capacity (kWh)</label><input type="number" id="desiredBatteryKwh" value="0" min="0" max="48" step="1"></div>
+                <div id="batteryConfigPanel" class="info-box" style="display:none;">
+                    <strong>Recommended Config:</strong> <span id="batteryBreakdown"></span>
+                    <div id="batteryAdjuster" style="margin-top:10px;padding-top:10px;border-top:1px solid #bfdbfe;">
+                        <div style="font-weight:600;margin-bottom:8px;">Adjust:</div>
+                        <div id="batteryAdjusterRows"></div>
+                        <div style="margin-top:8px;padding-top:8px;border-top:1px solid #bfdbfe;font-weight:600;">Total: <span id="batteryTotalDisplay">0</span> kWh (<span id="batteryModuleCount">0</span> modules)<span id="batteryCapWarning" style="color:#ef4444;display:none;"> Max <span id="maxModulesLabel">6</span> modules / <span id="maxKwhLabel">48</span> kWh</span></div>
+                    </div>
+                </div>
+                <div id="cecWarning" class="warn-box" style="display:none;"></div>
+                <div id="cecApproved" class="success-box" style="display:none;"></div>
+            </div>
+            <div class="section">
+                <div class="section-title">Energy Controller (Inverter)</div>
+                <div class="form-group"><label>Energy Controller</label><select id="inverterSelect"></select></div>
+                <div id="inverterInfo" class="info-box" style="display:none;"></div>
+                <div id="inverterWarning" class="warn-box" style="display:none;"></div>
+            </div>
+            <div class="section">
+                <div class="section-title">Gateway (Backup Power)</div>
+                <div class="addon-item"><input type="checkbox" id="addGateway"><label for="addGateway">Add Gateway for blackout protection</label></div>
+                <div id="gatewayOptions" style="display:none;"><div class="form-group"><label>Gateway Model</label><select id="gatewaySelect"></select></div></div>
+            </div>
+            <div class="section">
+                <div class="section-title">Installation</div>
+                <div class="grid-2">
+                    <div class="form-group"><label>Roof Type</label><select id="roofType"><option value="tile">Tile</option><option value="metal">Metal/Colorbond</option><option value="concrete">Concrete/Flat</option></select></div>
+                    <div class="form-group"><label>Mounting</label><select id="mountingType"><option value="wall">Wall Mount ($202)</option><option value="ground">Ground Mount ($202)</option></select></div>
+                </div>
+                <div class="grid-2">
+                    <div class="form-group"><label>Install $/kW (PV)</label><input type="number" id="installPerKwPv" value="300" step="1" class="readonly-field" readonly></div>
+                    <div class="form-group"><label>Install $/kWh (Battery)</label><input type="number" id="installPerKwhBattery" value="200" step="1" class="readonly-field" readonly></div>
+                </div>
+                <div class="form-group"><label>Roof Material Surcharge ($)</label><input type="number" id="roofSurcharge" value="0" step="1" class="readonly-field" readonly></div>
+            </div>
+            <div class="section">
+                <div class="section-title">Accessories</div>
+                <div class="addon-item"><input type="checkbox" id="addPowerSensor" checked><label for="addPowerSensor">Power Sensor</label><span class="addon-price" id="powerSensorPrice">$101</span></div>
+                <div class="addon-item"><input type="checkbox" id="add4GModule"><label for="add4GModule">4G Comms Module (poor Wi-Fi)</label><span class="addon-price">$177</span></div>
+                <div class="addon-item"><input type="checkbox" id="addSub1GKit"><label for="addSub1GKit">Sub1G Sensor Kit</label><span class="addon-price">$127</span></div>
+            </div>
+            <div class="section">
+                <div class="section-title">EV Charger</div>
+                <div class="addon-item"><input type="checkbox" id="addEvCharger"><label for="addEvCharger">Add EV Charger</label></div>
+                <div id="evChargerOptions" style="display:none;">
+                    <div class="form-group"><label>Charger Model</label>
+                        <select id="evChargerType"><option value="none">— Select —</option></select>
+                    </div>
+                </div>
+            </div>
+            <div class="section">
+                <div class="section-title">Other Add-ons</div>
+                <div class="addon-item"><input type="checkbox" id="addonHotWater"><label for="addonHotWater">Hot Water Timer</label><span class="addon-price" id="hotWaterPrice">$350</span></div>
+                <div class="addon-item"><input type="checkbox" id="addonMeterBoard"><label for="addonMeterBoard">New Meter Board</label><span class="addon-price" id="meterBoardPrice">$800</span></div>
+                <div id="customAddons"></div>
+                <button class="add-custom-btn" onclick="addCustomAddon()">+ Add Custom Item</button>
+            </div>
+            <div class="section">
+                <div class="section-title">STC Rebates & Margin</div>
+                <div class="grid-2">
+                    <div class="form-group"><label>PV Rebate ($/kW)</label><input type="number" id="pvRebatePerKw" value="216" step="1" class="readonly-field" readonly></div>
+                    <div class="form-group"><label>Battery Rebate ($/kWh)</label><input type="number" id="batteryRebatePerKwh" value="311" step="1" class="readonly-field" readonly></div>
+                </div>
+                <div style="font-size:11px;color:#6b7280;margin-bottom:12px;">Battery rebate drops to ~$252/kWh from May 1, 2026</div>
+                <div class="form-group"><label>GP Margin (%)</label><input type="number" id="gpMargin" value="30" min="0" max="100" step="0.1" class="readonly-field" readonly></div>
+            </div>
         </div>
-
-        <div class="content">
-            <div class="form-section">
-                <!-- Customer Info -->
-                <div class="section">
-                    <div class="section-title">Customer Information</div>
-                    <div class="form-group">
-                        <label>Customer Name</label>
-                        <input type="text" id="customerName" placeholder="Enter customer name">
-                    </div>
-                    <div class="form-group">
-                        <label>Installation Address</label>
-                        <input type="text" id="installAddress" placeholder="Enter installation address">
-                    </div>
-                </div>
-
-                <!-- System Configuration -->
-                <div class="section">
-                    <div class="section-title">System Configuration</div>
-                    
-                    <div class="form-group">
-                        <label>Panel Configuration Method</label>
-                        <select id="panelInputMode" onchange="togglePanelMode()">
-                            <option value="panels">Enter Number of Panels</option>
-                            <option value="kw">Enter System Size (kW)</option>
-                        </select>
-                    </div>
-
-                    <div class="grid-2">
-                        <div class="form-group">
-                            <label>Panel Wattage (W)</label>
-                            <input type="number" id="panelWattage" value="450" min="100">
-                        </div>
-                        <div class="form-group" id="panelCountGroup">
-                            <label>Number of Longi Panels</label>
-                            <input type="number" id="panelCount" value="20" min="1">
-                        </div>
-                        <div class="form-group" id="systemSizeGroup" style="display: none;">
-                            <label>System Size (kW)</label>
-                            <input type="number" id="systemSizeInput" value="9" min="0.1" step="0.1">
-                        </div>
-                    </div>
-
-                    <div style="background: #eff6ff; border-left: 4px solid #3b82f6; padding: 12px; border-radius: 4px; font-size: 13px; color: #1e40af; margin-bottom: 16px;">
-                        <strong id="systemCalc">System: 9.00 kW (20 panels)</strong>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Sigenergy Inverter Type</label>
-                        <select id="inverterType">
-                            <option value="single">Single Phase</option>
-                            <option value="three">Three Phase</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Battery Configuration (Sigenergy)</label>
-                        <div>
-                            <label style="font-size: 13px; color: #6b7280;">Total Battery Capacity (kWh)</label>
-                            <input type="number" id="totalBatteryCapacity" value="0" min="0" max="48" step="1">
-                        </div>
-                        <div style="background: #eff6ff; border-left: 4px solid #3b82f6; padding: 12px; border-radius: 4px; font-size: 13px; color: #1e40af; margin-top: 8px;">
-                            <strong>Optimized Setup:</strong><br>
-                            <span id="batteryBreakdown">No batteries selected</span>
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Roof Type</label>
-                        <select id="roofType">
-                            <option value="tile">Tile</option>
-                            <option value="metal">Metal/Colorbond</option>
-                            <option value="concrete">Concrete/Flat</option>
-                        </select>
-                    </div>
-                </div>
-
-                <!-- Pricing Inputs -->
-                <div class="section">
-                    <div class="section-title">Pricing (Loaded from Google Sheet)</div>
-                    
-                    <div class="grid-2">
-                        <div class="form-group">
-                            <label>Panel Cost ($)</label>
-                            <input type="number" id="panelCost" value="200" step="0.01" readonly style="background-color: #f3f4f6;">
-                        </div>
-                        <div class="form-group">
-                            <label>Inverter Cost ($)</label>
-                            <input type="number" id="inverterCost" value="2500" step="0.01" readonly style="background-color: #f3f4f6;">
-                        </div>
-                    </div>
-
-                    <div class="grid-2">
-                        <div class="form-group">
-                            <label>5 kWh Battery Cost ($)</label>
-                            <input type="number" id="battery5kwhCost" value="4000" step="0.01" readonly style="background-color: #f3f4f6;">
-                        </div>
-                        <div class="form-group">
-                            <label>8 kWh Battery Cost ($)</label>
-                            <input type="number" id="battery8kwhCost" value="6400" step="0.01" readonly style="background-color: #f3f4f6;">
-                        </div>
-                    </div>
-
-                    <div class="grid-2">
-                        <div class="form-group">
-                            <label>Install $/kW (PV)</label>
-                            <input type="number" id="installPerKwPv" value="300" step="0.01" readonly style="background-color: #f3f4f6;">
-                        </div>
-                        <div class="form-group">
-                            <label>Install $/kWh (Battery)</label>
-                            <input type="number" id="installPerKwhBattery" value="200" step="0.01" readonly style="background-color: #f3f4f6;">
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Roof Material Surcharge ($)</label>
-                        <input type="number" id="roofSurcharge" value="0" step="0.01" readonly style="background-color: #f3f4f6;">
-                    </div>
-
-                    <div class="form-group">
-                        <label>GP Margin (%)</label>
-                        <input type="number" id="gpMargin" value="30" min="0" max="100" step="0.1" readonly style="background-color: #f3f4f6;">
-                    </div>
-
-                    <div class="section-title" style="margin-top: 20px;">STC Rebates (Govt Incentive)</div>
-                    
-                    <div class="grid-2">
-                        <div class="form-group">
-                            <label>PV Rebate ($/kW)</label>
-                            <input type="number" id="pvRebatePerKw" value="216" step="0.01" readonly style="background-color: #f3f4f6;">
-                        </div>
-                        <div class="form-group">
-                            <label>Battery Rebate ($/kWh)</label>
-                            <input type="number" id="batteryRebatePerKwh" value="311" step="0.01" readonly style="background-color: #f3f4f6;">
-                        </div>
-                    </div>
-                    <div style="font-size: 12px; color: #6b7280; margin-top: -8px;">
-                        Note: Battery rebate drops to ~$252/kWh from May 1, 2026
-                    </div>
-                </div>
-
-                <!-- Add-ons -->
-                <div class="section">
-                    <div class="section-title">Add-ons & Extras</div>
-                    
-                    <div class="addon-item">
-                        <input type="checkbox" id="addonCarCharger">
-                        <label for="addonCarCharger">EV Car Charger</label>
-                        <input type="number" id="carChargerCost" value="1500" step="0.01" readonly style="background-color: #f3f4f6;">
-                    </div>
-
-                    <div class="addon-item">
-                        <input type="checkbox" id="addonHotWater">
-                        <label for="addonHotWater">Hot Water Timer</label>
-                        <input type="number" id="hotWaterCost" value="350" step="0.01" readonly style="background-color: #f3f4f6;">
-                    </div>
-
-                    <div class="addon-item">
-                        <input type="checkbox" id="addonMeterBoard">
-                        <label for="addonMeterBoard">New Meter Board</label>
-                        <input type="number" id="meterBoardCost" value="800" step="0.01" readonly style="background-color: #f3f4f6;">
-                    </div>
-
-                    <div id="customAddons"></div>
-
-                    <button class="add-custom-btn" onclick="addCustomAddon()">+ Add Custom Item</button>
-                </div>
+        <div class="quote-summary">
+            <div class="summary-card"><div class="summary-title">System Overview</div><div class="system-specs" id="systemSpecs">Configure system to see details</div></div>
+            <div class="summary-card">
+                <div class="summary-title">Equipment (ex GST)</div>
+                <div class="summary-row"><span>Panels</span><span id="costPanels">$0</span></div>
+                <div class="summary-row"><span>Energy Controller</span><span id="costInverter">$0</span></div>
+                <div class="summary-row"><span>Batteries</span><span id="costBattery">$0</span></div>
+                <div class="summary-row"><span>Gateway</span><span id="costGateway">$0</span></div>
+                <div class="summary-row"><span>Accessories</span><span id="costAccessories">$0</span></div>
+                <div class="summary-row"><span>EV Charger</span><span id="costEvCharger">$0</span></div>
+                <div class="summary-row total"><span>Total Equipment</span><span id="totalEquipment">$0</span></div>
             </div>
-
-            <div class="quote-summary">
-                <div class="summary-card">
-                    <div class="summary-title">System Overview</div>
-                    <div class="system-specs" id="systemSpecs">
-                        Configure system to see details
-                    </div>
-                </div>
-
-                <div class="summary-card">
-                    <div class="summary-title">Cost Breakdown</div>
-                    <div class="summary-row">
-                        <span>Panels</span>
-                        <span id="costPanels">$0.00</span>
-                    </div>
-                    <div class="summary-row">
-                        <span>Inverter</span>
-                        <span id="costInverter">$0.00</span>
-                    </div>
-                    <div class="summary-row">
-                        <span>Battery</span>
-                        <span id="costBattery">$0.00</span>
-                    </div>
-                    <div class="summary-row">
-                        <span>Installation (PV)</span>
-                        <span id="costInstallPv">$0.00</span>
-                    </div>
-                    <div class="summary-row">
-                        <span>Installation (Battery)</span>
-                        <span id="costInstallBattery">$0.00</span>
-                    </div>
-                    <div class="summary-row">
-                        <span>Roof Materials</span>
-                        <span id="costRoof">$0.00</span>
-                    </div>
-                    <div class="summary-row">
-                        <span>Add-ons</span>
-                        <span id="costAddons">$0.00</span>
-                    </div>
-                    <div class="summary-row total">
-                        <span>Total COG</span>
-                        <span id="totalCog">$0.00</span>
-                    </div>
-                    <div class="summary-row" style="color: #059669;">
-                        <span>PV STC Rebate</span>
-                        <span id="stcPvRebate">-$0.00</span>
-                    </div>
-                    <div class="summary-row" style="color: #059669;">
-                        <span>Battery STC Rebate</span>
-                        <span id="stcBatteryRebate">-$0.00</span>
-                    </div>
-                    <div class="summary-row total">
-                        <span>COG After Rebates</span>
-                        <span id="cogAfterRebates">$0.00</span>
-                    </div>
-                    <div class="summary-row">
-                        <span id="gpLabel">GP (30%)</span>
-                        <span id="gpAmount">$0.00</span>
-                    </div>
-                    <div class="summary-row final">
-                        <span>Customer Price</span>
-                        <span id="finalPrice">$0.00</span>
-                    </div>
-                </div>
-
-                <button class="generate-btn" onclick="generateQuote()">📄 Generate Quote PDF</button>
+            <div class="summary-card">
+                <div class="summary-title">Installation & Add-ons</div>
+                <div class="summary-row"><span>PV Installation</span><span id="costInstallPv">$0</span></div>
+                <div class="summary-row"><span>Battery Installation</span><span id="costInstallBattery">$0</span></div>
+                <div class="summary-row"><span>Roof Surcharge</span><span id="costRoof">$0</span></div>
+                <div class="summary-row"><span>Mounting Kit</span><span id="costMounting">$0</span></div>
+                <div class="summary-row"><span>Other Add-ons</span><span id="costAddons">$0</span></div>
+                <div class="summary-row total"><span>Total Installation</span><span id="totalInstall">$0</span></div>
             </div>
+            <div class="summary-card">
+                <div class="summary-title">Quote Total</div>
+                <div class="summary-row total"><span>Total COG</span><span id="totalCog">$0</span></div>
+                <div class="summary-row rebate"><span>PV STC Rebate</span><span id="stcPvRebate">-$0</span></div>
+                <div class="summary-row rebate"><span>Battery STC Rebate</span><span id="stcBatteryRebate">-$0</span></div>
+                <div class="summary-row total"><span>COG After Rebates</span><span id="cogAfterRebates">$0</span></div>
+                <div class="summary-row"><span id="gpLabel">GP (30%)</span><span id="gpAmount">$0</span></div>
+                <div class="summary-row final"><span>Customer Price (ex GST)</span><span id="finalPrice">$0</span></div>
+            </div>
+            <button class="generate-btn" onclick="generateQuote()">📄 Generate Quote PDF</button>
         </div>
     </div>
+</div>
 
-    <script>
-        let customAddonCount = 0;
-        const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSjaiDmlElkBiMNpqjeJVp4wQUGNFpMCbngjwqh8SSviLyH1qzIswoWM0tgd4jH7tCglCIzz9dli0VQ/pub?output=csv';
+<script>
+let CONFIG = {};
+let customAddonCount = 0, manualBatteryMode = false, userChangedInverter = false;
+let batteryQtys = {};
 
-        // Load pricing from Google Sheet on page load
-        async function loadPricingFromSheet() {
-            try {
-                const response = await fetch(SHEET_URL);
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                
-                const csvText = await response.text();
-                
-                // Parse CSV
-                const lines = csvText.split('\n');
-                const pricing = {};
-                
-                // Skip header row, parse data
-                for (let i = 1; i < lines.length; i++) {
-                    const line = lines[i].trim();
-                    if (!line) continue;
-                    
-                    // Simple CSV parsing - split by comma
-                    const parts = line.split(',');
-                    if (parts.length >= 2) {
-                        const key = parts[0].replace(/"/g, '').trim();
-                        const value = parts[1].replace(/"/g, '').trim();
-                        pricing[key] = parseFloat(value) || 0;
-                    }
-                }
-                
-                // Populate form fields with pricing data
-                if (pricing.panel_cost) document.getElementById('panelCost').value = pricing.panel_cost;
-                if (pricing.panel_wattage) document.getElementById('panelWattage').value = pricing.panel_wattage;
-                if (pricing.inverter_single_phase) {
-                    // Store both inverter prices for later use
-                    document.getElementById('inverterCost').value = pricing.inverter_single_phase;
-                    document.getElementById('inverterCost').dataset.singlePhase = pricing.inverter_single_phase;
-                    document.getElementById('inverterCost').dataset.threePhase = pricing.inverter_three_phase || pricing.inverter_single_phase;
-                }
-                if (pricing.battery_5kwh) document.getElementById('battery5kwhCost').value = pricing.battery_5kwh;
-                if (pricing.battery_8kwh) document.getElementById('battery8kwhCost').value = pricing.battery_8kwh;
-                if (pricing.install_pv_per_kw) document.getElementById('installPerKwPv').value = pricing.install_pv_per_kw;
-                if (pricing.install_battery_per_kwh) document.getElementById('installPerKwhBattery').value = pricing.install_battery_per_kwh;
-                if (pricing.addon_car_charger) document.getElementById('carChargerCost').value = pricing.addon_car_charger;
-                if (pricing.addon_hot_water) document.getElementById('hotWaterCost').value = pricing.addon_hot_water;
-                if (pricing.addon_meter_board) document.getElementById('meterBoardCost').value = pricing.addon_meter_board;
-                if (pricing.pv_rebate_per_kw) document.getElementById('pvRebatePerKw').value = pricing.pv_rebate_per_kw;
-                if (pricing.battery_rebate_per_kwh) document.getElementById('batteryRebatePerKwh').value = pricing.battery_rebate_per_kwh;
-                if (pricing.gp_margin) document.getElementById('gpMargin').value = pricing.gp_margin;
-                
-                // Store roof surcharges for later use
-                if (pricing.roof_tile !== undefined) document.getElementById('roofSurcharge').dataset.tile = pricing.roof_tile;
-                if (pricing.roof_metal !== undefined) document.getElementById('roofSurcharge').dataset.metal = pricing.roof_metal;
-                if (pricing.roof_concrete !== undefined) document.getElementById('roofSurcharge').dataset.concrete = pricing.roof_concrete;
-                
-                // Set initial roof surcharge based on default selection
-                updateRoofSurcharge();
-                updateInverterCost();
-                
-                calculateQuote();
-                
-                console.log('✅ Pricing loaded from Google Sheet successfully');
-            } catch (error) {
-                console.error('❌ Error loading pricing from Google Sheet:', error);
-                
-                // Show user-friendly error message
-                const errorDiv = document.createElement('div');
-                errorDiv.style.cssText = 'position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #fee2e2; border: 2px solid #ef4444; color: #991b1b; padding: 16px 24px; border-radius: 8px; z-index: 9999; max-width: 500px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.15);';
-                errorDiv.innerHTML = `
-                    <strong>⚠️ Could not load pricing from Google Sheet</strong><br>
-                    <span style="font-size: 14px;">Make sure the sheet is set to "Anyone with the link can view"<br>Using default values for now.</span>
-                `;
-                document.body.appendChild(errorDiv);
-                
-                // Auto-hide after 8 seconds
-                setTimeout(() => errorDiv.remove(), 8000);
-                
-                // Still calculate with default values
-                calculateQuote();
-            }
+// ═══════════════════════════════════════
+// EMBEDDED FALLBACK CONFIG
+// Used when config.json cannot be loaded (e.g. running locally)
+// Master copy lives in config.json on GitHub — update there first
+// ═══════════════════════════════════════
+const DEFAULT_CONFIG = {
+    "panels": [
+        { "brand": "Longi", "model": "Hi-MO 7", "wattage": 450, "price": 200, "colour": "Black" },
+        { "brand": "Longi", "model": "Hi-MO 7", "wattage": 440, "price": 190, "colour": "Silver" }
+    ],
+    "energy_controllers": {
+        "single_phase": [
+            { "sku": "SigenStor EC 5.0 SP", "kw": 5, "price": 1343, "max_pv_kw": 10 },
+            { "sku": "SigenStor EC 6.0 SP", "kw": 6, "price": 1452, "max_pv_kw": 12 },
+            { "sku": "SigenStor EC 8.0 SP", "kw": 8, "price": 2482, "max_pv_kw": 16 },
+            { "sku": "SigenStor EC 10.0 SP", "kw": 10, "price": 2675, "max_pv_kw": 20 },
+            { "sku": "SigenStor EC 12.0 SP", "kw": 12, "price": 2869, "max_pv_kw": 24 }
+        ],
+        "three_phase": [
+            { "sku": "SigenStor EC 5.0 TP", "kw": 5, "price": 2300, "max_pv_kw": 8 },
+            { "sku": "SigenStor EC 10.0 TP", "kw": 10, "price": 2663, "max_pv_kw": 16 },
+            { "sku": "SigenStor EC 15.0 TP", "kw": 15, "price": 3511, "max_pv_kw": 24 },
+            { "sku": "SigenStor EC 20.0 TP", "kw": 20, "price": 4007, "max_pv_kw": 32 },
+            { "sku": "SigenStor EC 25.0 TP", "kw": 25, "price": 4600, "max_pv_kw": 40 },
+            { "sku": "SigenStor EC 30.0 TP", "kw": 30, "price": 5060, "max_pv_kw": 48 }
+        ]
+    },
+    "batteries": [
+        { "kwh": 5, "price": 2905, "label": "5 kWh" },
+        { "kwh": 8, "price": 3632, "label": "8 kWh" }
+    ],
+    "battery_rules": { "max_modules": 6, "max_kwh": 48 },
+    "gateways": {
+        "single_phase": [
+            { "sku": "Sigen Gateway Home SP", "price": 645, "desc": "Standard Single Phase ($645)" },
+            { "sku": "Sigen Gateway Home SP AU (Pro)", "price": 695, "desc": "Pro back entry ($695)" },
+            { "sku": "Sigen CUST Gateway SP-63", "price": 2200, "desc": "Custom 63A up to 24kW ($2,200)" },
+            { "sku": "Sigen CUST Gateway SP-63-Hybrid", "price": 3000, "desc": "Custom 63A Hybrid ($3,000)" },
+            { "sku": "Sigen CUST Gateway SP-125", "price": 3200, "desc": "Custom 125A up to 24kW ($3,200)" }
+        ],
+        "three_phase": [
+            { "sku": "Sigen Gateway Home TP AU (Pro)", "price": 859, "desc": "Simple 2-inverter ($859)" },
+            { "sku": "Sigen Gateway Home TP", "price": 1575, "desc": "Standard Three Phase ($1,575)" },
+            { "sku": "Sigen Gateway C60 AU", "price": 1769, "desc": "C&I 60kW ($1,769)" }
+        ]
+    },
+    "ev_chargers": {
+        "dc_12_5": { "price": 2277, "desc": "DC 12kW 5m" },
+        "dc_25_5": { "price": 3105, "desc": "DC 25kW 5m" },
+        "dc_12_7.5": { "price": 2484, "desc": "DC 12kW 7.5m" },
+        "dc_25_7.5": { "price": 3312, "desc": "DC 25kW 7.5m" },
+        "dc_12_10": { "price": 2588, "desc": "DC 12kW 10m" },
+        "dc_25_10": { "price": 3416, "desc": "DC 25kW 10m" },
+        "ac_7_cable": { "price": 907, "desc": "AC 7kW w/cable" },
+        "ac_11_cable": { "price": 981, "desc": "AC 11kW w/cable" },
+        "ac_22_cable": { "price": 1089, "desc": "AC 22kW w/cable" },
+        "ac_7_socket": { "price": 782, "desc": "AC 7kW socket" },
+        "ac_11_socket": { "price": 863, "desc": "AC 11kW socket" },
+        "ac_22_socket": { "price": 932, "desc": "AC 22kW socket" }
+    },
+    "accessories": { "sensor_sp": 101, "sensor_tp": 202, "comm_4g": 177, "sub1g": 127, "mount_wall": 202, "mount_ground": 202 },
+    "cec_approved": {
+        "single_phase": {
+            "EC 5.0 SP": [0,5,8,10,13,16,21,24,29,32], "EC 6.0 SP": [0,5,8,10,13,16,21,24,29,32],
+            "EC 8.0 SP": [0,5,8,10,13,16,21,24,29,32,37,40,48], "EC 10.0 SP": [0,5,8,10,13,16,21,24,29,32,37,40,48],
+            "EC 12.0 SP": [0,5,8,10,13,16,21,24,29,32,37,40,48]
+        },
+        "three_phase": {
+            "EC 5.0 TP": [0,5,8,10,13,16], "EC 10.0 TP": [0,5,8,10,13,16,21,24,29,32,37,40,48],
+            "EC 15.0 TP": [0,5,8,10,13,16,21,24,29,32,37,40,48], "EC 20.0 TP": [0,5,8,10,13,16,21,24,29,32,37,40,48],
+            "EC 25.0 TP": [0,5,8,10,13,16,21,24,29,32,37,40,48], "EC 30.0 TP": [0,5,8,10,13,16,21,24,29,32,37,40,48]
         }
+    },
+    "installation": { "install_pv_per_kw": 300, "install_battery_per_kwh": 200, "roof_surcharge_tile": 0, "roof_surcharge_metal": 0, "roof_surcharge_concrete": 0 },
+    "rebates": { "pv_rebate_per_kw": 216, "battery_rebate_per_kwh": 311 },
+    "addons": { "hot_water_timer": 350, "meter_board": 800 },
+    "gp_margin": 30
+};
 
-        function updateRoofSurcharge() {
-            const roofType = document.getElementById('roofType').value;
-            const roofSurchargeField = document.getElementById('roofSurcharge');
-            const surcharges = {
-                'tile': roofSurchargeField.dataset.tile || 0,
-                'metal': roofSurchargeField.dataset.metal || 0,
-                'concrete': roofSurchargeField.dataset.concrete || 0
-            };
-            roofSurchargeField.value = surcharges[roofType] || 0;
-            calculateQuote();
-        }
+document.addEventListener('DOMContentLoaded', () => { loadConfig(); });
 
-        function updateInverterCost() {
-            const inverterType = document.getElementById('inverterType').value;
-            const inverterCostField = document.getElementById('inverterCost');
-            if (inverterType === 'single' && inverterCostField.dataset.singlePhase) {
-                inverterCostField.value = inverterCostField.dataset.singlePhase;
-            } else if (inverterType === 'three' && inverterCostField.dataset.threePhase) {
-                inverterCostField.value = inverterCostField.dataset.threePhase;
-            }
-            calculateQuote();
-        }
+async function loadConfig() {
+    try {
+        const r = await fetch('config.json');
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        CONFIG = await r.json();
+        console.log('✅ Config loaded from config.json');
+    } catch (err) {
+        console.warn('⚠️ Could not load config.json (' + err.message + '), using embedded fallback');
+        CONFIG = DEFAULT_CONFIG;
+    }
+    // Initialize battery quantities
+    CONFIG.batteries.forEach(b => { batteryQtys[b.kwh] = 0; });
+    // Apply installation/rebate/addon/GP from config
+    document.getElementById('installPerKwPv').value = CONFIG.installation.install_pv_per_kw;
+    document.getElementById('installPerKwhBattery').value = CONFIG.installation.install_battery_per_kwh;
+    document.getElementById('pvRebatePerKw').value = CONFIG.rebates.pv_rebate_per_kw;
+    document.getElementById('batteryRebatePerKwh').value = CONFIG.rebates.battery_rebate_per_kwh;
+    document.getElementById('gpMargin').value = CONFIG.gp_margin;
+    document.getElementById('hotWaterPrice').textContent = '$' + CONFIG.addons.hot_water_timer;
+    document.getElementById('meterBoardPrice').textContent = '$' + CONFIG.addons.meter_board;
+    const rs = document.getElementById('roofSurcharge');
+    rs.dataset.tile = CONFIG.installation.roof_surcharge_tile;
+    rs.dataset.metal = CONFIG.installation.roof_surcharge_metal;
+    rs.dataset.concrete = CONFIG.installation.roof_surcharge_concrete;
+    // Build all UI from config
+    populatePanels(); buildBatteryUI(); populateInverters(); populateGateways(); populateEvChargers(); updateSensorPrice(); bindEvents(); updateRoofSurcharge(); calculateQuote();
+}
 
-        function togglePanelMode() {
-            const mode = document.getElementById('panelInputMode').value;
-            const panelCountGroup = document.getElementById('panelCountGroup');
-            const systemSizeGroup = document.getElementById('systemSizeGroup');
-            
-            if (mode === 'panels') {
-                panelCountGroup.style.display = 'block';
-                systemSizeGroup.style.display = 'none';
-            } else {
-                panelCountGroup.style.display = 'none';
-                systemSizeGroup.style.display = 'block';
-            }
-            
-            calculateQuote();
-        }
+function bindEvents() {
+    document.querySelectorAll('input, select').forEach(el => { el.addEventListener('input', calculateQuote); el.addEventListener('change', calculateQuote); });
+    document.getElementById('phaseType').addEventListener('change', () => { userChangedInverter = false; populateInverters(); populateGateways(); updateSensorPrice(); calculateQuote(); });
+    document.getElementById('panelSelect').addEventListener('change', calculateQuote);
+    document.getElementById('panelInputMode').addEventListener('change', togglePanelMode);
+    document.getElementById('desiredBatteryKwh').addEventListener('input', () => { manualBatteryMode = false; userChangedInverter = false; });
+    document.getElementById('inverterSelect').addEventListener('change', () => { userChangedInverter = true; calculateQuote(); });
+    document.getElementById('roofType').addEventListener('change', updateRoofSurcharge);
+    document.getElementById('addGateway').addEventListener('change', () => { document.getElementById('gatewayOptions').style.display = document.getElementById('addGateway').checked ? 'block' : 'none'; calculateQuote(); });
+    document.getElementById('addEvCharger').addEventListener('change', () => { document.getElementById('evChargerOptions').style.display = document.getElementById('addEvCharger').checked ? 'block' : 'none'; calculateQuote(); });
+}
 
-        function addCustomAddon() {
-            customAddonCount++;
-            const container = document.getElementById('customAddons');
-            const div = document.createElement('div');
-            div.className = 'custom-addon';
-            div.id = `custom-${customAddonCount}`;
-            div.innerHTML = `
-                <input type="text" placeholder="Item name" id="customName-${customAddonCount}">
-                <input type="number" placeholder="Cost" id="customCost-${customAddonCount}" value="0" step="0.01">
-                <button onclick="removeCustomAddon(${customAddonCount})">×</button>
-            `;
-            container.appendChild(div);
-            
-            // Add event listeners
-            document.getElementById(`customName-${customAddonCount}`).addEventListener('input', calculateQuote);
-            document.getElementById(`customCost-${customAddonCount}`).addEventListener('input', calculateQuote);
-        }
+function populatePanels() {
+    const sel = document.getElementById('panelSelect');
+    sel.innerHTML = '';
+    CONFIG.panels.forEach((p, idx) => {
+        const o = document.createElement('option');
+        o.value = idx;
+        o.textContent = p.brand + ' ' + p.model + ' ' + p.wattage + 'W ' + p.colour + ' ($' + p.price + ')';
+        o.dataset.wattage = p.wattage;
+        o.dataset.price = p.price;
+        o.dataset.brand = p.brand;
+        o.dataset.model = p.model;
+        o.dataset.colour = p.colour;
+        sel.appendChild(o);
+    });
+}
 
-        function removeCustomAddon(id) {
-            document.getElementById(`custom-${id}`).remove();
-            calculateQuote();
-        }
+function populateInverters() {
+    const phase = document.getElementById('phaseType').value, sel = document.getElementById('inverterSelect');
+    sel.innerHTML = '';
+    CONFIG.energy_controllers[phase].forEach(m => {
+        const o = document.createElement('option'); o.value = m.sku;
+        o.textContent = m.sku + ' — ' + m.kw + 'kW ($' + m.price.toLocaleString() + ') — Max PV: ' + m.max_pv_kw + 'kW';
+        o.dataset.kw = m.kw; o.dataset.price = m.price; o.dataset.maxPv = m.max_pv_kw; sel.appendChild(o);
+    });
+}
 
-        function calculateQuote() {
-            // Get values
-            const panelInputMode = document.getElementById('panelInputMode').value;
-            const panelWattage = parseFloat(document.getElementById('panelWattage').value) || 0;
-            
-            let panelCount, systemSizeKw;
-            
-            if (panelInputMode === 'panels') {
-                // User enters number of panels, calculate kW
-                panelCount = parseFloat(document.getElementById('panelCount').value) || 0;
-                systemSizeKw = (panelCount * panelWattage) / 1000;
-                
-                // Update the systemSizeInput silently for consistency
-                document.getElementById('systemSizeInput').value = systemSizeKw.toFixed(2);
-            } else {
-                // User enters kW, calculate number of panels
-                systemSizeKw = parseFloat(document.getElementById('systemSizeInput').value) || 0;
-                panelCount = Math.ceil((systemSizeKw * 1000) / panelWattage);
-                
-                // Update the panelCount silently for consistency
-                document.getElementById('panelCount').value = panelCount;
-            }
-            
-            // Update the system calc display
-            document.getElementById('systemCalc').textContent = `System: ${systemSizeKw.toFixed(2)} kW (${panelCount} panels)`;
-            
-            const panelCost = parseFloat(document.getElementById('panelCost').value) || 0;
-            const inverterCost = parseFloat(document.getElementById('inverterCost').value) || 0;
-            const inverterType = document.getElementById('inverterType').value;
-            
-            // Optimize battery configuration - compare costs to find cheapest option
-            const desiredBatteryKwh = parseFloat(document.getElementById('totalBatteryCapacity').value) || 0;
-            const battery5kwhCost = parseFloat(document.getElementById('battery5kwhCost').value) || 0;
-            const battery8kwhCost = parseFloat(document.getElementById('battery8kwhCost').value) || 0;
-            
-            let battery8kwhQty = 0;
-            let battery5kwhQty = 0;
-            let actualBatteryKwh = 0;
-            
-            if (desiredBatteryKwh > 0 && desiredBatteryKwh <= 48) {
-                // Calculate how many 8kWh batteries we'd need if we only use 8kWh
-                const only8kwh_qty = Math.ceil(desiredBatteryKwh / 8);
-                const only8kwh_capacity = only8kwh_qty * 8;
-                const only8kwh_cost = only8kwh_qty * battery8kwhCost;
-                
-                // Calculate optimal mix: use 8kWh batteries first, then 5kWh for remainder
-                const mix_8kwh_qty = Math.floor(desiredBatteryKwh / 8);
-                const remaining = desiredBatteryKwh - (mix_8kwh_qty * 8);
-                const mix_5kwh_qty = remaining > 0 ? Math.ceil(remaining / 5) : 0;
-                const mix_capacity = (mix_8kwh_qty * 8) + (mix_5kwh_qty * 5);
-                const mix_cost = (mix_8kwh_qty * battery8kwhCost) + (mix_5kwh_qty * battery5kwhCost);
-                
-                // Compare costs and choose cheaper option
-                if (only8kwh_capacity <= 48 && only8kwh_cost <= mix_cost) {
-                    // Using only 8kWh batteries is cheaper (even if over capacity)
-                    battery8kwhQty = only8kwh_qty;
-                    battery5kwhQty = 0;
-                    actualBatteryKwh = only8kwh_capacity;
-                } else if (mix_capacity <= 48) {
-                    // Mixed configuration is cheaper
-                    battery8kwhQty = mix_8kwh_qty;
-                    battery5kwhQty = mix_5kwh_qty;
-                    actualBatteryKwh = mix_capacity;
-                } else {
-                    // Over 48kWh limit, cap at maximum
-                    battery8kwhQty = 6;
-                    battery5kwhQty = 0;
-                    actualBatteryKwh = 48;
-                }
-                
-                // Update battery breakdown display
-                let breakdownText = '';
-                let costSavingNote = '';
-                
-                if (battery8kwhQty > 0 && battery5kwhQty > 0) {
-                    breakdownText = `${battery8kwhQty}× 8kWh + ${battery5kwhQty}× 5kWh = ${actualBatteryKwh} kWh total`;
-                } else if (battery8kwhQty > 0) {
-                    breakdownText = `${battery8kwhQty}× 8kWh = ${actualBatteryKwh} kWh total`;
-                } else if (battery5kwhQty > 0) {
-                    breakdownText = `${battery5kwhQty}× 5kWh = ${actualBatteryKwh} kWh total`;
-                }
-                
-                // Show if we went over capacity for cost savings
-                if (actualBatteryKwh > desiredBatteryKwh) {
-                    const savings = mix_cost - only8kwh_cost;
-                    costSavingNote = ` <span style="color: #059669;">(+${actualBatteryKwh - desiredBatteryKwh} kWh, saves $${savings.toFixed(0)})</span>`;
-                } else if (actualBatteryKwh !== desiredBatteryKwh) {
-                    breakdownText += ` <span style="color: #f59e0b;">(Adjusted from ${desiredBatteryKwh} kWh)</span>`;
-                }
-                
-                document.getElementById('batteryBreakdown').innerHTML = breakdownText + costSavingNote;
-            } else if (desiredBatteryKwh > 48) {
-                // Over max limit
-                battery8kwhQty = 6;
-                battery5kwhQty = 0;
-                actualBatteryKwh = 48;
-                document.getElementById('batteryBreakdown').innerHTML = `${battery8kwhQty}× 8kWh = ${actualBatteryKwh} kWh total <span style="color: #ef4444;">(Max capacity reached)</span>`;
-            } else {
-                document.getElementById('batteryBreakdown').textContent = 'No batteries selected';
-            }
-            const installPerKwPv = parseFloat(document.getElementById('installPerKwPv').value) || 0;
-            const installPerKwhBattery = parseFloat(document.getElementById('installPerKwhBattery').value) || 0;
-            const roofSurcharge = parseFloat(document.getElementById('roofSurcharge').value) || 0;
-            const gpMargin = parseFloat(document.getElementById('gpMargin').value) || 0;
-            const pvRebatePerKw = parseFloat(document.getElementById('pvRebatePerKw').value) || 0;
-            const batteryRebatePerKwh = parseFloat(document.getElementById('batteryRebatePerKwh').value) || 0;
-            
-            // Battery capacity for calculations
-            const batteryKwh = actualBatteryKwh;
+function populateGateways() {
+    const phase = document.getElementById('phaseType').value, sel = document.getElementById('gatewaySelect');
+    sel.innerHTML = '';
+    CONFIG.gateways[phase].forEach(m => { const o = document.createElement('option'); o.value = m.sku; o.textContent = m.desc; o.dataset.price = m.price; sel.appendChild(o); });
+}
 
-            // Update system specs
-            let batteryText = 'No Battery';
-            if (batteryKwh > 0) {
-                let batteryDetails = [];
-                if (battery5kwhQty > 0) batteryDetails.push(`${battery5kwhQty}× 5kWh`);
-                if (battery8kwhQty > 0) batteryDetails.push(`${battery8kwhQty}× 8kWh`);
-                batteryText = `${batteryKwh} kWh Battery (${batteryDetails.join(' + ')})`;
-            }
-            
-            document.getElementById('systemSpecs').innerHTML = `
-                <strong>${systemSizeKw.toFixed(2)} kW System</strong><br>
-                ${panelCount} × ${panelWattage}W Longi Panels<br>
-                ${inverterType === 'single' ? 'Single' : 'Three'} Phase Sigenergy Inverter<br>
-                ${batteryText}
-            `;
+function updateSensorPrice() {
+    const p = document.getElementById('phaseType').value === 'single_phase' ? CONFIG.accessories.sensor_sp : CONFIG.accessories.sensor_tp;
+    document.getElementById('powerSensorPrice').textContent = '$' + p;
+}
 
-            // Calculate costs
-            const costPanels = panelCount * panelCost;
-            const costInverter = inverterCost;
-            const costBattery = (battery5kwhQty * battery5kwhCost) + (battery8kwhQty * battery8kwhCost);
-            const costInstallPv = systemSizeKw * installPerKwPv;
-            const costInstallBattery = batteryKwh * installPerKwhBattery;
-            const costRoof = roofSurcharge;
-
-            // Add-ons
-            let costAddons = 0;
-            if (document.getElementById('addonCarCharger').checked) {
-                costAddons += parseFloat(document.getElementById('carChargerCost').value) || 0;
-            }
-            if (document.getElementById('addonHotWater').checked) {
-                costAddons += parseFloat(document.getElementById('hotWaterCost').value) || 0;
-            }
-            if (document.getElementById('addonMeterBoard').checked) {
-                costAddons += parseFloat(document.getElementById('meterBoardCost').value) || 0;
-            }
-
-            // Custom add-ons
-            for (let i = 1; i <= customAddonCount; i++) {
-                const costElement = document.getElementById(`customCost-${i}`);
-                const nameElement = document.getElementById(`customName-${i}`);
-                if (costElement && nameElement && nameElement.value.trim()) {
-                    costAddons += parseFloat(costElement.value) || 0;
-                }
-            }
-
-            // Totals
-            const totalCog = costPanels + costInverter + costBattery + costInstallPv + costInstallBattery + costRoof + costAddons;
-            
-            // Calculate STC rebates
-            const stcPvRebate = systemSizeKw * pvRebatePerKw;
-            const stcBatteryRebate = batteryKwh * batteryRebatePerKwh;
-            
-            // COG after rebates
-            const cogAfterRebates = totalCog - stcPvRebate - stcBatteryRebate;
-            
-            // GP is calculated on COG after rebates
-            const gpAmount = cogAfterRebates * (gpMargin / 100);
-            const finalPrice = cogAfterRebates + gpAmount;
-
-            // Update display
-            document.getElementById('costPanels').textContent = `$${costPanels.toFixed(2)}`;
-            document.getElementById('costInverter').textContent = `$${costInverter.toFixed(2)}`;
-            document.getElementById('costBattery').textContent = `$${costBattery.toFixed(2)}`;
-            document.getElementById('costInstallPv').textContent = `$${costInstallPv.toFixed(2)}`;
-            document.getElementById('costInstallBattery').textContent = `$${costInstallBattery.toFixed(2)}`;
-            document.getElementById('costRoof').textContent = `$${costRoof.toFixed(2)}`;
-            document.getElementById('costAddons').textContent = `$${costAddons.toFixed(2)}`;
-            document.getElementById('totalCog').textContent = `$${totalCog.toFixed(2)}`;
-            document.getElementById('stcPvRebate').textContent = `-$${stcPvRebate.toFixed(2)}`;
-            document.getElementById('stcBatteryRebate').textContent = `-$${stcBatteryRebate.toFixed(2)}`;
-            document.getElementById('cogAfterRebates').textContent = `$${cogAfterRebates.toFixed(2)}`;
-            document.getElementById('gpLabel').textContent = `GP (${gpMargin}%)`;
-            document.getElementById('gpAmount').textContent = `$${gpAmount.toFixed(2)}`;
-            document.getElementById('finalPrice').textContent = `$${finalPrice.toFixed(2)}`;
-        }
-
-        function generateQuote() {
-            const customerName = document.getElementById('customerName').value || 'Customer';
-            const installAddress = document.getElementById('installAddress').value || 'TBD';
-            const finalPrice = document.getElementById('finalPrice').textContent;
-            
-            alert(`Quote generated for ${customerName}\nAddress: ${installAddress}\nTotal: ${finalPrice}\n\n(PDF generation would be implemented here)`);
-        }
-
-        // Add event listeners to all inputs
-        document.querySelectorAll('input, select').forEach(element => {
-            element.addEventListener('input', calculateQuote);
-            element.addEventListener('change', calculateQuote);
+function populateEvChargers() {
+    const sel = document.getElementById('evChargerType');
+    sel.innerHTML = '<option value="none">— Select —</option>';
+    // Group by prefix: dc_, ac_*_cable, ac_*_socket
+    const groups = { dc: [], ac_cable: [], ac_socket: [] };
+    Object.entries(CONFIG.ev_chargers).forEach(([key, val]) => {
+        if (key.startsWith('dc_')) groups.dc.push({ key, ...val });
+        else if (key.includes('_cable')) groups.ac_cable.push({ key, ...val });
+        else if (key.includes('_socket')) groups.ac_socket.push({ key, ...val });
+    });
+    const addGroup = (label, items) => {
+        if (items.length === 0) return;
+        const grp = document.createElement('optgroup');
+        grp.label = label;
+        items.forEach(item => {
+            const o = document.createElement('option');
+            o.value = item.key;
+            o.textContent = item.desc + ' ($' + item.price.toLocaleString() + ')';
+            grp.appendChild(o);
         });
+        sel.appendChild(grp);
+    };
+    addGroup('DC (connects to Energy Controller)', groups.dc);
+    addGroup('AC with Cable', groups.ac_cable);
+    addGroup('AC Socket Only', groups.ac_socket);
+}
 
-        // Special handlers for roof type and inverter type
-        document.getElementById('roofType').addEventListener('change', updateRoofSurcharge);
-        document.getElementById('inverterType').addEventListener('change', updateInverterCost);
+function togglePanelMode() {
+    const m = document.getElementById('panelInputMode').value;
+    document.getElementById('panelCountGroup').style.display = m === 'panels' ? 'block' : 'none';
+    document.getElementById('systemSizeGroup').style.display = m === 'kw' ? 'block' : 'none';
+    calculateQuote();
+}
 
-        // Load pricing from Google Sheet on page load
-        loadPricingFromSheet();
-    </script>
+function adjustBattery(kwh, delta) {
+    const newQty = Math.max(0, (batteryQtys[kwh] || 0) + delta);
+    const testQtys = Object.assign({}, batteryQtys, {[kwh]: newQty});
+    const totalMod = Object.values(testQtys).reduce((s, v) => s + v, 0);
+    const totalKwh = Object.entries(testQtys).reduce((s, [k, v]) => s + (parseFloat(k) * v), 0);
+    const maxMod = CONFIG.battery_rules.max_modules;
+    const maxKwh = CONFIG.battery_rules.max_kwh;
+    if (totalMod > maxMod || totalKwh > maxKwh) {
+        const w = document.getElementById('batteryCapWarning'); w.style.display = 'inline';
+        setTimeout(() => w.style.display = 'none', 2000); return;
+    }
+    batteryQtys[kwh] = newQty;
+    manualBatteryMode = true; userChangedInverter = false;
+    updateBatteryUI();
+    document.getElementById('desiredBatteryKwh').value = getTotalBatteryKwh();
+    calculateQuote();
+}
+
+function getTotalBatteryKwh() {
+    return Object.entries(batteryQtys).reduce((s, [k, v]) => s + (parseFloat(k) * v), 0);
+}
+
+function getTotalBatteryModules() {
+    return Object.values(batteryQtys).reduce((s, v) => s + v, 0);
+}
+
+function updateBatteryUI() {
+    const totalKwh = getTotalBatteryKwh();
+    const totalMod = getTotalBatteryModules();
+    // Update each row's quantity display
+    CONFIG.batteries.forEach(bat => {
+        const el = document.getElementById('qty_' + bat.kwh + 'kwh');
+        if (el) el.textContent = batteryQtys[bat.kwh] || 0;
+    });
+    document.getElementById('batteryTotalDisplay').textContent = totalKwh;
+    document.getElementById('batteryModuleCount').textContent = totalMod;
+    // Build breakdown text (sorted largest first)
+    const sorted = [...CONFIG.batteries].sort((a, b) => b.kwh - a.kwh);
+    let parts = [];
+    sorted.forEach(bat => { const q = batteryQtys[bat.kwh] || 0; if (q > 0) parts.push(q + '× ' + bat.kwh + 'kWh'); });
+    document.getElementById('batteryBreakdown').innerHTML = parts.length ? parts.join(' + ') + ' = ' + totalKwh + ' kWh' : 'No batteries selected';
+}
+
+function optimizeBattery(desired) {
+    // Dynamic optimizer: tries all combinations of all battery sizes
+    // Finds the cheapest CUSTOMER PRICE (after rebate + GP) that meets or exceeds desired kWh
+    const maxMod = CONFIG.battery_rules.max_modules;
+    const maxKwh = CONFIG.battery_rules.max_kwh;
+    if (desired <= 0 || desired > maxKwh) { const result = {}; CONFIG.batteries.forEach(b => result[b.kwh] = 0); return { qtys: result, total: 0, cost: 0 }; }
+
+    // Get rebate and GP for true cost comparison
+    const rebatePerKwh = parseFloat(document.getElementById('batteryRebatePerKwh').value) || 0;
+    const gpMargin = (parseFloat(document.getElementById('gpMargin').value) || 0) / 100;
+
+    const sorted = [...CONFIG.batteries].sort((a, b) => (a.price / a.kwh) - (b.price / b.kwh));
+    let bestCombo = null, bestCustomerCost = Infinity, bestTotal = Infinity;
+
+    function customerCost(equipCost, totalKwh) {
+        // Same formula as the main quote: (equipment - rebate) * (1 + GP)
+        const afterRebate = equipCost - (totalKwh * rebatePerKwh);
+        return afterRebate * (1 + gpMargin);
+    }
+
+    function search(idx, qtys, totalKwh, totalEquipCost, totalModules) {
+        if (totalKwh >= desired) {
+            const cc = customerCost(totalEquipCost, totalKwh);
+            if (cc < bestCustomerCost || (cc === bestCustomerCost && totalKwh < bestTotal)) {
+                bestCombo = Object.assign({}, qtys);
+                bestCustomerCost = cc;
+                bestTotal = totalKwh;
+            }
+        }
+        if (idx >= sorted.length) return;
+        const bat = sorted[idx];
+        const maxQty = Math.min(maxMod - totalModules, Math.floor((maxKwh - totalKwh) / bat.kwh) + 1);
+        for (let q = 0; q <= maxQty; q++) {
+            const newKwh = totalKwh + (q * bat.kwh);
+            const newMod = totalModules + q;
+            if (newMod > maxMod || newKwh > maxKwh + bat.kwh) break;
+            qtys[bat.kwh] = q;
+            search(idx + 1, qtys, newKwh, totalEquipCost + (q * bat.price), newMod);
+        }
+        qtys[bat.kwh] = 0;
+    }
+
+    const initQtys = {};
+    CONFIG.batteries.forEach(b => initQtys[b.kwh] = 0);
+    search(0, initQtys, 0, 0, 0);
+
+    if (!bestCombo) { const fallback = {}; CONFIG.batteries.forEach(b => fallback[b.kwh] = 0); return { qtys: fallback, total: 0, cost: 0 }; }
+    return { qtys: bestCombo, total: bestTotal, cost: bestCustomerCost };
+}
+
+function getCecKey(sku) { return sku.replace('SigenStor ', ''); }
+
+function checkCec(sku, kwh, phase) {
+    const key = getCecKey(sku), combos = CONFIG.cec_approved[phase];
+    if (!combos || !combos[key]) return { ok: false, msg: 'No CEC data' };
+    if (combos[key].includes(kwh)) return { ok: true, msg: '✅ CEC approved: ' + key + ' + ' + kwh + 'kWh' };
+    const nearest = combos[key].filter(k => k >= kwh).sort((a,b) => a-b)[0] || combos[key][combos[key].length - 1];
+    return { ok: false, msg: '⚠️ ' + kwh + 'kWh not CEC approved with ' + key + '. Nearest: ' + nearest + 'kWh' };
+}
+
+function autoSelectInverter(sysKw, battKwh, phase) {
+    const models = CONFIG.energy_controllers[phase], combos = CONFIG.cec_approved[phase];
+    for (const m of models) { const k = getCecKey(m.sku); if (m.max_pv_kw >= sysKw && combos[k] && combos[k].includes(battKwh)) return m.sku; }
+    for (const m of models) { const k = getCecKey(m.sku); if (combos[k] && combos[k].includes(battKwh)) return m.sku; }
+    return models[models.length - 1].sku;
+}
+
+function updateRoofSurcharge() { const f = document.getElementById('roofSurcharge'); f.value = parseFloat(f.dataset[document.getElementById('roofType').value]) || 0; calculateQuote(); }
+
+function addCustomAddon() {
+    customAddonCount++; const c = document.getElementById('customAddons'), d = document.createElement('div');
+    d.className = 'custom-addon'; d.id = 'custom-' + customAddonCount;
+    d.innerHTML = '<input type="text" placeholder="Item name" id="customName-' + customAddonCount + '"><input type="number" placeholder="Cost" id="customCost-' + customAddonCount + '" value="0" step="1"><button onclick="removeCustomAddon(' + customAddonCount + ')">×</button>';
+    c.appendChild(d);
+    document.getElementById('customName-' + customAddonCount).addEventListener('input', calculateQuote);
+    document.getElementById('customCost-' + customAddonCount).addEventListener('input', calculateQuote);
+}
+function removeCustomAddon(id) { document.getElementById('custom-' + id).remove(); calculateQuote(); }
+
+function calculateQuote() {
+    const phase = document.getElementById('phaseType').value;
+    const panelMode = document.getElementById('panelInputMode').value;
+    // Get selected panel from dropdown
+    const panelSel = document.getElementById('panelSelect');
+    const panelOpt = panelSel.options[panelSel.selectedIndex];
+    const panelWattage = parseFloat(panelOpt?.dataset.wattage) || 450;
+    const panelCost = parseFloat(panelOpt?.dataset.price) || 200;
+    const panelBrand = panelOpt?.dataset.brand || '';
+    const panelModel = panelOpt?.dataset.model || '';
+    const panelColour = panelOpt?.dataset.colour || '';
+    let panelCount, sysKw;
+    if (panelMode === 'panels') { panelCount = parseInt(document.getElementById('panelCount').value) || 0; sysKw = (panelCount * panelWattage) / 1000; document.getElementById('systemSizeInput').value = sysKw.toFixed(2); }
+    else { sysKw = parseFloat(document.getElementById('systemSizeInput').value) || 0; panelCount = Math.ceil((sysKw * 1000) / panelWattage); document.getElementById('panelCount').value = panelCount; }
+    document.getElementById('systemCalc').textContent = 'System: ' + sysKw.toFixed(2) + ' kW (' + panelCount + ' panels)';
+
+    const desired = parseFloat(document.getElementById('desiredBatteryKwh').value) || 0;
+    let actualKwh = 0;
+    if (!manualBatteryMode && desired > 0) {
+        const opt = optimizeBattery(desired);
+        batteryQtys = opt.qtys;
+        actualKwh = opt.total;
+        updateBatteryUI();
+        if (actualKwh > desired) document.getElementById('batteryBreakdown').innerHTML += ' <span style="color:#059669;">(+' + (actualKwh - desired) + 'kWh, cheaper)</span>';
+    } else if (manualBatteryMode) { actualKwh = getTotalBatteryKwh(); }
+    document.getElementById('batteryConfigPanel').style.display = desired > 0 ? 'block' : 'none';
+
+    if (!userChangedInverter) {
+        const rec = autoSelectInverter(sysKw, actualKwh, phase), sel = document.getElementById('inverterSelect');
+        for (let i = 0; i < sel.options.length; i++) { if (sel.options[i].value === rec) { sel.selectedIndex = i; break; } }
+    }
+
+    const invSel = document.getElementById('inverterSelect'), invOpt = invSel.options[invSel.selectedIndex];
+    const invPrice = parseFloat(invOpt?.dataset.price) || 0, invMaxPv = parseFloat(invOpt?.dataset.maxPv) || 0;
+    const invKw = parseFloat(invOpt?.dataset.kw) || 0, invSku = invOpt?.value || '';
+
+    document.getElementById('inverterInfo').style.display = 'block';
+    document.getElementById('inverterInfo').innerHTML = 'Max PV: ' + invMaxPv + 'kW | Inverter: ' + invKw + 'kW | Oversizing: ' + (phase === 'single_phase' ? '200%' : '160%');
+    if (sysKw > invMaxPv) { document.getElementById('inverterWarning').style.display = 'block'; document.getElementById('inverterWarning').innerHTML = '⚠️ PV (' + sysKw.toFixed(1) + 'kW) exceeds max (' + invMaxPv + 'kW). Select larger inverter.'; }
+    else { document.getElementById('inverterWarning').style.display = 'none'; }
+
+    const cec = checkCec(invSku, actualKwh, phase);
+    if (actualKwh > 0) {
+        document.getElementById('cecApproved').style.display = cec.ok ? 'block' : 'none'; document.getElementById('cecApproved').textContent = cec.ok ? cec.msg : '';
+        document.getElementById('cecWarning').style.display = !cec.ok ? 'block' : 'none'; document.getElementById('cecWarning').textContent = !cec.ok ? cec.msg : '';
+    } else { document.getElementById('cecWarning').style.display = 'none'; document.getElementById('cecApproved').style.display = 'none'; }
+
+    const costPanels = panelCount * panelCost, costInverter = invPrice;
+    let costBattery = 0;
+    CONFIG.batteries.forEach(bat => { costBattery += (batteryQtys[bat.kwh] || 0) * bat.price; });
+    let costGateway = 0;
+    if (document.getElementById('addGateway').checked) { const gw = document.getElementById('gatewaySelect'); costGateway = parseFloat(gw.options[gw.selectedIndex]?.dataset.price) || 0; }
+    let costAcc = 0;
+    if (document.getElementById('addPowerSensor').checked) costAcc += phase === 'single_phase' ? CONFIG.accessories.sensor_sp : CONFIG.accessories.sensor_tp;
+    if (document.getElementById('add4GModule').checked) costAcc += CONFIG.accessories.comm_4g;
+    if (document.getElementById('addSub1GKit').checked) costAcc += CONFIG.accessories.sub1g;
+    let costEv = 0;
+    if (document.getElementById('addEvCharger').checked) { const t = document.getElementById('evChargerType').value; if (t !== 'none' && CONFIG.ev_chargers[t]) costEv = CONFIG.ev_chargers[t].price; }
+    const totalEquip = costPanels + costInverter + costBattery + costGateway + costAcc + costEv;
+
+    const installPv = sysKw * (parseFloat(document.getElementById('installPerKwPv').value) || 0);
+    const installBat = actualKwh * (parseFloat(document.getElementById('installPerKwhBattery').value) || 0);
+    const roofSurch = parseFloat(document.getElementById('roofSurcharge').value) || 0;
+    const costMount = CONFIG.accessories[document.getElementById('mountingType').value === 'wall' ? 'mount_wall' : 'mount_ground'];
+    let costAddons = 0;
+    if (document.getElementById('addonHotWater').checked) costAddons += parseFloat(document.getElementById('hotWaterPrice').textContent.replace('$','')) || 0;
+    if (document.getElementById('addonMeterBoard').checked) costAddons += parseFloat(document.getElementById('meterBoardPrice').textContent.replace('$','')) || 0;
+    for (let i = 1; i <= customAddonCount; i++) { const ce = document.getElementById('customCost-' + i), ne = document.getElementById('customName-' + i); if (ce && ne && ne.value.trim()) costAddons += parseFloat(ce.value) || 0; }
+    const totalInstall = installPv + installBat + roofSurch + costMount + costAddons;
+    const totalCog = totalEquip + totalInstall;
+
+    const pvReb = sysKw * (parseFloat(document.getElementById('pvRebatePerKw').value) || 0);
+    const batReb = actualKwh * (parseFloat(document.getElementById('batteryRebatePerKwh').value) || 0);
+    const cogAfterReb = totalCog - pvReb - batReb;
+    const gp = parseFloat(document.getElementById('gpMargin').value) || 0;
+    const gpAmt = cogAfterReb * (gp / 100);
+    const finalPrice = cogAfterReb + gpAmt;
+
+    const f = v => '$' + Math.round(v).toLocaleString('en-AU');
+    document.getElementById('costPanels').textContent = f(costPanels); document.getElementById('costInverter').textContent = f(costInverter);
+    document.getElementById('costBattery').textContent = f(costBattery); document.getElementById('costGateway').textContent = f(costGateway);
+    document.getElementById('costAccessories').textContent = f(costAcc); document.getElementById('costEvCharger').textContent = f(costEv);
+    document.getElementById('totalEquipment').textContent = f(totalEquip);
+    document.getElementById('costInstallPv').textContent = f(installPv); document.getElementById('costInstallBattery').textContent = f(installBat);
+    document.getElementById('costRoof').textContent = f(roofSurch); document.getElementById('costMounting').textContent = f(costMount);
+    document.getElementById('costAddons').textContent = f(costAddons); document.getElementById('totalInstall').textContent = f(totalInstall);
+    document.getElementById('totalCog').textContent = f(totalCog); document.getElementById('stcPvRebate').textContent = '-' + f(pvReb);
+    document.getElementById('stcBatteryRebate').textContent = '-' + f(batReb); document.getElementById('cogAfterRebates').textContent = f(cogAfterReb);
+    document.getElementById('gpLabel').textContent = 'GP (' + gp + '%)'; document.getElementById('gpAmount').textContent = f(gpAmt);
+    document.getElementById('finalPrice').textContent = f(finalPrice);
+
+    let batText = 'No Battery';
+    if (actualKwh > 0) {
+        const sorted = [...CONFIG.batteries].sort((a, b) => b.kwh - a.kwh);
+        let p = []; sorted.forEach(bat => { const q = batteryQtys[bat.kwh] || 0; if (q > 0) p.push(q + '× ' + bat.kwh + 'kWh'); });
+        batText = actualKwh + 'kWh Battery (' + p.join(' + ') + ')';
+    }
+    let specs = '<strong>' + sysKw.toFixed(2) + ' kW Solar System</strong><br>' + panelCount + ' × ' + panelBrand + ' ' + panelModel + ' ' + panelWattage + 'W ' + panelColour + '<br>' + invSku + ' (' + invKw + 'kW ' + (phase === 'single_phase' ? 'Single' : 'Three') + ' Phase)<br>' + batText;
+    if (document.getElementById('addGateway').checked) { const gw = document.getElementById('gatewaySelect'); specs += '<br>Gateway: ' + (gw.options[gw.selectedIndex]?.textContent || ''); }
+    if (document.getElementById('addEvCharger').checked && document.getElementById('evChargerType').value !== 'none') { specs += '<br>EV: ' + (CONFIG.ev_chargers[document.getElementById('evChargerType').value]?.desc || ''); }
+    document.getElementById('systemSpecs').innerHTML = specs;
+}
+
+function generateQuote() {
+    const name = document.getElementById('customerName').value || 'Customer';
+    const addr = document.getElementById('installAddress').value || 'TBD';
+    alert('Quote for ' + name + '\nAddress: ' + addr + '\nTotal: ' + document.getElementById('finalPrice').textContent + '\n\n(PDF generation coming soon)');
+}
+</script>
 </body>
 </html>
