@@ -97,16 +97,25 @@
                 <div id="gatewayOptions" style="display:none;"><div class="form-group"><label>Gateway Model</label><select id="gatewaySelect"></select></div></div>
             </div>
             <div class="section">
-                <div class="section-title">Installation</div>
+                <div class="section-title">Installation & Mounting</div>
                 <div class="grid-2">
-                    <div class="form-group"><label>Roof Type</label><select id="roofType"><option value="tile">Tile</option><option value="metal">Metal/Colorbond</option><option value="concrete">Concrete/Flat</option></select></div>
-                    <div class="form-group"><label>Mounting</label><select id="mountingType"><option value="wall">Wall Mount ($202)</option><option value="ground">Ground Mount ($202)</option></select></div>
+                    <div class="form-group"><label>PV Install ($/kW)</label><input type="number" id="installPerKwPv" value="300" min="0" step="1"></div>
+                    <div class="form-group"><label>Battery Install ($/stack)</label><input type="number" id="installPerStack" value="1600" min="0" step="1"></div>
                 </div>
                 <div class="grid-2">
-                    <div class="form-group"><label>Install $/kW (PV)</label><input type="number" id="installPerKwPv" value="300" step="1" class="readonly-field" readonly></div>
-                    <div class="form-group"><label>Install $/kWh (Battery)</label><input type="number" id="installPerKwhBattery" value="200" step="1" class="readonly-field" readonly></div>
+                    <div class="form-group"><label>Roof Type</label><select id="roofType"><option value="metal">Metal</option><option value="tile">Tile</option><option value="concrete">Concrete/Terracotta</option><option value="flat">Flat</option></select></div>
+                    <div class="form-group"><label>Panel Orientation</label><select id="panelOrientation"><option value="portrait">Portrait</option><option value="landscape">Landscape</option></select></div>
                 </div>
-                <div class="form-group"><label>Roof Material Surcharge ($)</label><input type="number" id="roofSurcharge" value="0" step="1" class="readonly-field" readonly></div>
+                <div class="grid-2">
+                    <div class="form-group"><label>Number of Rows</label><input type="number" id="numRows" value="1" min="1" max="20" step="1"></div>
+                    <div class="form-group"><label>Split Arrays (roof sections)</label><input type="number" id="numArrays" value="1" min="1" max="10" step="1"></div>
+                </div>
+                <div id="tiltAngleGroup" style="display:none;">
+                    <div class="form-group"><label>Tilt Angle (Flat Roof)</label><select id="tiltAngle"><option value="10_15">10-15° ($11.99/panel)</option><option value="15_30">15-30° ($13.99/panel)</option><option value="30_60">30-60° ($14.99/panel)</option></select></div>
+                </div>
+                <div class="form-group"><label>Battery Mounting Type</label><select id="mountingType"><option value="wall">Wall Mount ($222 inc GST)</option><option value="ground">Ground Mount ($222 inc GST)</option></select></div>
+                <div id="roofCostInfo" class="info-box" style="display:none;"></div>
+                <div id="mountingKitInfo" class="info-box" style="display:none;"></div>
             </div>
             <div class="section">
                 <div class="section-title">Accessories</div>
@@ -141,34 +150,40 @@
             </div>
         </div>
         <div class="quote-summary">
+            <div style="text-align:right;font-size:11px;color:#6b7280;margin-bottom:4px;">All prices inc GST</div>
             <div class="summary-card"><div class="summary-title">System Overview</div><div class="system-specs" id="systemSpecs">Configure system to see details</div></div>
             <div class="summary-card">
-                <div class="summary-title">Equipment (ex GST)</div>
+                <div class="summary-title">PV Equipment</div>
                 <div class="summary-row"><span>Panels</span><span id="costPanels">$0</span></div>
+                <div class="summary-row"><span>Roof Mounting Kit</span><span id="costRoofKit">$0</span></div>
+                <div class="summary-row"><span>Roof Surcharge</span><span id="costRoofSurcharge">$0</span></div>
+                <div class="summary-row total"><span>Total PV</span><span id="totalPv">$0</span></div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-title">Battery</div>
                 <div class="summary-row"><span>Energy Controller</span><span id="costInverter">$0</span></div>
                 <div class="summary-row"><span>Batteries</span><span id="costBattery">$0</span></div>
                 <div class="summary-row"><span>Gateway</span><span id="costGateway">$0</span></div>
-                <div class="summary-row"><span>Accessories</span><span id="costAccessories">$0</span></div>
-                <div class="summary-row"><span>EV Charger</span><span id="costEvCharger">$0</span></div>
-                <div class="summary-row total"><span>Total Equipment</span><span id="totalEquipment">$0</span></div>
+                <div class="summary-row"><span>Battery Mounting (Wall/Ground)</span><span id="costMounting">$0</span></div>
+                <div class="summary-row total"><span>Total Battery</span><span id="totalBattery">$0</span></div>
             </div>
             <div class="summary-card">
                 <div class="summary-title">Installation & Add-ons</div>
                 <div class="summary-row"><span>PV Installation</span><span id="costInstallPv">$0</span></div>
-                <div class="summary-row"><span>Battery Installation</span><span id="costInstallBattery">$0</span></div>
-                <div class="summary-row"><span>Roof Surcharge</span><span id="costRoof">$0</span></div>
-                <div class="summary-row"><span>Mounting Kit</span><span id="costMounting">$0</span></div>
+                <div class="summary-row"><span>Battery Install (per stack)</span><span id="costInstallBattery">$0</span></div>
+                <div class="summary-row"><span>Accessories</span><span id="costAccessories">$0</span></div>
+                <div class="summary-row"><span>EV Charger</span><span id="costEvCharger">$0</span></div>
                 <div class="summary-row"><span>Other Add-ons</span><span id="costAddons">$0</span></div>
                 <div class="summary-row total"><span>Total Installation</span><span id="totalInstall">$0</span></div>
             </div>
             <div class="summary-card">
                 <div class="summary-title">Quote Total</div>
                 <div class="summary-row total"><span>Total COG</span><span id="totalCog">$0</span></div>
+                <div class="summary-row"><span id="gpLabel">GP (30%)</span><span id="gpAmount">$0</span></div>
+                <div class="summary-row total"><span>Price Before Rebates</span><span id="priceBeforeRebates">$0</span></div>
                 <div class="summary-row rebate"><span>PV STC Rebate</span><span id="stcPvRebate">-$0</span></div>
                 <div class="summary-row rebate"><span>Battery STC Rebate</span><span id="stcBatteryRebate">-$0</span></div>
-                <div class="summary-row total"><span>COG After Rebates</span><span id="cogAfterRebates">$0</span></div>
-                <div class="summary-row"><span id="gpLabel">GP (30%)</span><span id="gpAmount">$0</span></div>
-                <div class="summary-row final"><span>Customer Price (ex GST)</span><span id="finalPrice">$0</span></div>
+                <div class="summary-row final"><span>Customer Price (inc GST)</span><span id="finalPrice">$0</span></div>
             </div>
             <button class="generate-btn" onclick="generateQuote()">📄 Generate Quote PDF</button>
         </div>
@@ -187,8 +202,9 @@ let batteryQtys = {};
 // ═══════════════════════════════════════
 const DEFAULT_CONFIG = {
     "panels": [
-        { "brand": "Longi", "model": "Hi-MO 7", "wattage": 450, "price": 200, "colour": "Black" },
-        { "brand": "Longi", "model": "Hi-MO 7", "wattage": 440, "price": 190, "colour": "Silver" }
+        { "brand": "Longi", "model": "X10", "wattage": 475, "price": 121.13, "colour": "Black", "width_mm": 1134, "height_mm": 1800 },
+        { "brand": "Longi", "model": "Hi-MO 7", "wattage": 450, "price": 200, "colour": "Black", "width_mm": 1134, "height_mm": 1722 },
+        { "brand": "Longi", "model": "Hi-MO 7", "wattage": 440, "price": 190, "colour": "Silver", "width_mm": 1134, "height_mm": 1722 }
     ],
     "energy_controllers": {
         "single_phase": [
@@ -253,10 +269,17 @@ const DEFAULT_CONFIG = {
             "EC 25.0 TP": [0,5,8,10,13,16,21,24,29,32,37,40,48], "EC 30.0 TP": [0,5,8,10,13,16,21,24,29,32,37,40,48]
         }
     },
-    "installation": { "install_pv_per_kw": 300, "install_battery_per_kwh": 200, "roof_surcharge_tile": 0, "roof_surcharge_metal": 0, "roof_surcharge_concrete": 0 },
+    "installation": { "install_pv_per_kw": 300, "install_battery_per_stack": 1600, "roof_types": { "metal": {"label":"Metal","surcharge":0,"kit_cost_per_panel":0}, "tile": {"label":"Tile","surcharge":100,"kit_cost_per_panel":0}, "concrete": {"label":"Concrete/Terracotta","surcharge":200,"kit_cost_per_panel":0}, "flat": {"label":"Flat","surcharge":300,"kit_cost_per_panel":0} } },
     "rebates": { "pv_rebate_per_kw": 216, "battery_rebate_per_kwh": 311 },
     "addons": { "hot_water_timer": 350, "meter_board": 800 },
-    "gp_margin": 30
+    "gp_margin": 30,
+    "mounting_kits": {
+        "kits": { "tin_2kw": {"label":"Tin Roof 2kW Pack","panels_covered":4,"price":46.50,"roof_types":["metal","flat"]}, "tin_1_5kw": {"label":"Tin Roof 1.5kW Pack","panels_covered":3,"price":34.90,"roof_types":["metal","flat"]}, "tile_2kw": {"label":"Tile Roof 2kW Pack","panels_covered":4,"price":93.00,"roof_types":["tile","concrete"]}, "tile_1_5kw": {"label":"Tile Roof 1.5kW Pack","panels_covered":3,"price":69.50,"roof_types":["tile","concrete"]} },
+        "tilt_angles": { "10_15": {"label":"10-15°","price":11.99}, "15_30": {"label":"15-30°","price":13.99}, "30_60": {"label":"30-60°","price":14.99} },
+        "split_array_surcharge": { "extra_parts_cost": 6.50, "labour_surcharge": 100.00 },
+        "rails": { "portrait_per_row": 2, "landscape_per_row": 3, "price": 25.50, "length_mm": 4800, "clamp_gap_mm": 25, "splicer_price": 1.60 },
+        "landscape_extras": { "tin_attachment_price": 1.60, "tile_attachment_price": 4.90, "attachments_per_row": 4 }
+    }
 };
 
 document.addEventListener('DOMContentLoaded', () => { loadConfig(); });
@@ -275,18 +298,34 @@ async function loadConfig() {
     CONFIG.batteries.forEach(b => { batteryQtys[b.kwh] = 0; });
     // Apply installation/rebate/addon/GP from config
     document.getElementById('installPerKwPv').value = CONFIG.installation.install_pv_per_kw;
-    document.getElementById('installPerKwhBattery').value = CONFIG.installation.install_battery_per_kwh;
+    document.getElementById('installPerStack').value = CONFIG.installation.install_battery_per_stack;
     document.getElementById('pvRebatePerKw').value = CONFIG.rebates.pv_rebate_per_kw;
     document.getElementById('batteryRebatePerKwh').value = CONFIG.rebates.battery_rebate_per_kwh;
     document.getElementById('gpMargin').value = CONFIG.gp_margin;
     document.getElementById('hotWaterPrice').textContent = '$' + CONFIG.addons.hot_water_timer;
     document.getElementById('meterBoardPrice').textContent = '$' + CONFIG.addons.meter_board;
-    const rs = document.getElementById('roofSurcharge');
-    rs.dataset.tile = CONFIG.installation.roof_surcharge_tile;
-    rs.dataset.metal = CONFIG.installation.roof_surcharge_metal;
-    rs.dataset.concrete = CONFIG.installation.roof_surcharge_concrete;
     // Build all UI from config
-    populatePanels(); buildBatteryUI(); populateInverters(); populateGateways(); populateEvChargers(); updateSensorPrice(); bindEvents(); updateRoofSurcharge(); calculateQuote();
+    populatePanels(); buildBatteryUI(); populateInverters(); populateGateways(); populateEvChargers(); updateSensorPrice(); bindEvents(); updateRoofInfo(); updateMountingKitInfo(); calculateQuote();
+}
+
+// Build battery adjuster rows dynamically from config (sorted largest first)
+function buildBatteryUI() {
+    const container = document.getElementById('batteryAdjusterRows');
+    container.innerHTML = '';
+    document.getElementById('maxModulesLabel').textContent = CONFIG.battery_rules.max_modules;
+    document.getElementById('maxKwhLabel').textContent = CONFIG.battery_rules.max_kwh;
+    const sorted = [...CONFIG.batteries].sort((a, b) => b.kwh - a.kwh);
+    sorted.forEach(bat => {
+        const row = document.createElement('div');
+        row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;';
+        row.innerHTML = '<span>' + bat.label + ' ($' + bat.price.toLocaleString() + ' ea)</span>'
+            + '<div style="display:flex;align-items:center;gap:8px;">'
+            + '<button class="battery-adj-btn" onclick="adjustBattery(' + bat.kwh + ',-1)">−</button>'
+            + '<span id="qty_' + bat.kwh + 'kwh" style="font-weight:700;min-width:24px;text-align:center;">0</span>'
+            + '<button class="battery-adj-btn" onclick="adjustBattery(' + bat.kwh + ',1)">+</button>'
+            + '</div>';
+        container.appendChild(row);
+    });
 }
 
 function bindEvents() {
@@ -296,7 +335,11 @@ function bindEvents() {
     document.getElementById('panelInputMode').addEventListener('change', togglePanelMode);
     document.getElementById('desiredBatteryKwh').addEventListener('input', () => { manualBatteryMode = false; userChangedInverter = false; });
     document.getElementById('inverterSelect').addEventListener('change', () => { userChangedInverter = true; calculateQuote(); });
-    document.getElementById('roofType').addEventListener('change', updateRoofSurcharge);
+    document.getElementById('roofType').addEventListener('change', updateRoofInfo);
+    document.getElementById('panelOrientation').addEventListener('change', () => { updateMountingKitInfo(); calculateQuote(); });
+    document.getElementById('numRows').addEventListener('input', () => { updateMountingKitInfo(); calculateQuote(); });
+    document.getElementById('numArrays').addEventListener('input', () => { updateMountingKitInfo(); calculateQuote(); });
+    document.getElementById('tiltAngle').addEventListener('change', () => { updateMountingKitInfo(); calculateQuote(); });
     document.getElementById('addGateway').addEventListener('change', () => { document.getElementById('gatewayOptions').style.display = document.getElementById('addGateway').checked ? 'block' : 'none'; calculateQuote(); });
     document.getElementById('addEvCharger').addEventListener('change', () => { document.getElementById('evChargerOptions').style.display = document.getElementById('addEvCharger').checked ? 'block' : 'none'; calculateQuote(); });
 }
@@ -313,6 +356,8 @@ function populatePanels() {
         o.dataset.brand = p.brand;
         o.dataset.model = p.model;
         o.dataset.colour = p.colour;
+        o.dataset.widthMm = p.width_mm || 1134;
+        o.dataset.heightMm = p.height_mm || 1800;
         sel.appendChild(o);
     });
 }
@@ -416,6 +461,7 @@ function updateBatteryUI() {
 }
 
 function optimizeBattery(desired) {
+    if (!CONFIG.batteries) return { qtys: {}, total: 0, cost: 0 };
     // Dynamic optimizer: tries all combinations of all battery sizes
     // Finds the cheapest CUSTOMER PRICE (after rebate + GP) that meets or exceeds desired kWh
     const maxMod = CONFIG.battery_rules.max_modules;
@@ -430,9 +476,9 @@ function optimizeBattery(desired) {
     let bestCombo = null, bestCustomerCost = Infinity, bestTotal = Infinity;
 
     function customerCost(equipCost, totalKwh) {
-        // Same formula as the main quote: (equipment - rebate) * (1 + GP)
-        const afterRebate = equipCost - (totalKwh * rebatePerKwh);
-        return afterRebate * (1 + gpMargin);
+        // GP applied to equipment cost first, then rebate subtracted
+        const withGP = equipCost * (1 + gpMargin);
+        return withGP - (totalKwh * rebatePerKwh);
     }
 
     function search(idx, qtys, totalKwh, totalEquipCost, totalModules) {
@@ -482,7 +528,113 @@ function autoSelectInverter(sysKw, battKwh, phase) {
     return models[models.length - 1].sku;
 }
 
-function updateRoofSurcharge() { const f = document.getElementById('roofSurcharge'); f.value = parseFloat(f.dataset[document.getElementById('roofType').value]) || 0; calculateQuote(); }
+function updateRoofInfo() {
+    const roofType = document.getElementById('roofType').value;
+    const roof = CONFIG.installation.roof_types[roofType];
+    const info = document.getElementById('roofCostInfo');
+    // Show/hide tilt angle for flat roof
+    const tiltGroup = document.getElementById('tiltAngleGroup');
+    if (tiltGroup) tiltGroup.style.display = (roofType === 'flat') ? 'block' : 'none';
+    if (roof && roof.surcharge > 0) {
+        info.innerHTML = roof.label + ' — Surcharge: $' + roof.surcharge;
+        info.style.display = 'block';
+    } else {
+        info.style.display = 'none';
+    }
+    updateMountingKitInfo();
+    calculateQuote();
+}
+
+function calculateMountingKits(panelCount) {
+    const mk = CONFIG.mounting_kits;
+    if (!mk || panelCount === 0) return { total: 0, breakdown: [] };
+
+    const roofType = document.getElementById('roofType').value;
+    const orientation = document.getElementById('panelOrientation').value;
+    const numRows = parseInt(document.getElementById('numRows').value) || 1;
+    const numArrays = parseInt(document.getElementById('numArrays').value) || 1;
+    const tiltAngle = document.getElementById('tiltAngle').value;
+
+    // Get panel dimensions from selected panel
+    const panelSel = document.getElementById('panelSelect');
+    const selOpt = panelSel.options[panelSel.selectedIndex];
+    const panelWidthMm = parseInt(selOpt?.dataset.widthMm) || 1134;
+    const panelHeightMm = parseInt(selOpt?.dataset.heightMm) || 1800;
+
+    let breakdown = [], total = 0;
+
+    // Step 1: Base kit calculation
+    const kitFamily = (roofType === 'metal' || roofType === 'flat') ? 'tin' : 'tile';
+    const kit2kw = mk.kits[kitFamily + '_2kw'];
+    const kit1_5kw = mk.kits[kitFamily + '_1_5kw'];
+    const qty2kw = Math.floor(panelCount / kit2kw.panels_covered);
+    const remainder = panelCount % kit2kw.panels_covered;
+    const qty1_5kw = (remainder >= 1) ? 1 : 0;
+    if (qty2kw > 0) { const c = qty2kw * kit2kw.price; breakdown.push(qty2kw + '× ' + kit2kw.label + ' = $' + c.toFixed(2)); total += c; }
+    if (qty1_5kw > 0) { const c = kit1_5kw.price; breakdown.push('1× ' + kit1_5kw.label + ' = $' + c.toFixed(2)); total += c; }
+
+    // Step 2: Rails — calculate based on panel dimensions and rail length
+    const railLinesPerRow = (orientation === 'landscape') ? mk.rails.landscape_per_row : mk.rails.portrait_per_row;
+    const panelSpanMm = (orientation === 'landscape') ? panelHeightMm : panelWidthMm;
+    const clampGap = mk.rails.clamp_gap_mm || 25;
+    const railLengthMm = mk.rails.length_mm || 4800;
+    const panelsPerRow = Math.ceil(panelCount / numRows);
+    const totalSpanMm = panelsPerRow * (panelSpanMm + clampGap);
+    const physicalRailsPerLine = Math.ceil(totalSpanMm / railLengthMm);
+    const totalRails = physicalRailsPerLine * railLinesPerRow * numRows;
+    const railCost = totalRails * mk.rails.price;
+    breakdown.push(totalRails + '× Black Rail 4800mm = $' + railCost.toFixed(2) + ' (' + panelsPerRow + ' panels/row, ' + physicalRailsPerLine + ' rails/line × ' + railLinesPerRow + ' lines × ' + numRows + ' rows)');
+    total += railCost;
+
+    // Step 2b: Splicers — one per join where rails meet end-to-end
+    const splicersPerLine = Math.max(0, physicalRailsPerLine - 1);
+    const totalSplicers = splicersPerLine * railLinesPerRow * numRows;
+    if (totalSplicers > 0) {
+        const splicerCost = totalSplicers * mk.rails.splicer_price;
+        breakdown.push(totalSplicers + '× Splicer = $' + splicerCost.toFixed(2));
+        total += splicerCost;
+    }
+
+    // Step 3: Flat roof tilt arms
+    if (roofType === 'flat') {
+        const tilt = mk.tilt_angles[tiltAngle];
+        if (tilt) { const c = panelCount * tilt.price; breakdown.push(panelCount + '× Tilt Arm ' + tilt.label + ' = $' + c.toFixed(2)); total += c; }
+    }
+
+    // Step 4: Split array surcharges
+    if (numArrays > 1) {
+        const extra = numArrays - 1;
+        const partsCost = extra * mk.split_array_surcharge.extra_parts_cost;
+        const labourCost = extra * mk.split_array_surcharge.labour_surcharge;
+        breakdown.push(extra + '× Extra array parts = $' + partsCost.toFixed(2));
+        breakdown.push(extra + '× Extra array labour = $' + labourCost.toFixed(2));
+        total += partsCost + labourCost;
+    }
+
+    // Step 5: Landscape orientation extras (attachments only, splicers already counted above)
+    if (orientation === 'landscape' && numRows > 0) {
+        const le = mk.landscape_extras;
+        const attachPrice = (roofType === 'metal' || roofType === 'flat') ? le.tin_attachment_price : le.tile_attachment_price;
+        const perRow = le.attachments_per_row * attachPrice;
+        const c = numRows * perRow;
+        breakdown.push(numRows + '× Landscape attachments = $' + c.toFixed(2));
+        total += c;
+    }
+
+    return { total: Math.round(total * 100) / 100, breakdown: breakdown };
+}
+
+function updateMountingKitInfo() {
+    const panelCount = parseInt(document.getElementById('panelCount').value) || 0;
+    const result = calculateMountingKits(panelCount);
+    const infoDiv = document.getElementById('mountingKitInfo');
+    if (!infoDiv) return;
+    if (result.total === 0 || panelCount === 0) { infoDiv.style.display = 'none'; return; }
+    let html = '<strong>Mounting Kit: $' + result.total.toFixed(2) + '</strong><br>';
+    html += result.breakdown.join('<br>');
+    infoDiv.innerHTML = html;
+    infoDiv.style.display = 'block';
+}
 
 function addCustomAddon() {
     customAddonCount++; const c = document.getElementById('customAddons'), d = document.createElement('div');
@@ -495,6 +647,7 @@ function addCustomAddon() {
 function removeCustomAddon(id) { document.getElementById('custom-' + id).remove(); calculateQuote(); }
 
 function calculateQuote() {
+    if (!CONFIG.energy_controllers) return; // Config not loaded yet
     const phase = document.getElementById('phaseType').value;
     const panelMode = document.getElementById('panelInputMode').value;
     // Get selected panel from dropdown
@@ -555,34 +708,46 @@ function calculateQuote() {
     const totalEquip = costPanels + costInverter + costBattery + costGateway + costAcc + costEv;
 
     const installPv = sysKw * (parseFloat(document.getElementById('installPerKwPv').value) || 0);
-    const installBat = actualKwh * (parseFloat(document.getElementById('installPerKwhBattery').value) || 0);
-    const roofSurch = parseFloat(document.getElementById('roofSurcharge').value) || 0;
+    const installBat = (getTotalBatteryModules() > 0) ? (parseFloat(document.getElementById('installPerStack').value) || 0) : 0;
+    const roofType = document.getElementById('roofType').value;
+    const roof = CONFIG.installation.roof_types[roofType] || { surcharge: 0 };
+    const costRoofSurcharge = roof.surcharge;
+    const mountingResult = calculateMountingKits(panelCount);
+    const costRoofKit = mountingResult.total;
     const costMount = CONFIG.accessories[document.getElementById('mountingType').value === 'wall' ? 'mount_wall' : 'mount_ground'];
     let costAddons = 0;
     if (document.getElementById('addonHotWater').checked) costAddons += parseFloat(document.getElementById('hotWaterPrice').textContent.replace('$','')) || 0;
     if (document.getElementById('addonMeterBoard').checked) costAddons += parseFloat(document.getElementById('meterBoardPrice').textContent.replace('$','')) || 0;
     for (let i = 1; i <= customAddonCount; i++) { const ce = document.getElementById('customCost-' + i), ne = document.getElementById('customName-' + i); if (ce && ne && ne.value.trim()) costAddons += parseFloat(ce.value) || 0; }
-    const totalInstall = installPv + installBat + roofSurch + costMount + costAddons;
-    const totalCog = totalEquip + totalInstall;
+
+    // Group totals
+    const totalPv = costPanels + costRoofKit + costRoofSurcharge;
+    const totalBattery = costInverter + costBattery + costGateway + costMount;
+    const totalInstall = installPv + installBat + costAcc + costEv + costAddons;
+    const totalCog = totalPv + totalBattery + totalInstall;
 
     const pvReb = sysKw * (parseFloat(document.getElementById('pvRebatePerKw').value) || 0);
     const batReb = actualKwh * (parseFloat(document.getElementById('batteryRebatePerKwh').value) || 0);
-    const cogAfterReb = totalCog - pvReb - batReb;
     const gp = parseFloat(document.getElementById('gpMargin').value) || 0;
-    const gpAmt = cogAfterReb * (gp / 100);
-    const finalPrice = cogAfterReb + gpAmt;
+    const gpAmt = totalCog * (gp / 100);
+    const priceBeforeRebates = totalCog + gpAmt;
+    const finalPrice = priceBeforeRebates - pvReb - batReb;
 
-    const f = v => '$' + Math.round(v).toLocaleString('en-AU');
+    const GST = 1.1;
+    const f = v => '$' + Math.round(v * GST).toLocaleString('en-AU');
+    const fExGst = v => '$' + Math.round(v).toLocaleString('en-AU');
     document.getElementById('costPanels').textContent = f(costPanels); document.getElementById('costInverter').textContent = f(costInverter);
+    document.getElementById('costRoofKit').textContent = f(costRoofKit); document.getElementById('totalPv').textContent = f(totalPv);
     document.getElementById('costBattery').textContent = f(costBattery); document.getElementById('costGateway').textContent = f(costGateway);
-    document.getElementById('costAccessories').textContent = f(costAcc); document.getElementById('costEvCharger').textContent = f(costEv);
-    document.getElementById('totalEquipment').textContent = f(totalEquip);
+    document.getElementById('costMounting').textContent = f(costMount); document.getElementById('totalBattery').textContent = f(totalBattery);
     document.getElementById('costInstallPv').textContent = f(installPv); document.getElementById('costInstallBattery').textContent = f(installBat);
-    document.getElementById('costRoof').textContent = f(roofSurch); document.getElementById('costMounting').textContent = f(costMount);
+    document.getElementById('costRoofSurcharge').textContent = f(costRoofSurcharge);
+    document.getElementById('costAccessories').textContent = f(costAcc); document.getElementById('costEvCharger').textContent = f(costEv);
     document.getElementById('costAddons').textContent = f(costAddons); document.getElementById('totalInstall').textContent = f(totalInstall);
-    document.getElementById('totalCog').textContent = f(totalCog); document.getElementById('stcPvRebate').textContent = '-' + f(pvReb);
-    document.getElementById('stcBatteryRebate').textContent = '-' + f(batReb); document.getElementById('cogAfterRebates').textContent = f(cogAfterReb);
-    document.getElementById('gpLabel').textContent = 'GP (' + gp + '%)'; document.getElementById('gpAmount').textContent = f(gpAmt);
+    document.getElementById('totalCog').textContent = f(totalCog); document.getElementById('gpLabel').textContent = 'GP (' + gp + '%)'; document.getElementById('gpAmount').textContent = f(gpAmt);
+    document.getElementById('priceBeforeRebates').textContent = f(priceBeforeRebates);
+    document.getElementById('stcPvRebate').textContent = '-' + f(pvReb);
+    document.getElementById('stcBatteryRebate').textContent = '-' + f(batReb);
     document.getElementById('finalPrice').textContent = f(finalPrice);
 
     let batText = 'No Battery';
