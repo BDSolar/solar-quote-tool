@@ -2,8 +2,9 @@
     "_notes": "Solar Quote Builder Configuration. All prices are AUD ex GST. Edit values here — the tool loads this file on startup.",
 
     "panels": [
-        { "brand": "Longi", "model": "Hi-MO 7", "wattage": 450, "price": 200, "colour": "Black" },
-        { "brand": "Longi", "model": "Hi-MO 7", "wattage": 440, "price": 190, "colour": "Silver" }
+        { "brand": "Longi", "model": "X10", "wattage": 475, "price": 121.13, "colour": "Black", "width_mm": 1134, "height_mm": 1800 },
+        { "brand": "Longi", "model": "Hi-MO 7", "wattage": 450, "price": 200, "colour": "Black", "width_mm": 1134, "height_mm": 1722 },
+        { "brand": "Longi", "model": "Hi-MO 7", "wattage": 440, "price": 190, "colour": "Silver", "width_mm": 1134, "height_mm": 1722 }
     ],
 
     "energy_controllers": {
@@ -93,10 +94,13 @@
 
     "installation": {
         "install_pv_per_kw": 300,
-        "install_battery_per_kwh": 200,
-        "roof_surcharge_tile": 0,
-        "roof_surcharge_metal": 0,
-        "roof_surcharge_concrete": 0
+        "install_battery_per_stack": 1600,
+        "roof_types": {
+            "metal":    { "label": "Metal",               "surcharge": 0, "kit_cost_per_panel": 0 },
+            "tile":     { "label": "Tile",                "surcharge": 100, "kit_cost_per_panel": 0 },
+            "concrete": { "label": "Concrete/Terracotta", "surcharge": 200, "kit_cost_per_panel": 0 },
+            "flat":     { "label": "Flat",                "surcharge": 300, "kit_cost_per_panel": 0 }
+        }
     },
 
     "rebates": {
@@ -109,5 +113,36 @@
         "meter_board": 800
     },
 
-    "gp_margin": 30
+    "gp_margin": 30,
+
+    "mounting_kits": {
+        "kits": {
+            "tin_2kw":    { "label": "Tin Roof 2kW Pack",  "panels_covered": 4, "price": 46.50, "roof_types": ["metal","flat"] },
+            "tin_1_5kw":  { "label": "Tin Roof 1.5kW Pack", "panels_covered": 3, "price": 34.90, "roof_types": ["metal","flat"] },
+            "tile_2kw":   { "label": "Tile Roof 2kW Pack",  "panels_covered": 4, "price": 93.00, "roof_types": ["tile","concrete"] },
+            "tile_1_5kw": { "label": "Tile Roof 1.5kW Pack", "panels_covered": 3, "price": 69.50, "roof_types": ["tile","concrete"] }
+        },
+        "tilt_angles": {
+            "10_15": { "label": "10-15°", "price": 11.99 },
+            "15_30": { "label": "15-30°", "price": 13.99 },
+            "30_60": { "label": "30-60°", "price": 14.99 }
+        },
+        "split_array_surcharge": {
+            "extra_parts_cost": 6.50,
+            "labour_surcharge": 100.00
+        },
+        "rails": {
+            "portrait_per_row": 2,
+            "landscape_per_row": 3,
+            "price": 25.50,
+            "length_mm": 4800,
+            "clamp_gap_mm": 25,
+            "splicer_price": 1.60
+        },
+        "landscape_extras": {
+            "tin_attachment_price": 1.60,
+            "tile_attachment_price": 4.90,
+            "attachments_per_row": 4
+        }
+    }
 }
