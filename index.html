@@ -286,7 +286,7 @@ document.addEventListener('DOMContentLoaded', () => { loadConfig(); });
 
 async function loadConfig() {
     try {
-        const r = await fetch('config.json');
+        const r = await fetch('config.json?v=' + Date.now());
         if (!r.ok) throw new Error('HTTP ' + r.status);
         CONFIG = await r.json();
         console.log('✅ Config loaded from config.json');
@@ -297,13 +297,13 @@ async function loadConfig() {
     // Initialize battery quantities
     CONFIG.batteries.forEach(b => { batteryQtys[b.kwh] = 0; });
     // Apply installation/rebate/addon/GP from config
-    document.getElementById('installPerKwPv').value = CONFIG.installation.install_pv_per_kw;
-    document.getElementById('installPerStack').value = CONFIG.installation.install_battery_per_stack;
-    document.getElementById('pvRebatePerKw').value = CONFIG.rebates.pv_rebate_per_kw;
-    document.getElementById('batteryRebatePerKwh').value = CONFIG.rebates.battery_rebate_per_kwh;
-    document.getElementById('gpMargin').value = CONFIG.gp_margin;
-    document.getElementById('hotWaterPrice').textContent = '$' + CONFIG.addons.hot_water_timer;
-    document.getElementById('meterBoardPrice').textContent = '$' + CONFIG.addons.meter_board;
+    document.getElementById('installPerKwPv').value = CONFIG.installation?.install_pv_per_kw ?? 300;
+    document.getElementById('installPerStack').value = CONFIG.installation?.install_battery_per_stack ?? 1600;
+    document.getElementById('pvRebatePerKw').value = CONFIG.rebates?.pv_rebate_per_kw ?? 216;
+    document.getElementById('batteryRebatePerKwh').value = CONFIG.rebates?.battery_rebate_per_kwh ?? 311;
+    document.getElementById('gpMargin').value = CONFIG.gp_margin ?? 30;
+    document.getElementById('hotWaterPrice').textContent = '$' + (CONFIG.addons?.hot_water_timer ?? 350);
+    document.getElementById('meterBoardPrice').textContent = '$' + (CONFIG.addons?.meter_board ?? 800);
     // Build all UI from config
     populatePanels(); buildBatteryUI(); populateInverters(); populateGateways(); populateEvChargers(); updateSensorPrice(); bindEvents(); updateRoofInfo(); updateMountingKitInfo(); calculateQuote();
 }
@@ -379,7 +379,7 @@ function populateGateways() {
 }
 
 function updateSensorPrice() {
-    const p = document.getElementById('phaseType').value === 'single_phase' ? CONFIG.accessories.sensor_sp : CONFIG.accessories.sensor_tp;
+    const p = document.getElementById('phaseType').value === 'single_phase' ? (CONFIG.accessories?.sensor_sp ?? 101) : (CONFIG.accessories?.sensor_tp ?? 202);
     document.getElementById('powerSensorPrice').textContent = '$' + p;
 }
 
@@ -530,7 +530,7 @@ function autoSelectInverter(sysKw, battKwh, phase) {
 
 function updateRoofInfo() {
     const roofType = document.getElementById('roofType').value;
-    const roof = CONFIG.installation.roof_types[roofType];
+    const roof = CONFIG.installation?.roof_types?.[roofType];
     const info = document.getElementById('roofCostInfo');
     // Show/hide tilt angle for flat roof
     const tiltGroup = document.getElementById('tiltAngleGroup');
@@ -700,9 +700,9 @@ function calculateQuote() {
     let costGateway = 0;
     if (document.getElementById('addGateway').checked) { const gw = document.getElementById('gatewaySelect'); costGateway = parseFloat(gw.options[gw.selectedIndex]?.dataset.price) || 0; }
     let costAcc = 0;
-    if (document.getElementById('addPowerSensor').checked) costAcc += phase === 'single_phase' ? CONFIG.accessories.sensor_sp : CONFIG.accessories.sensor_tp;
-    if (document.getElementById('add4GModule').checked) costAcc += CONFIG.accessories.comm_4g;
-    if (document.getElementById('addSub1GKit').checked) costAcc += CONFIG.accessories.sub1g;
+    if (document.getElementById('addPowerSensor').checked) costAcc += phase === 'single_phase' ? (CONFIG.accessories?.sensor_sp ?? 101) : (CONFIG.accessories?.sensor_tp ?? 202);
+    if (document.getElementById('add4GModule').checked) costAcc += CONFIG.accessories?.comm_4g ?? 177;
+    if (document.getElementById('addSub1GKit').checked) costAcc += CONFIG.accessories?.sub1g ?? 127;
     let costEv = 0;
     if (document.getElementById('addEvCharger').checked) { const t = document.getElementById('evChargerType').value; if (t !== 'none' && CONFIG.ev_chargers[t]) costEv = CONFIG.ev_chargers[t].price; }
     const totalEquip = costPanels + costInverter + costBattery + costGateway + costAcc + costEv;
@@ -710,11 +710,11 @@ function calculateQuote() {
     const installPv = sysKw * (parseFloat(document.getElementById('installPerKwPv').value) || 0);
     const installBat = (getTotalBatteryModules() > 0) ? (parseFloat(document.getElementById('installPerStack').value) || 0) : 0;
     const roofType = document.getElementById('roofType').value;
-    const roof = CONFIG.installation.roof_types[roofType] || { surcharge: 0 };
+    const roof = CONFIG.installation?.roof_types?.[roofType] || { surcharge: 0 };
     const costRoofSurcharge = roof.surcharge;
     const mountingResult = calculateMountingKits(panelCount);
     const costRoofKit = mountingResult.total;
-    const costMount = CONFIG.accessories[document.getElementById('mountingType').value === 'wall' ? 'mount_wall' : 'mount_ground'];
+    const costMount = CONFIG.accessories?.[document.getElementById('mountingType').value === 'wall' ? 'mount_wall' : 'mount_ground'] ?? 202;
     let costAddons = 0;
     if (document.getElementById('addonHotWater').checked) costAddons += parseFloat(document.getElementById('hotWaterPrice').textContent.replace('$','')) || 0;
     if (document.getElementById('addonMeterBoard').checked) costAddons += parseFloat(document.getElementById('meterBoardPrice').textContent.replace('$','')) || 0;
