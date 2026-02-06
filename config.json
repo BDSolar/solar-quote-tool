@@ -1,0 +1,113 @@
+{
+    "_notes": "Solar Quote Builder Configuration. All prices are AUD ex GST. Edit values here — the tool loads this file on startup.",
+
+    "panels": [
+        { "brand": "Longi", "model": "Hi-MO 7", "wattage": 450, "price": 200, "colour": "Black" },
+        { "brand": "Longi", "model": "Hi-MO 7", "wattage": 440, "price": 190, "colour": "Silver" }
+    ],
+
+    "energy_controllers": {
+        "single_phase": [
+            { "sku": "SigenStor EC 5.0 SP", "kw": 5, "price": 1343, "max_pv_kw": 10 },
+            { "sku": "SigenStor EC 6.0 SP", "kw": 6, "price": 1452, "max_pv_kw": 12 },
+            { "sku": "SigenStor EC 8.0 SP", "kw": 8, "price": 2482, "max_pv_kw": 16 },
+            { "sku": "SigenStor EC 10.0 SP", "kw": 10, "price": 2675, "max_pv_kw": 20 },
+            { "sku": "SigenStor EC 12.0 SP", "kw": 12, "price": 2869, "max_pv_kw": 24 }
+        ],
+        "three_phase": [
+            { "sku": "SigenStor EC 5.0 TP", "kw": 5, "price": 2300, "max_pv_kw": 8 },
+            { "sku": "SigenStor EC 10.0 TP", "kw": 10, "price": 2663, "max_pv_kw": 16 },
+            { "sku": "SigenStor EC 15.0 TP", "kw": 15, "price": 3511, "max_pv_kw": 24 },
+            { "sku": "SigenStor EC 20.0 TP", "kw": 20, "price": 4007, "max_pv_kw": 32 },
+            { "sku": "SigenStor EC 25.0 TP", "kw": 25, "price": 4600, "max_pv_kw": 40 },
+            { "sku": "SigenStor EC 30.0 TP", "kw": 30, "price": 5060, "max_pv_kw": 48 }
+        ]
+    },
+
+    "batteries": [
+        { "kwh": 5, "price": 2905, "label": "5 kWh" },
+        { "kwh": 8, "price": 3632, "label": "8 kWh" }
+    ],
+
+    "battery_rules": {
+        "max_modules": 6,
+        "max_kwh": 48
+    },
+
+    "gateways": {
+        "single_phase": [
+            { "sku": "Sigen Gateway Home SP", "price": 645, "desc": "Standard Single Phase ($645)" },
+            { "sku": "Sigen Gateway Home SP AU (Pro)", "price": 695, "desc": "Pro back entry ($695)" },
+            { "sku": "Sigen CUST Gateway SP-63", "price": 2200, "desc": "Custom 63A up to 24kW ($2,200)" },
+            { "sku": "Sigen CUST Gateway SP-63-Hybrid", "price": 3000, "desc": "Custom 63A Hybrid ($3,000)" },
+            { "sku": "Sigen CUST Gateway SP-125", "price": 3200, "desc": "Custom 125A up to 24kW ($3,200)" }
+        ],
+        "three_phase": [
+            { "sku": "Sigen Gateway Home TP AU (Pro)", "price": 859, "desc": "Simple 2-inverter ($859)" },
+            { "sku": "Sigen Gateway Home TP", "price": 1575, "desc": "Standard Three Phase ($1,575)" },
+            { "sku": "Sigen Gateway C60 AU", "price": 1769, "desc": "C&I 60kW ($1,769)" }
+        ]
+    },
+
+    "ev_chargers": {
+        "dc_12_5": { "price": 2277, "desc": "DC 12kW 5m" },
+        "dc_25_5": { "price": 3105, "desc": "DC 25kW 5m" },
+        "dc_12_7.5": { "price": 2484, "desc": "DC 12kW 7.5m" },
+        "dc_25_7.5": { "price": 3312, "desc": "DC 25kW 7.5m" },
+        "dc_12_10": { "price": 2588, "desc": "DC 12kW 10m" },
+        "dc_25_10": { "price": 3416, "desc": "DC 25kW 10m" },
+        "ac_7_cable": { "price": 907, "desc": "AC 7kW w/cable" },
+        "ac_11_cable": { "price": 981, "desc": "AC 11kW w/cable" },
+        "ac_22_cable": { "price": 1089, "desc": "AC 22kW w/cable" },
+        "ac_7_socket": { "price": 782, "desc": "AC 7kW socket" },
+        "ac_11_socket": { "price": 863, "desc": "AC 11kW socket" },
+        "ac_22_socket": { "price": 932, "desc": "AC 22kW socket" }
+    },
+
+    "accessories": {
+        "sensor_sp": 101,
+        "sensor_tp": 202,
+        "comm_4g": 177,
+        "sub1g": 127,
+        "mount_wall": 202,
+        "mount_ground": 202
+    },
+
+    "cec_approved": {
+        "single_phase": {
+            "EC 5.0 SP":  [0, 5, 8, 10, 13, 16, 21, 24, 29, 32],
+            "EC 6.0 SP":  [0, 5, 8, 10, 13, 16, 21, 24, 29, 32],
+            "EC 8.0 SP":  [0, 5, 8, 10, 13, 16, 21, 24, 29, 32, 37, 40, 48],
+            "EC 10.0 SP": [0, 5, 8, 10, 13, 16, 21, 24, 29, 32, 37, 40, 48],
+            "EC 12.0 SP": [0, 5, 8, 10, 13, 16, 21, 24, 29, 32, 37, 40, 48]
+        },
+        "three_phase": {
+            "EC 5.0 TP":  [0, 5, 8, 10, 13, 16],
+            "EC 10.0 TP": [0, 5, 8, 10, 13, 16, 21, 24, 29, 32, 37, 40, 48],
+            "EC 15.0 TP": [0, 5, 8, 10, 13, 16, 21, 24, 29, 32, 37, 40, 48],
+            "EC 20.0 TP": [0, 5, 8, 10, 13, 16, 21, 24, 29, 32, 37, 40, 48],
+            "EC 25.0 TP": [0, 5, 8, 10, 13, 16, 21, 24, 29, 32, 37, 40, 48],
+            "EC 30.0 TP": [0, 5, 8, 10, 13, 16, 21, 24, 29, 32, 37, 40, 48]
+        }
+    },
+
+    "installation": {
+        "install_pv_per_kw": 300,
+        "install_battery_per_kwh": 200,
+        "roof_surcharge_tile": 0,
+        "roof_surcharge_metal": 0,
+        "roof_surcharge_concrete": 0
+    },
+
+    "rebates": {
+        "pv_rebate_per_kw": 216,
+        "battery_rebate_per_kwh": 311
+    },
+
+    "addons": {
+        "hot_water_timer": 350,
+        "meter_board": 800
+    },
+
+    "gp_margin": 30
+}
