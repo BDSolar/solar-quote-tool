@@ -1,33 +1,33 @@
 {
-    "_notes": "Solar Quote Builder Configuration. All prices are AUD ex GST. Edit values here - the tool loads this file on startup.",
+    "_notes": "Solar Quote Builder Configuration. All prices are AUD ex GST. supplier_code format: SUPPLIER:PART_NO (RAY=Raystech, SIG=Sigenergy, BDS=Black Diamond Solar internal)",
 
     "panels": [
-        { "brand": "Longi", "model": "X10", "wattage": 475, "price": 121.13, "colour": "Black", "width_mm": 1134, "height_mm": 1800 },
-        { "brand": "Longi", "model": "Hi-MO 7", "wattage": 450, "price": 200, "colour": "Black", "width_mm": 1134, "height_mm": 1722 },
-        { "brand": "Longi", "model": "Hi-MO 7", "wattage": 440, "price": 190, "colour": "Silver", "width_mm": 1134, "height_mm": 1722 }
+        { "brand": "Longi", "model": "X10", "wattage": 475, "price": 121.13, "colour": "Black", "width_mm": 1134, "height_mm": 1800, "supplier_code": "RAY:LONGI-X10-475" },
+        { "brand": "Longi", "model": "Hi-MO 7", "wattage": 450, "price": 200, "colour": "Black", "width_mm": 1134, "height_mm": 1722, "supplier_code": "RAY:LONGI-HIMO7-450" },
+        { "brand": "Longi", "model": "Hi-MO 7", "wattage": 440, "price": 190, "colour": "Silver", "width_mm": 1134, "height_mm": 1722, "supplier_code": "RAY:LONGI-HIMO7-440" }
     ],
 
     "energy_controllers": {
         "single_phase": [
-            { "sku": "SigenStor EC 5.0 SP", "kw": 5, "price": 1343, "max_pv_kw": 10 },
-            { "sku": "SigenStor EC 6.0 SP", "kw": 6, "price": 1452, "max_pv_kw": 12 },
-            { "sku": "SigenStor EC 8.0 SP", "kw": 8, "price": 2482, "max_pv_kw": 16 },
-            { "sku": "SigenStor EC 10.0 SP", "kw": 10, "price": 2675, "max_pv_kw": 20 },
-            { "sku": "SigenStor EC 12.0 SP", "kw": 12, "price": 2869, "max_pv_kw": 24 }
+            { "sku": "SigenStor EC 5.0 SP", "kw": 5, "price": 1343, "max_pv_kw": 10, "supplier_code": "SIG:EC-5.0-SP" },
+            { "sku": "SigenStor EC 6.0 SP", "kw": 6, "price": 1452, "max_pv_kw": 12, "supplier_code": "SIG:EC-6.0-SP" },
+            { "sku": "SigenStor EC 8.0 SP", "kw": 8, "price": 2482, "max_pv_kw": 16, "supplier_code": "SIG:EC-8.0-SP" },
+            { "sku": "SigenStor EC 10.0 SP", "kw": 10, "price": 2675, "max_pv_kw": 20, "supplier_code": "SIG:EC-10.0-SP" },
+            { "sku": "SigenStor EC 12.0 SP", "kw": 12, "price": 2869, "max_pv_kw": 24, "supplier_code": "SIG:EC-12.0-SP" }
         ],
         "three_phase": [
-            { "sku": "SigenStor EC 5.0 TP", "kw": 5, "price": 2300, "max_pv_kw": 8 },
-            { "sku": "SigenStor EC 10.0 TP", "kw": 10, "price": 2663, "max_pv_kw": 16 },
-            { "sku": "SigenStor EC 15.0 TP", "kw": 15, "price": 3511, "max_pv_kw": 24 },
-            { "sku": "SigenStor EC 20.0 TP", "kw": 20, "price": 4007, "max_pv_kw": 32 },
-            { "sku": "SigenStor EC 25.0 TP", "kw": 25, "price": 4600, "max_pv_kw": 40 },
-            { "sku": "SigenStor EC 30.0 TP", "kw": 30, "price": 5060, "max_pv_kw": 48 }
+            { "sku": "SigenStor EC 5.0 TP", "kw": 5, "price": 2300, "max_pv_kw": 8, "supplier_code": "SIG:EC-5.0-TP" },
+            { "sku": "SigenStor EC 10.0 TP", "kw": 10, "price": 2663, "max_pv_kw": 16, "supplier_code": "SIG:EC-10.0-TP" },
+            { "sku": "SigenStor EC 15.0 TP", "kw": 15, "price": 3511, "max_pv_kw": 24, "supplier_code": "SIG:EC-15.0-TP" },
+            { "sku": "SigenStor EC 20.0 TP", "kw": 20, "price": 4007, "max_pv_kw": 32, "supplier_code": "SIG:EC-20.0-TP" },
+            { "sku": "SigenStor EC 25.0 TP", "kw": 25, "price": 4600, "max_pv_kw": 40, "supplier_code": "SIG:EC-25.0-TP" },
+            { "sku": "SigenStor EC 30.0 TP", "kw": 30, "price": 5060, "max_pv_kw": 48, "supplier_code": "SIG:EC-30.0-TP" }
         ]
     },
 
     "batteries": [
-        { "kwh": 5, "usable_kwh": 5.2, "price": 2905, "label": "5 kWh" },
-        { "kwh": 8, "usable_kwh": 7.8, "price": 3632, "label": "8 kWh" }
+        { "kwh": 5, "usable_kwh": 5.2, "price": 2905, "label": "5 kWh", "supplier_code": "SIG:BAT-5.0" },
+        { "kwh": 8, "usable_kwh": 7.8, "price": 3632, "label": "8 kWh", "supplier_code": "SIG:BAT-8.0" }
     ],
 
     "battery_rules": {
@@ -37,41 +37,41 @@
 
     "gateways": {
         "single_phase": [
-            { "sku": "Sigen Gateway Home SP", "price": 645, "desc": "Standard Single Phase ($645)" },
-            { "sku": "Sigen Gateway Home SP AU (Pro)", "price": 695, "desc": "Pro back entry ($695)" },
-            { "sku": "Sigen CUST Gateway SP-63", "price": 2200, "desc": "Custom 63A up to 24kW ($2,200)" },
-            { "sku": "Sigen CUST Gateway SP-63-Hybrid", "price": 3000, "desc": "Custom 63A Hybrid ($3,000)" },
-            { "sku": "Sigen CUST Gateway SP-125", "price": 3200, "desc": "Custom 125A up to 24kW ($3,200)" }
+            { "sku": "Sigen Gateway Home SP", "price": 645, "desc": "Standard Single Phase ($645)", "supplier_code": "SIG:GW-HOME-SP" },
+            { "sku": "Sigen Gateway Home SP AU (Pro)", "price": 695, "desc": "Pro back entry ($695)", "supplier_code": "SIG:GW-HOME-SP-PRO" },
+            { "sku": "Sigen CUST Gateway SP-63", "price": 2200, "desc": "Custom 63A up to 24kW ($2,200)", "supplier_code": "SIG:GW-CUST-SP-63" },
+            { "sku": "Sigen CUST Gateway SP-63-Hybrid", "price": 3000, "desc": "Custom 63A Hybrid ($3,000)", "supplier_code": "SIG:GW-CUST-SP-63-HYB" },
+            { "sku": "Sigen CUST Gateway SP-125", "price": 3200, "desc": "Custom 125A up to 24kW ($3,200)", "supplier_code": "SIG:GW-CUST-SP-125" }
         ],
         "three_phase": [
-            { "sku": "Sigen Gateway Home TP AU (Pro)", "price": 859, "desc": "Simple 2-inverter ($859)" },
-            { "sku": "Sigen Gateway Home TP", "price": 1575, "desc": "Standard Three Phase ($1,575)" },
-            { "sku": "Sigen Gateway C60 AU", "price": 1769, "desc": "C&I 60kW ($1,769)" }
+            { "sku": "Sigen Gateway Home TP AU (Pro)", "price": 859, "desc": "Simple 2-inverter ($859)", "supplier_code": "SIG:GW-HOME-TP-PRO" },
+            { "sku": "Sigen Gateway Home TP", "price": 1575, "desc": "Standard Three Phase ($1,575)", "supplier_code": "SIG:GW-HOME-TP" },
+            { "sku": "Sigen Gateway C60 AU", "price": 1769, "desc": "C&I 60kW ($1,769)", "supplier_code": "SIG:GW-C60" }
         ]
     },
 
     "ev_chargers": {
-        "dc_12_5": { "price": 2277, "desc": "DC 12kW 5m" },
-        "dc_25_5": { "price": 3105, "desc": "DC 25kW 5m" },
-        "dc_12_7.5": { "price": 2484, "desc": "DC 12kW 7.5m" },
-        "dc_25_7.5": { "price": 3312, "desc": "DC 25kW 7.5m" },
-        "dc_12_10": { "price": 2588, "desc": "DC 12kW 10m" },
-        "dc_25_10": { "price": 3416, "desc": "DC 25kW 10m" },
-        "ac_7_cable": { "price": 907, "desc": "AC 7kW w/cable" },
-        "ac_11_cable": { "price": 981, "desc": "AC 11kW w/cable" },
-        "ac_22_cable": { "price": 1089, "desc": "AC 22kW w/cable" },
-        "ac_7_socket": { "price": 782, "desc": "AC 7kW socket" },
-        "ac_11_socket": { "price": 863, "desc": "AC 11kW socket" },
-        "ac_22_socket": { "price": 932, "desc": "AC 22kW socket" }
+        "dc_12_5": { "price": 2277, "desc": "DC 12kW 5m", "supplier_code": "SIG:EVDC-12-5S2" },
+        "dc_25_5": { "price": 3105, "desc": "DC 25kW 5m", "supplier_code": "SIG:EVDC-25-5S2" },
+        "dc_12_7.5": { "price": 2484, "desc": "DC 12kW 7.5m", "supplier_code": "SIG:EVDC-12-7.5S2" },
+        "dc_25_7.5": { "price": 3312, "desc": "DC 25kW 7.5m", "supplier_code": "SIG:EVDC-25-7.5S2" },
+        "dc_12_10": { "price": 2588, "desc": "DC 12kW 10m", "supplier_code": "SIG:EVDC-12-10S2" },
+        "dc_25_10": { "price": 3416, "desc": "DC 25kW 10m", "supplier_code": "SIG:EVDC-25-10S2" },
+        "ac_7_cable": { "price": 907, "desc": "AC 7kW w/cable", "supplier_code": "SIG:EVAC-7-4G-T2-WH" },
+        "ac_11_cable": { "price": 981, "desc": "AC 11kW w/cable", "supplier_code": "SIG:EVAC-11-4G-T2-WH" },
+        "ac_22_cable": { "price": 1089, "desc": "AC 22kW w/cable", "supplier_code": "SIG:EVAC-22-4G-T2-WH" },
+        "ac_7_socket": { "price": 782, "desc": "AC 7kW socket", "supplier_code": "SIG:EVAC-7-4G-T2SH-WH" },
+        "ac_11_socket": { "price": 863, "desc": "AC 11kW socket", "supplier_code": "SIG:EVAC-11-4G-T2SH-WH" },
+        "ac_22_socket": { "price": 932, "desc": "AC 22kW socket", "supplier_code": "SIG:EVAC-22-4G-T2SH-WH" }
     },
 
     "accessories": {
-        "sensor_sp": 101,
-        "sensor_tp": 202,
-        "comm_4g": 177,
-        "sub1g": 127,
-        "mount_wall": 202,
-        "mount_ground": 202
+        "sensor_sp": 101, "sensor_sp_code": "SIG:SENSOR-SP-CT100",
+        "sensor_tp": 202, "sensor_tp_code": "SIG:SENSOR-TP-CT100",
+        "comm_4g": 177, "comm_4g_code": "SIG:4G-COMMMOD",
+        "sub1g": 127, "sub1g_code": "SIG:SUB1G-KIT-AU",
+        "mount_wall": 202, "mount_wall_code": "SIG:MOUNT-WALL",
+        "mount_ground": 202, "mount_ground_code": "SIG:MOUNT-GROUND"
     },
 
     "cec_approved": {
@@ -147,26 +147,30 @@
     },
 
     "addons": {
-        "hot_water_timer": 350,
-        "meter_board": 800
+        "hot_water_timer": 350, "hot_water_timer_code": "BDS:HWT-001",
+        "meter_board": 800, "meter_board_code": "BDS:MB-001"
     },
 
     "gp_margin": 30,
 
     "mounting_kits": {
         "kits": {
-            "tin_2kw":    { "label": "Tin Roof 2kW Pack",  "panels_covered": 4, "price": 46.50, "roof_types": ["metal","flat"] },
-            "tin_1_5kw":  { "label": "Tin Roof 1.5kW Pack", "panels_covered": 3, "price": 34.90, "roof_types": ["metal","flat"] },
-            "tile_2kw":   { "label": "Tile Roof 2kW Pack",  "panels_covered": 4, "price": 93.00, "roof_types": ["tile","concrete"] },
-            "tile_1_5kw": { "label": "Tile Roof 1.5kW Pack", "panels_covered": 3, "price": 69.50, "roof_types": ["tile","concrete"] }
+            "tin_2kw":    { "label": "Tin Roof 2kW Pack",   "panels_covered": 4, "price": 46.50, "roof_types": ["metal","flat"], "supplier_code": "RAY:KIT-TIN-2KW" },
+            "tin_1_5kw":  { "label": "Tin Roof 1.5kW Pack", "panels_covered": 3, "price": 34.90, "roof_types": ["metal","flat"], "supplier_code": "RAY:KIT-TIN-1.5KW" },
+            "tile_2kw":   { "label": "Tile Roof 2kW Pack",  "panels_covered": 4, "price": 93.00, "roof_types": ["tile","concrete"], "supplier_code": "RAY:KIT-TILE-2KW" },
+            "tile_1_5kw": { "label": "Tile Roof 1.5kW Pack","panels_covered": 3, "price": 69.50, "roof_types": ["tile","concrete"], "supplier_code": "RAY:KIT-TILE-1.5KW" }
         },
         "tilt_angles": {
-            "10_15": { "label": "10-15°", "price": 11.99 },
-            "15_30": { "label": "15-30°", "price": 13.99 },
-            "30_60": { "label": "30-60°", "price": 14.99 }
+            "10_15": { "label": "10-15 deg", "price": 11.99, "supplier_code": "RAY:TILT-10/15" },
+            "15_30": { "label": "15-30 deg", "price": 13.99, "supplier_code": "RAY:TILT-15/30" },
+            "30_60": { "label": "30-60 deg", "price": 14.99, "supplier_code": "RAY:TILT-30/60" }
         },
         "split_array_surcharge": {
-            "extra_parts_cost": 6.50,
+            "parts": [
+                { "desc": "End Clamp 30/35mm", "qty": 4, "price": 1.10, "supplier_code": "RAY:END-30/35" },
+                { "desc": "Earthing Lug (GLG)", "qty": 2, "price": 0.85, "supplier_code": "RAY:GLG" },
+                { "desc": "Earthing Clip (GC)", "qty": 2, "price": 0.20, "supplier_code": "RAY:GC" }
+            ],
             "labour_surcharge": 100.00
         },
         "rails": {
@@ -175,11 +179,13 @@
             "price": 25.50,
             "length_mm": 4800,
             "clamp_gap_mm": 25,
-            "splicer_price": 1.60
+            "splicer_price": 1.60,
+            "supplier_code": "RAY:R-4800-BLK",
+            "splicer_code": "RAY:R-SP"
         },
         "landscape_extras": {
-            "tin_attachment_price": 1.60,
-            "tile_attachment_price": 4.90,
+            "tin_attachment_price": 1.60, "tin_attachment_code": "RAY:TH-L",
+            "tile_attachment_price": 4.90, "tile_attachment_code": "RAY:RH-1#",
             "attachments_per_row": 4
         }
     }
