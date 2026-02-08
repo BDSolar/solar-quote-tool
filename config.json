@@ -95,6 +95,11 @@
     "installation": {
         "install_pv_per_kw": 300,
         "install_battery_per_stack": 1600,
+        "meter_board_upgrade": {
+            "partial":              { "label": "Partial",              "price": 900,  "supplier_code": "BDS:MB-PARTIAL" },
+            "full":                 { "label": "Full",                 "price": 1250, "supplier_code": "BDS:MB-FULL" },
+            "full_with_relocation": { "label": "Full with Relocation", "price": 1800, "supplier_code": "BDS:MB-FULL-RELOC" }
+        },
         "roof_types": {
             "metal":    { "label": "Metal",               "surcharge": 0, "kit_cost_per_panel": 0 },
             "tile":     { "label": "Tile",                "surcharge": 100, "kit_cost_per_panel": 0 },
@@ -147,11 +152,11 @@
     },
 
     "addons": {
-        "hot_water_timer": 350, "hot_water_timer_code": "BDS:HWT-001",
-        "meter_board": 800, "meter_board_code": "BDS:MB-001"
+        "hot_water_timer": 350, "hot_water_timer_code": "BDS:HWT-001"
     },
 
     "gp_margin": 30,
+    "sales_commission": 7,
 
     "mounting_kits": {
         "kits": {
