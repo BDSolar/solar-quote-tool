@@ -777,13 +777,6 @@ function calculateQuote() {
         let costHotWater = 0;
         if (document.getElementById('addonHotWater').checked) costHotWater = CONFIG.addons?.hot_water_timer ?? 350;
 
-        const installPv = state.sysKw * state.installPvPerKw;
-        const installBat = (bat.totalModules > 0) ? state.installBatPerStack : 0;
-        const totalInstallBat = installBat + extraStackCost;
-        const roof = CONFIG.installation?.roof_types?.[state.roofType] || { surcharge: 0 };
-        const costRoofSurcharge = roof.surcharge;
-        const mountingResult = getMountingKitItems(state.panelCount, state.roofType, state.orientation, state.numRows, state.numArrays, state.tiltAngle, state.panelWidthMm, state.panelHeightMm);
-        const costRoofKit = mountingResult.total;
         const mountPricePerKit = CONFIG.accessories?.[state.mountingType === 'wall' ? 'mount_wall' : 'mount_ground'] ?? 202;
         let mountKits = 0, extraInstallStacks = 0;
         if (bat.totalModules > 0) {
@@ -798,6 +791,14 @@ function calculateQuote() {
         }
         const costMount = mountKits * mountPricePerKit;
         const extraStackCost = extraInstallStacks * state.installBatPerStack;
+
+        const installPv = state.sysKw * state.installPvPerKw;
+        const installBat = (bat.totalModules > 0) ? state.installBatPerStack : 0;
+        const totalInstallBat = installBat + extraStackCost;
+        const roof = CONFIG.installation?.roof_types?.[state.roofType] || { surcharge: 0 };
+        const costRoofSurcharge = roof.surcharge;
+        const mountingResult = getMountingKitItems(state.panelCount, state.roofType, state.orientation, state.numRows, state.numArrays, state.tiltAngle, state.panelWidthMm, state.panelHeightMm);
+        const costRoofKit = mountingResult.total;
 
         // Update mount info display
         const mountInfoEl = document.getElementById('mountInfo');
