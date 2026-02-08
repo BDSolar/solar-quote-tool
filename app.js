@@ -56,7 +56,7 @@ const state = {
     numRows: 1,
     numArrays: 1,
     tiltAngle: '10_15',
-    mountingType: 'wall'
+    mountingType: 'ground'
 };
 
 function syncStateFromDOM() {
@@ -777,19 +777,23 @@ function calculateQuote() {
         let costHotWater = 0;
         if (document.getElementById('addonHotWater').checked) costHotWater = CONFIG.addons?.hot_water_timer ?? 350;
 
-        const mountPricePerKit = CONFIG.accessories?.[state.mountingType === 'wall' ? 'mount_wall' : 'mount_ground'] ?? 202;
-        let mountKits = 0, extraInstallStacks = 0;
+        const groundMountPrice = CONFIG.accessories?.mount_ground ?? 202;
+        const wallMountPrice = CONFIG.accessories?.mount_wall ?? 202;
+        let mountKits = 0, extraMountKits = 0, extraInstallStacks = 0;
+        let costMount = 0;
         if (bat.totalModules > 0) {
-            const totalStackModules = bat.totalModules + 1; // batteries + energy controller
+            const totalStackModules = bat.totalModules + 1;
             if (state.mountingType === 'wall') {
                 const maxPerMount = 3;
                 mountKits = Math.ceil(totalStackModules / maxPerMount);
-                extraInstallStacks = mountKits - 1; // first stack install included, extras added
+                extraMountKits = mountKits - 1;
+                extraInstallStacks = extraMountKits;
+                costMount = mountKits * wallMountPrice;
             } else {
-                mountKits = 1; // ground mount = 1 kit
+                mountKits = 1;
+                costMount = groundMountPrice;
             }
         }
-        const costMount = mountKits * mountPricePerKit;
         const extraStackCost = extraInstallStacks * state.installBatPerStack;
 
         const installPv = state.sysKw * state.installPvPerKw;
@@ -800,19 +804,18 @@ function calculateQuote() {
         const mountingResult = getMountingKitItems(state.panelCount, state.roofType, state.orientation, state.numRows, state.numArrays, state.tiltAngle, state.panelWidthMm, state.panelHeightMm);
         const costRoofKit = mountingResult.total;
 
-        // Update mount info display
+        // Update mount info - only show for wall mount with extra kits needed
         const mountInfoEl = document.getElementById('mountInfo');
         if (mountInfoEl) {
-            if (bat.totalModules > 0) {
+            if (bat.totalModules > 0 && state.mountingType === 'wall' && extraMountKits > 0) {
                 const totalStackModules = bat.totalModules + 1;
                 const gp = state.gpMargin / 100;
-                const sellMount = Math.round(costMount * (1 + gp) * GST);
-                let mountText = mountKits + 'x ' + (state.mountingType === 'wall' ? 'Wall' : 'Ground') + ' Mount Kit ($' + sellMount.toLocaleString() + ')';
-                if (extraInstallStacks > 0) {
-                    const sellExtraStack = Math.round(extraStackCost * (1 + gp) * GST);
-                    mountText += ' | ' + totalStackModules + ' modules (inc controller) across ' + mountKits + ' stacks';
-                    mountText += ' | Extra stack install: $' + sellExtraStack.toLocaleString();
-                }
+                const extraMountCost = extraMountKits * wallMountPrice;
+                const sellExtraMount = Math.round(extraMountCost * (1 + gp) * GST);
+                const sellExtraStack = Math.round(extraStackCost * (1 + gp) * GST);
+                let mountText = totalStackModules + ' modules (inc controller) across ' + mountKits + ' wall mount stacks';
+                mountText += ' | Extra mount kit: +$' + sellExtraMount.toLocaleString();
+                mountText += ' | Extra stack install: +$' + sellExtraStack.toLocaleString();
                 mountInfoEl.innerHTML = mountText;
                 mountInfoEl.style.display = 'block';
             } else {
