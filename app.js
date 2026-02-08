@@ -781,7 +781,8 @@ function calculateQuote() {
         let specs = '<strong>' + state.sysKw.toFixed(2) + ' kW Solar System</strong><br>' + state.panelCount + ' x ' + esc(state.panelBrand) + ' ' + esc(state.panelModel) + ' ' + state.panelWattage + 'W ' + esc(state.panelColour) + '<br>' + esc(state.invSku) + ' (' + state.invKw + 'kW ' + (state.phase === 'single_phase' ? 'Single' : 'Three') + ' Phase)<br>' + esc(batText);
         if (document.getElementById('addGateway').checked) { const gw = document.getElementById('gatewaySelect'); specs += '<br>Gateway: ' + esc(gw.options[gw.selectedIndex]?.textContent || ''); }
         if (document.getElementById('addEvCharger').checked && document.getElementById('evChargerType').value !== 'none') { specs += '<br>EV: ' + esc(CONFIG.ev_chargers[document.getElementById('evChargerType').value]?.desc || ''); }
-        document.getElementById('systemSpecs').innerHTML = specs;
+        const specsEl = document.getElementById('systemSpecs');
+        if (specsEl) specsEl.innerHTML = specs;
 
     } catch (err) {
         console.error('[!] Quote calculation error:', err);
