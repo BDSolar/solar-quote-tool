@@ -60,6 +60,8 @@
                 </div>
                 <div id="cecWarning" class="warn-box" style="display:none;"></div>
                 <div id="cecApproved" class="success-box" style="display:none;"></div>
+                <div class="form-group"><label>Battery Mounting Type</label><select id="mountingType"><option value="wall">Wall Mount</option><option value="ground">Ground Mount</option></select></div>
+                <div id="mountInfo" class="info-box" style="display:none;"></div>
             </div>
             <div class="section">
                 <div class="section-title">Energy Controller (Inverter)</div>
@@ -85,13 +87,12 @@
                 <div id="tiltAngleGroup" style="display:none;">
                     <div class="form-group"><label>Tilt Angle (Flat Roof)</label><select id="tiltAngle"><option value="10_15">10-15&deg; ($11.99/panel)</option><option value="15_30">15-30&deg; ($13.99/panel)</option><option value="30_60">30-60&deg; ($14.99/panel)</option></select></div>
                 </div>
-                <div class="form-group"><label>Battery Mounting Type</label><select id="mountingType"><option value="wall">Wall Mount ($222 inc GST)</option><option value="ground">Ground Mount ($222 inc GST)</option></select></div>
             </div>
             <div class="section">
                 <div class="section-title">Accessories</div>
                 <div class="addon-item"><input type="checkbox" id="addPowerSensor" checked><label for="addPowerSensor">Power Sensor</label><span class="addon-price" id="powerSensorPrice">$101</span></div>
-                <div class="addon-item"><input type="checkbox" id="add4GModule"><label for="add4GModule">4G Comms Module (poor Wi-Fi)</label><span class="addon-price">$177</span></div>
-                <div class="addon-item"><input type="checkbox" id="addSub1GKit"><label for="addSub1GKit">Sub1G Sensor Kit</label><span class="addon-price">$127</span></div>
+                <div class="addon-item"><input type="checkbox" id="add4GModule"><label for="add4GModule">4G Comms Module (poor Wi-Fi)</label><span class="addon-price" id="price4GModule">$177</span></div>
+                <div class="addon-item"><input type="checkbox" id="addSub1GKit"><label for="addSub1GKit">Sub1G Sensor Kit</label><span class="addon-price" id="priceSub1GKit">$127</span></div>
                 <div class="addon-item"><input type="checkbox" id="addEvCharger"><label for="addEvCharger">EV Charger</label></div>
                 <div id="evChargerOptions" style="display:none;">
                     <div class="form-group"><label>Charger Model</label>
@@ -120,7 +121,7 @@
             <div class="section">
                 <div class="section-title">STC Rebates &amp; Margin</div>
                 <div class="grid-2">
-                    <div class="form-group"><label>STC Price ($/cert)</label><input type="number" id="stcPrice" value="40" step="0.5" min="0"></div>
+                    <div class="form-group"><label>STC Price ($/cert)</label><input type="number" id="stcPrice" value="37.2" step="0.5" min="0"></div>
                     <div class="form-group"><label>Deeming Period (yrs)</label><input type="number" id="stcDeemingPeriod" value="5" step="1" min="1" max="10" class="readonly-field" readonly></div>
                 </div>
                 <div class="grid-2">
@@ -141,7 +142,7 @@
             </div>
             <div class="summary-card">
                 <div class="summary-title">Battery</div>
-                <div class="summary-row"><span>Energy Controller</span><span id="costInverter">$0</span></div>
+                <div class="summary-row"><span>Controller Upgrade</span><span id="costInverter">$0</span></div>
                 <div class="summary-row"><span>Batteries</span><span id="costBattery">$0</span></div>
                 <div class="summary-row"><span>Gateway</span><span id="costGateway">$0</span></div>
                 <div class="summary-row"><span>Battery Mounting (Wall/Ground)</span><span id="costMounting">$0</span></div>

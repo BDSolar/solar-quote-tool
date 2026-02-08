@@ -26,8 +26,8 @@
     },
 
     "batteries": [
-        { "kwh": 5, "usable_kwh": 5.2, "price": 2905, "label": "5 kWh", "supplier_code": "SIG:BAT-5.0" },
-        { "kwh": 8, "usable_kwh": 7.8, "price": 3632, "label": "8 kWh", "supplier_code": "SIG:BAT-8.0" }
+        { "kwh": 5, "usable_kwh": 5.2, "price": 2905, "label": "SigenStor BAT 5.0 (5 kWh)", "supplier_code": "SIG:BAT-5.0" },
+        { "kwh": 8, "usable_kwh": 7.8, "price": 3632, "label": "SigenStor BAT 8.0 (8 kWh)", "supplier_code": "SIG:BAT-8.0" }
     ],
 
     "battery_rules": {
@@ -109,7 +109,7 @@
     },
 
     "rebates": {
-        "stc_price": 40,
+        "stc_price": 37.2,
         "stc_deeming_period": 5,
         "battery_rebate_per_kwh": 311,
         "stc_zones": [

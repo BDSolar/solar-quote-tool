@@ -46,7 +46,7 @@ const state = {
     invMaxPv: 0,
     invSupplierCode: '',
     gpMargin: 30,
-    stcPrice: 40,
+    stcPrice: 37.2,
     deemingPeriod: 5,
     batteryRebatePerKwh: 311,
     installPvPerKw: 300,
@@ -243,8 +243,8 @@ const DEFAULT_CONFIG = {
         ]
     },
     "batteries": [
-        { "kwh": 5, "usable_kwh": 5.2, "price": 2905, "label": "5 kWh", "supplier_code": "SIG:BAT-5.0" },
-        { "kwh": 8, "usable_kwh": 7.8, "price": 3632, "label": "8 kWh", "supplier_code": "SIG:BAT-8.0" }
+        { "kwh": 5, "usable_kwh": 5.2, "price": 2905, "label": "SigenStor BAT 5.0 (5 kWh)", "supplier_code": "SIG:BAT-5.0" },
+        { "kwh": 8, "usable_kwh": 7.8, "price": 3632, "label": "SigenStor BAT 8.0 (8 kWh)", "supplier_code": "SIG:BAT-8.0" }
     ],
     "battery_rules": { "max_modules": 6, "max_kwh": 48 },
     "gateways": {
@@ -289,7 +289,7 @@ const DEFAULT_CONFIG = {
         }
     },
     "installation": { "install_pv_per_kw": 300, "install_battery_per_stack": 1600, "meter_board_upgrade": { "partial": {"label":"Partial","price":900,"supplier_code":"BDS:MB-PARTIAL"}, "full": {"label":"Full","price":1250,"supplier_code":"BDS:MB-FULL"}, "full_with_relocation": {"label":"Full with Relocation","price":1800,"supplier_code":"BDS:MB-FULL-RELOC"} }, "roof_types": { "metal": {"label":"Metal","surcharge":0,"kit_cost_per_panel":0}, "tile": {"label":"Tile","surcharge":100,"kit_cost_per_panel":0}, "concrete": {"label":"Concrete/Terracotta","surcharge":200,"kit_cost_per_panel":0}, "flat": {"label":"Flat","surcharge":300,"kit_cost_per_panel":0} } },
-    "rebates": { "stc_price": 40, "stc_deeming_period": 5, "battery_rebate_per_kwh": 311, "stc_zones": [[0,799,3,1.382],[800,853,2,1.536],[854,854,3,1.382],[855,861,2,1.536],[862,862,3,1.382],[863,869,2,1.536],[870,879,1,1.622],[880,885,3,1.382],[886,1000,2,1.536],[1001,2355,3,1.382],[2356,2357,2,1.536],[2358,2384,3,1.382],[2385,2389,2,1.536],[2390,2395,3,1.382],[2396,2397,2,1.536],[2398,2399,3,1.382],[2400,2400,2,1.536],[2401,2404,3,1.382],[2405,2407,2,1.536],[2408,2544,3,1.382],[2545,2554,4,1.185],[2555,2627,3,1.382],[2628,2628,4,1.185],[2629,2629,3,1.382],[2630,2639,4,1.185],[2640,2816,3,1.382],[2817,2817,2,1.536],[2818,2820,3,1.382],[2821,2829,2,1.536],[2830,2830,3,1.382],[2831,2841,2,1.536],[2842,2872,3,1.382],[2873,2873,2,1.536],[2874,2877,3,1.382],[2878,2889,2,1.536],[2890,2999,3,1.382],[3000,3035,4,1.185],[3036,3038,3,1.382],[3039,3044,4,1.185],[3045,3045,3,1.382],[3046,3046,4,1.185],[3047,3049,3,1.382],[3050,3058,4,1.185],[3059,3059,3,1.382],[3060,3060,4,1.185],[3061,3064,3,1.382],[3065,3074,4,1.185],[3075,3076,3,1.382],[3077,3098,4,1.185],[3099,3099,3,1.382],[3100,3292,4,1.185],[3293,3302,3,1.382],[3303,3308,4,1.185],[3309,3319,3,1.382],[3320,3333,4,1.185],[3334,3337,3,1.382],[3338,3339,4,1.185],[3340,3758,3,1.382],[3759,3760,4,1.185],[3761,3764,3,1.382],[3765,3999,4,1.185],[4000,4416,3,1.382],[4417,4417,2,1.536],[4418,4427,3,1.382],[4428,4473,2,1.536],[4474,4476,1,1.622],[4477,4478,2,1.536],[4479,4485,1,1.622],[4486,4491,2,1.536],[4492,4492,1,1.622],[4493,4493,2,1.536],[4494,4494,3,1.382],[4495,4497,2,1.536],[4498,4719,3,1.382],[4720,4722,2,1.536],[4723,4723,3,1.382],[4724,4734,2,1.536],[4735,4736,1,1.622],[4737,4822,3,1.382],[4823,4823,2,1.536],[4824,4824,3,1.382],[4825,4827,2,1.536],[4828,4828,3,1.382],[4829,4829,1,1.622],[4830,5431,3,1.382],[5432,5450,2,1.536],[5451,5654,3,1.382],[5655,5669,2,1.536],[5670,5679,3,1.382],[5680,5699,2,1.536],[5700,5709,3,1.382],[5710,5722,2,1.536],[5723,5724,1,1.622],[5725,5730,2,1.536],[5731,5731,1,1.622],[5732,5732,2,1.536],[5733,5799,1,1.622],[5800,6043,3,1.382],[6044,6044,2,1.536],[6045,6256,3,1.382],[6257,6270,4,1.185],[6271,6316,3,1.382],[6317,6349,4,1.185],[6350,6353,3,1.382],[6354,6356,4,1.185],[6357,6394,3,1.382],[6395,6400,4,1.185],[6401,6430,3,1.382],[6431,6431,2,1.536],[6432,6433,3,1.382],[6434,6440,2,1.536],[6441,6441,1,1.622],[6442,6444,3,1.382],[6445,6459,4,1.185],[6460,6467,3,1.382],[6468,6469,2,1.536],[6470,6471,3,1.382],[6472,6472,2,1.536],[6473,6506,3,1.382],[6507,6508,2,1.536],[6509,6509,3,1.382],[6510,6536,2,1.536],[6537,6537,1,1.622],[6538,6555,2,1.536],[6556,6573,3,1.382],[6574,6602,2,1.536],[6603,6607,3,1.382],[6608,6641,2,1.536],[6642,6724,1,1.622],[6725,6750,2,1.536],[6751,6764,1,1.622],[6765,6765,2,1.536],[6766,6797,1,1.622],[6798,6799,2,1.536],[6800,6999,3,1.382],[7000,8999,4,1.185],[9000,9999,3,1.382]] },
+    "rebates": { "stc_price": 37.2, "stc_deeming_period": 5, "battery_rebate_per_kwh": 311, "stc_zones": [[0,799,3,1.382],[800,853,2,1.536],[854,854,3,1.382],[855,861,2,1.536],[862,862,3,1.382],[863,869,2,1.536],[870,879,1,1.622],[880,885,3,1.382],[886,1000,2,1.536],[1001,2355,3,1.382],[2356,2357,2,1.536],[2358,2384,3,1.382],[2385,2389,2,1.536],[2390,2395,3,1.382],[2396,2397,2,1.536],[2398,2399,3,1.382],[2400,2400,2,1.536],[2401,2404,3,1.382],[2405,2407,2,1.536],[2408,2544,3,1.382],[2545,2554,4,1.185],[2555,2627,3,1.382],[2628,2628,4,1.185],[2629,2629,3,1.382],[2630,2639,4,1.185],[2640,2816,3,1.382],[2817,2817,2,1.536],[2818,2820,3,1.382],[2821,2829,2,1.536],[2830,2830,3,1.382],[2831,2841,2,1.536],[2842,2872,3,1.382],[2873,2873,2,1.536],[2874,2877,3,1.382],[2878,2889,2,1.536],[2890,2999,3,1.382],[3000,3035,4,1.185],[3036,3038,3,1.382],[3039,3044,4,1.185],[3045,3045,3,1.382],[3046,3046,4,1.185],[3047,3049,3,1.382],[3050,3058,4,1.185],[3059,3059,3,1.382],[3060,3060,4,1.185],[3061,3064,3,1.382],[3065,3074,4,1.185],[3075,3076,3,1.382],[3077,3098,4,1.185],[3099,3099,3,1.382],[3100,3292,4,1.185],[3293,3302,3,1.382],[3303,3308,4,1.185],[3309,3319,3,1.382],[3320,3333,4,1.185],[3334,3337,3,1.382],[3338,3339,4,1.185],[3340,3758,3,1.382],[3759,3760,4,1.185],[3761,3764,3,1.382],[3765,3999,4,1.185],[4000,4416,3,1.382],[4417,4417,2,1.536],[4418,4427,3,1.382],[4428,4473,2,1.536],[4474,4476,1,1.622],[4477,4478,2,1.536],[4479,4485,1,1.622],[4486,4491,2,1.536],[4492,4492,1,1.622],[4493,4493,2,1.536],[4494,4494,3,1.382],[4495,4497,2,1.536],[4498,4719,3,1.382],[4720,4722,2,1.536],[4723,4723,3,1.382],[4724,4734,2,1.536],[4735,4736,1,1.622],[4737,4822,3,1.382],[4823,4823,2,1.536],[4824,4824,3,1.382],[4825,4827,2,1.536],[4828,4828,3,1.382],[4829,4829,1,1.622],[4830,5431,3,1.382],[5432,5450,2,1.536],[5451,5654,3,1.382],[5655,5669,2,1.536],[5670,5679,3,1.382],[5680,5699,2,1.536],[5700,5709,3,1.382],[5710,5722,2,1.536],[5723,5724,1,1.622],[5725,5730,2,1.536],[5731,5731,1,1.622],[5732,5732,2,1.536],[5733,5799,1,1.622],[5800,6043,3,1.382],[6044,6044,2,1.536],[6045,6256,3,1.382],[6257,6270,4,1.185],[6271,6316,3,1.382],[6317,6349,4,1.185],[6350,6353,3,1.382],[6354,6356,4,1.185],[6357,6394,3,1.382],[6395,6400,4,1.185],[6401,6430,3,1.382],[6431,6431,2,1.536],[6432,6433,3,1.382],[6434,6440,2,1.536],[6441,6441,1,1.622],[6442,6444,3,1.382],[6445,6459,4,1.185],[6460,6467,3,1.382],[6468,6469,2,1.536],[6470,6471,3,1.382],[6472,6472,2,1.536],[6473,6506,3,1.382],[6507,6508,2,1.536],[6509,6509,3,1.382],[6510,6536,2,1.536],[6537,6537,1,1.622],[6538,6555,2,1.536],[6556,6573,3,1.382],[6574,6602,2,1.536],[6603,6607,3,1.382],[6608,6641,2,1.536],[6642,6724,1,1.622],[6725,6750,2,1.536],[6751,6764,1,1.622],[6765,6765,2,1.536],[6766,6797,1,1.622],[6798,6799,2,1.536],[6800,6999,3,1.382],[7000,8999,4,1.185],[9000,9999,3,1.382]] },
     "addons": { "hot_water_timer": 350, "hot_water_timer_code": "BDS:HWT-001" },
     "gp_margin": 30,
     "sales_commission": 7,
@@ -333,17 +333,15 @@ async function loadConfig() {
     // Apply installation/rebate/addon/GP from config
     document.getElementById('installPerKwPv').value = CONFIG.installation?.install_pv_per_kw ?? 300;
     document.getElementById('installPerStack').value = CONFIG.installation?.install_battery_per_stack ?? 1600;
-    document.getElementById('stcPrice').value = CONFIG.rebates?.stc_price ?? 40;
+    document.getElementById('stcPrice').value = CONFIG.rebates?.stc_price ?? 37.2;
     document.getElementById('stcDeemingPeriod').value = CONFIG.rebates?.stc_deeming_period ?? 5;
     document.getElementById('batteryRebatePerKwh').value = CONFIG.rebates?.battery_rebate_per_kwh ?? 311;
     document.getElementById('gpMargin').value = CONFIG.gp_margin ?? 30;
     document.getElementById('salesCommission').value = CONFIG.sales_commission ?? 7;
-    const hwEl = document.getElementById('hotWaterPrice');
-    if (hwEl) hwEl.textContent = '$' + (CONFIG.addons?.hot_water_timer ?? 350);
     // Populate meter board upgrade dropdown
     populateMeterBoardUpgrade();
     // Build all UI from config
-    populatePanels(); buildBatteryUI(); populateInverters(); populateGateways(); populateEvChargers(); updateSensorPrice(); bindEvents(); updateRoofInfo(); updateMountingKitInfo(); updateZoneDisplay(); calculateQuote();
+    populatePanels(); buildBatteryUI(); populateInverters(); populateGateways(); populateEvChargers(); updateSensorPrice(); bindEvents(); updateAccessoryPrices(); updateRoofInfo(); updateMountingKitInfo(); updateZoneDisplay(); calculateQuote();
 }
 
 // ====================
@@ -359,7 +357,7 @@ function buildBatteryUI() {
     sorted.forEach(bat => {
         const row = document.createElement('div');
         row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;';
-        row.innerHTML = '<span>' + bat.label + ' ($' + bat.price.toLocaleString() + ' ea)</span>'
+        row.innerHTML = '<span>' + bat.label + '</span>'
             + '<div style="display:flex;align-items:center;gap:8px;">'
             + '<button class="battery-adj-btn" onclick="adjustBattery(' + bat.kwh + ',-1)">-</button>'
             + '<span id="qty_' + bat.kwh + 'kwh" style="font-weight:700;min-width:24px;text-align:center;">0</span>'
@@ -398,7 +396,7 @@ function updateZoneDisplay() {
 // ====================
 
 function bindEvents() {
-    document.querySelectorAll('input, select').forEach(el => { el.addEventListener('input', calculateQuote); el.addEventListener('change', calculateQuote); });
+    document.querySelectorAll('input, select').forEach(el => { if (el.id === 'inverterSelect') return; el.addEventListener('input', calculateQuote); el.addEventListener('change', calculateQuote); });
     document.getElementById('installPostcode').addEventListener('input', function() {
         this.value = this.value.replace(/\D/g, '').slice(0, 4);
         updateZoneDisplay();
@@ -416,6 +414,8 @@ function bindEvents() {
     document.getElementById('tiltAngle').addEventListener('change', () => { updateMountingKitInfo(); calculateQuote(); });
     document.getElementById('addGateway').addEventListener('change', () => { document.getElementById('gatewayOptions').style.display = document.getElementById('addGateway').checked ? 'block' : 'none'; calculateQuote(); });
     document.getElementById('addEvCharger').addEventListener('change', () => { document.getElementById('evChargerOptions').style.display = document.getElementById('addEvCharger').checked ? 'block' : 'none'; calculateQuote(); });
+    document.getElementById('mountingType').addEventListener('change', calculateQuote);
+    document.getElementById('gpMargin').addEventListener('input', () => { updateAccessoryPrices(); populateGateways(); calculateQuote(); });
     // Custom spinner: click right arrow area to step up/down
     document.querySelectorAll('input[type="number"]').forEach(el => {
         el.addEventListener('click', function(e) {
@@ -444,7 +444,7 @@ function populatePanels() {
     CONFIG.panels.forEach((p, idx) => {
         const o = document.createElement('option');
         o.value = idx;
-        o.textContent = p.brand + ' ' + p.model + ' ' + p.wattage + 'W ' + p.colour + ' ($' + p.price + ')';
+        o.textContent = p.brand + ' ' + p.model + ' ' + p.wattage + 'W ' + p.colour;
         o.dataset.wattage = p.wattage;
         o.dataset.price = p.price;
         o.dataset.brand = p.brand;
@@ -459,23 +459,65 @@ function populatePanels() {
 
 function populateInverters() {
     const phase = document.getElementById('phaseType').value, sel = document.getElementById('inverterSelect');
+    const models = CONFIG.energy_controllers[phase];
     sel.innerHTML = '';
-    CONFIG.energy_controllers[phase].forEach(m => {
+    models.forEach(m => {
         const o = document.createElement('option'); o.value = m.sku;
-        o.textContent = m.sku + '  -  ' + m.kw + 'kW ($' + m.price.toLocaleString() + ')  -  Max PV: ' + m.max_pv_kw + 'kW';
+        o.textContent = m.sku + '  -  ' + m.kw + 'kW  -  Max PV: ' + m.max_pv_kw + 'kW';
         o.dataset.kw = m.kw; o.dataset.price = m.price; o.dataset.maxPv = m.max_pv_kw; o.dataset.supplierCode = m.supplier_code || ''; sel.appendChild(o);
     });
+}
+
+function updateInverterValidity() {
+    const sel = document.getElementById('inverterSelect');
+    const sysKw = state.sysKw;
+    const battKwh = state.actualBatteryKwh || 0;
+    const phase = state.phase;
+    const combos = CONFIG.cec_approved[phase] || {};
+    for (let i = 0; i < sel.options.length; i++) {
+        const opt = sel.options[i];
+        const maxPv = parseFloat(opt.dataset.maxPv) || 0;
+        const sku = opt.value;
+        const cecKey = getCecKey(sku);
+        const pvOk = maxPv >= sysKw;
+        const cecOk = battKwh === 0 || (combos[cecKey] && combos[cecKey].includes(battKwh));
+        const valid = pvOk && cecOk;
+        opt.disabled = !valid;
+        opt.style.color = valid ? '' : '#555';
+    }
 }
 
 function populateGateways() {
     const phase = document.getElementById('phaseType').value, sel = document.getElementById('gatewaySelect');
     sel.innerHTML = '';
-    CONFIG.gateways[phase].forEach(m => { const o = document.createElement('option'); o.value = m.sku; o.textContent = m.desc; o.dataset.price = m.price; o.dataset.supplierCode = m.supplier_code || ''; sel.appendChild(o); });
+    const gp = parseFloat(document.getElementById('gpMargin')?.value) || CONFIG.gp_margin || 30;
+    CONFIG.gateways[phase].forEach(m => {
+        const sellPrice = Math.round(m.price * (1 + gp / 100) * GST);
+        const o = document.createElement('option'); o.value = m.sku;
+        o.textContent = m.desc.replace(/\(\$[\d,.]+\)/, '($' + sellPrice.toLocaleString() + ')');
+        o.dataset.price = m.price; o.dataset.supplierCode = m.supplier_code || ''; sel.appendChild(o);
+    });
 }
 
 function updateSensorPrice() {
-    const p = document.getElementById('phaseType').value === 'single_phase' ? (CONFIG.accessories?.sensor_sp ?? 101) : (CONFIG.accessories?.sensor_tp ?? 202);
-    document.getElementById('powerSensorPrice').textContent = '$' + p;
+    const gp = parseFloat(document.getElementById('gpMargin')?.value) || CONFIG.gp_margin || 30;
+    const cost = document.getElementById('phaseType').value === 'single_phase' ? (CONFIG.accessories?.sensor_sp ?? 101) : (CONFIG.accessories?.sensor_tp ?? 202);
+    document.getElementById('powerSensorPrice').textContent = '$' + Math.round(cost * (1 + gp / 100) * GST);
+}
+
+function updateAccessoryPrices() {
+    const gp = parseFloat(document.getElementById('gpMargin')?.value) || CONFIG.gp_margin || 30;
+    const sell = v => '$' + Math.round(v * (1 + gp / 100) * GST);
+    updateSensorPrice();
+    const el4g = document.getElementById('price4GModule');
+    const elSub = document.getElementById('priceSub1GKit');
+    if (el4g) el4g.textContent = sell(CONFIG.accessories?.comm_4g ?? 177);
+    if (elSub) elSub.textContent = sell(CONFIG.accessories?.sub1g ?? 127);
+    // Update EV charger prices in dropdown
+    populateEvChargers();
+    // Update hot water price
+    const hwEl = document.getElementById('hotWaterPrice');
+    if (hwEl) hwEl.textContent = sell(CONFIG.addons?.hot_water_timer ?? 350);
 }
 
 function populateEvChargers() {
@@ -494,7 +536,9 @@ function populateEvChargers() {
         items.forEach(item => {
             const o = document.createElement('option');
             o.value = item.key;
-            o.textContent = item.desc + ' ($' + item.price.toLocaleString() + ')';
+            const gp = parseFloat(document.getElementById('gpMargin')?.value) || CONFIG.gp_margin || 30;
+            const sellPrice = Math.round(item.price * (1 + gp / 100) * GST);
+            o.textContent = item.desc + ' ($' + sellPrice.toLocaleString() + ')';
             grp.appendChild(o);
         });
         sel.appendChild(grp);
@@ -690,14 +734,22 @@ function calculateQuote() {
         state.actualBatteryKwh = actualKwh;
         document.getElementById('batteryConfigPanel').style.display = desired > 0 ? 'block' : 'none';
 
+        // Always calculate recommended inverter (even if user changed)
+        const recSku = autoSelectInverter(state.sysKw, actualKwh, state.phase);
+        const recModel = CONFIG.energy_controllers[state.phase].find(m => m.sku === recSku);
+        const recPrice = recModel ? recModel.price : 0;
+
         if (!userChangedInverter) {
-            const rec = autoSelectInverter(state.sysKw, actualKwh, state.phase), sel = document.getElementById('inverterSelect');
-            for (let i = 0; i < sel.options.length; i++) { if (sel.options[i].value === rec) { sel.selectedIndex = i; break; } }
+            const sel = document.getElementById('inverterSelect');
+            for (let i = 0; i < sel.options.length; i++) { if (sel.options[i].value === recSku) { sel.selectedIndex = i; break; } }
             syncStateFromDOM(); // Re-sync after inverter change
         }
 
         document.getElementById('inverterInfo').style.display = 'block';
-        document.getElementById('inverterInfo').innerHTML = 'Max PV: ' + state.invMaxPv + 'kW | Inverter: ' + state.invKw + 'kW | Oversizing: ' + (state.phase === 'single_phase' ? '200%' : '160%');
+        const upgradeCost = state.invPrice - recPrice;
+        let invInfoText = 'Max PV: ' + state.invMaxPv + 'kW | Inverter: ' + state.invKw + 'kW | Oversizing: ' + (state.phase === 'single_phase' ? '200%' : '160%');
+        if (upgradeCost > 0) invInfoText += ' | Upgrade: +' + fmtIncGst(upgradeCost);
+        document.getElementById('inverterInfo').innerHTML = invInfoText;
         if (state.sysKw > state.invMaxPv) { document.getElementById('inverterWarning').style.display = 'block'; document.getElementById('inverterWarning').innerHTML = '[!] PV (' + state.sysKw.toFixed(1) + 'kW) exceeds max (' + state.invMaxPv + 'kW). Select larger inverter.'; }
         else { document.getElementById('inverterWarning').style.display = 'none'; }
 
@@ -707,9 +759,12 @@ function calculateQuote() {
             document.getElementById('cecWarning').style.display = !cec.ok ? 'block' : 'none'; document.getElementById('cecWarning').textContent = !cec.ok ? cec.msg : '';
         } else { document.getElementById('cecWarning').style.display = 'none'; document.getElementById('cecApproved').style.display = 'none'; }
 
+        updateInverterValidity();
+
         const bat = getBatterySummary();
         const costPanels = state.panelCount * state.panelCost;
         const costInverter = state.invPrice;
+        const costInverterUpgrade = Math.max(0, state.invPrice - recPrice);
         const costBattery = bat.equipmentCost;
         let costGateway = 0;
         if (document.getElementById('addGateway').checked) { const gw = document.getElementById('gatewaySelect'); costGateway = parseFloat(gw.options[gw.selectedIndex]?.dataset.price) || 0; }
@@ -724,11 +779,45 @@ function calculateQuote() {
 
         const installPv = state.sysKw * state.installPvPerKw;
         const installBat = (bat.totalModules > 0) ? state.installBatPerStack : 0;
+        const totalInstallBat = installBat + extraStackCost;
         const roof = CONFIG.installation?.roof_types?.[state.roofType] || { surcharge: 0 };
         const costRoofSurcharge = roof.surcharge;
         const mountingResult = getMountingKitItems(state.panelCount, state.roofType, state.orientation, state.numRows, state.numArrays, state.tiltAngle, state.panelWidthMm, state.panelHeightMm);
         const costRoofKit = mountingResult.total;
-        const costMount = (bat.totalModules > 0) ? (CONFIG.accessories?.[state.mountingType === 'wall' ? 'mount_wall' : 'mount_ground'] ?? 202) : 0;
+        const mountPricePerKit = CONFIG.accessories?.[state.mountingType === 'wall' ? 'mount_wall' : 'mount_ground'] ?? 202;
+        let mountKits = 0, extraInstallStacks = 0;
+        if (bat.totalModules > 0) {
+            const totalStackModules = bat.totalModules + 1; // batteries + energy controller
+            if (state.mountingType === 'wall') {
+                const maxPerMount = 3;
+                mountKits = Math.ceil(totalStackModules / maxPerMount);
+                extraInstallStacks = mountKits - 1; // first stack install included, extras added
+            } else {
+                mountKits = 1; // ground mount = 1 kit
+            }
+        }
+        const costMount = mountKits * mountPricePerKit;
+        const extraStackCost = extraInstallStacks * state.installBatPerStack;
+
+        // Update mount info display
+        const mountInfoEl = document.getElementById('mountInfo');
+        if (mountInfoEl) {
+            if (bat.totalModules > 0) {
+                const totalStackModules = bat.totalModules + 1;
+                const gp = state.gpMargin / 100;
+                const sellMount = Math.round(costMount * (1 + gp) * GST);
+                let mountText = mountKits + 'x ' + (state.mountingType === 'wall' ? 'Wall' : 'Ground') + ' Mount Kit ($' + sellMount.toLocaleString() + ')';
+                if (extraInstallStacks > 0) {
+                    const sellExtraStack = Math.round(extraStackCost * (1 + gp) * GST);
+                    mountText += ' | ' + totalStackModules + ' modules (inc controller) across ' + mountKits + ' stacks';
+                    mountText += ' | Extra stack install: $' + sellExtraStack.toLocaleString();
+                }
+                mountInfoEl.innerHTML = mountText;
+                mountInfoEl.style.display = 'block';
+            } else {
+                mountInfoEl.style.display = 'none';
+            }
+        }
         let costMeterBoard = 0;
         const mbSel = document.getElementById('meterBoardUpgrade');
         const mbVal = mbSel.value;
@@ -740,7 +829,7 @@ function calculateQuote() {
         const totalPv = costPanels + costRoofKit + costRoofSurcharge;
         const totalBattery = costInverter + costBattery + costGateway + costMount;
         const totalAccessories = costAcc + costEv + costHotWater;
-        const totalInstall = installPv + installBat + costMeterBoard;
+        const totalInstall = installPv + totalInstallBat + costMeterBoard;
         const totalCog = totalPv + totalBattery + totalAccessories + totalInstall + costCustomAddons;
 
         const zoneResult = lookupZone(document.getElementById('installPostcode').value);
@@ -754,13 +843,14 @@ function calculateQuote() {
         const priceBeforeRebates = totalCog + gpAmt + commAmt;
         const finalPrice = priceBeforeRebates - pvReb - batReb;
 
-        document.getElementById('costPanels').textContent = fmtIncGst(costPanels); document.getElementById('costInverter').textContent = fmtIncGst(costInverter);
+        document.getElementById('costPanels').textContent = fmtIncGst(costPanels);
+        document.getElementById('costInverter').textContent = costInverterUpgrade > 0 ? '+' + fmtIncGst(costInverterUpgrade) : '$0';
         document.getElementById('costRoofKit').textContent = fmtIncGst(costRoofKit); document.getElementById('totalPv').textContent = fmtIncGst(totalPv);
         document.getElementById('costBattery').textContent = fmtIncGst(costBattery); document.getElementById('costGateway').textContent = fmtIncGst(costGateway);
         document.getElementById('costMounting').textContent = fmtIncGst(costMount); document.getElementById('totalBattery').textContent = fmtIncGst(totalBattery);
         document.getElementById('costAccessories').textContent = fmtIncGst(costAcc); document.getElementById('costEvCharger').textContent = fmtIncGst(costEv);
         document.getElementById('costHotWater').textContent = fmtIncGst(costHotWater); document.getElementById('totalAccessories').textContent = fmtIncGst(totalAccessories);
-        document.getElementById('costInstallPv').textContent = fmtIncGst(installPv); document.getElementById('costInstallBattery').textContent = fmtIncGst(installBat);
+        document.getElementById('costInstallPv').textContent = fmtIncGst(installPv); document.getElementById('costInstallBattery').textContent = fmtIncGst(totalInstallBat);
         document.getElementById('costMeterBoard').textContent = fmtIncGst(costMeterBoard); document.getElementById('totalInstall').textContent = fmtIncGst(totalInstall);
         document.getElementById('costRoofSurcharge').textContent = fmtIncGst(costRoofSurcharge);
         document.getElementById('costCustomAddons').textContent = fmtIncGst(costCustomAddons);
@@ -836,7 +926,12 @@ function buildBOM() {
         const mountType = state.mountingType;
         const mountPrice = CONFIG.accessories?.[mountType === 'wall' ? 'mount_wall' : 'mount_ground'] ?? 202;
         const mountCode = CONFIG.accessories?.[mountType === 'wall' ? 'mount_wall_code' : 'mount_ground_code'] || '';
-        batItems.push({ desc: (mountType === 'wall' ? 'Wall' : 'Ground') + ' Mount Kit', sku: '', qty: 1, unit: mountPrice, total: mountPrice, supplier_code: mountCode });
+        const totalStackModules = bat.totalModules + 1; // batteries + energy controller
+        let mountQty = 1;
+        if (mountType === 'wall') {
+            mountQty = Math.ceil(totalStackModules / 3);
+        }
+        batItems.push({ desc: (mountType === 'wall' ? 'Wall' : 'Ground') + ' Mount Kit', sku: '', qty: mountQty, unit: mountPrice, total: mountQty * mountPrice, supplier_code: mountCode });
     }
 
     bom.push({ category: 'Battery & Energy Controller', items: batItems });
@@ -873,7 +968,12 @@ function buildBOM() {
     let installItems = [];
     installItems.push({ desc: 'PV Installation (' + state.sysKw.toFixed(2) + 'kW)', sku: 'Labour', qty: 1, unit: state.sysKw * state.installPvPerKw, total: state.sysKw * state.installPvPerKw, supplier_code: 'BDS:LABOUR-PV' });
     if (bat.totalModules > 0) {
-        installItems.push({ desc: 'Battery Installation', sku: 'Labour', qty: 1, unit: state.installBatPerStack, total: state.installBatPerStack, supplier_code: 'BDS:LABOUR-BAT' });
+        const totalStackModules = bat.totalModules + 1;
+        let bomMountKits = 1;
+        if (state.mountingType === 'wall') bomMountKits = Math.ceil(totalStackModules / 3);
+        const extraStacks = bomMountKits - 1;
+        const totalBatInstall = state.installBatPerStack * (1 + extraStacks);
+        installItems.push({ desc: 'Battery Installation (' + bomMountKits + ' stack' + (bomMountKits > 1 ? 's' : '') + ')', sku: 'Labour', qty: 1, unit: totalBatInstall, total: totalBatInstall, supplier_code: 'BDS:LABOUR-BAT' });
     }
     const mbSel = document.getElementById('meterBoardUpgrade');
     const mbVal = mbSel.value;
