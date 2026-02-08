@@ -8,7 +8,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 .header-text p { opacity: 0.5; font-size: 12px; letter-spacing: 1px; text-transform: uppercase; margin-top: 2px; }
 .content { display: grid; grid-template-columns: 1fr 420px; gap: 0; }
 .form-section { padding: 30px; border-right: 1px solid #222; }
-.quote-summary { padding: 24px; background: #111; position: sticky; top: 0; max-height: 100vh; overflow-y: auto; }
+.quote-summary { padding: 24px; background: #111; }
 .section { margin-bottom: 28px; }
 .section-title { font-size: 14px; font-weight: 600; color: #e000f0; margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px solid #2a2a2a; text-transform: uppercase; letter-spacing: 1px; }
 .form-group { margin-bottom: 14px; }
@@ -46,8 +46,5 @@ select option { background: #1e1e1e; color: #f0f0f0; }
 .generate-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(224,0,240,0.3); }
 .readonly-field { background-color: #161616 !important; color: #6b7280 !important; }
 /* Scrollbar styling */
-.quote-summary::-webkit-scrollbar { width: 6px; }
-.quote-summary::-webkit-scrollbar-track { background: #111; }
-.quote-summary::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
-.quote-summary::-webkit-scrollbar-thumb:hover { background: #e000f0; }
-@media (max-width: 968px) { .content { grid-template-columns: 1fr; } .form-section { border-right: none; border-bottom: 1px solid #222; } .quote-summary { position: static; max-height: none; } }
+
+@media (max-width: 968px) { .content { grid-template-columns: 1fr; } .form-section { border-right: none; border-bottom: 1px solid #222; } }
