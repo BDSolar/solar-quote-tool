@@ -36,43 +36,63 @@
                     <div class="form-group"><label>STC Zone</label><div class="info-box" id="stcZoneInfo" style="margin-top:0;font-size:13px;">Enter postcode</div></div>
                 </div>
             </div>
-            <div class="section">
+            <div class="grid-2-sections">
+            <div class="section" style="padding-bottom:8px;">
                 <div class="section-title">System Configuration</div>
                 <div class="form-group"><label>Phase Type</label><select id="phaseType"><option value="single_phase">Single Phase</option><option value="three_phase">Three Phase</option></select></div>
                 <div class="form-group"><label>Solar Panel</label><select id="panelSelect"></select></div>
-                <div class="form-group"><label>Panel Configuration</label><select id="panelInputMode"><option value="panels">Enter Number of Panels</option><option value="kw">Enter System Size (kW)</option></select></div>
                 <div class="grid-2">
-                    <div class="form-group" id="panelCountGroup"><label>Number of Panels</label><input type="number" id="panelCount" value="20" min="0"></div>
-                    <div class="form-group" id="systemSizeGroup" style="display:none;"><label>System Size (kW)</label><input type="number" id="systemSizeInput" value="9" min="0" step="0.1"></div>
+                    <div class="form-group"><label>Number of Panels</label><input type="number" id="panelCount" value="28" min="0"></div>
+                    <div class="form-group"><label>System Size</label><div class="info-box" id="systemSizeDisplay" style="margin-top:0;font-size:13px;font-weight:700;color:#e000f0;">9.50 kW</div></div>
                 </div>
-                <div class="info-box"><strong id="systemCalc">System: 9.00 kW (20 panels)</strong></div>
             </div>
-            <div class="section">
+            <div class="section" style="padding-bottom:8px;">
                 <div class="section-title">Battery Configuration</div>
-                <div class="form-group"><label>Desired Battery Capacity (kWh)</label><input type="number" id="desiredBatteryKwh" value="0" min="0" max="48" step="1"></div>
-                <div id="batteryConfigPanel" class="info-box" style="display:none;">
-                    <strong>Recommended Config:</strong> <span id="batteryBreakdown"></span>
-                    <div id="batteryAdjuster" style="margin-top:10px;padding-top:10px;border-top:1px solid #bfdbfe;">
-                        <div style="font-weight:600;margin-bottom:8px;">Adjust:</div>
-                        <div id="batteryAdjusterRows"></div>
-                        <div style="margin-top:8px;padding-top:8px;border-top:1px solid #bfdbfe;font-weight:600;">Total: <span id="batteryTotalDisplay">0</span> kWh (<span id="batteryModuleCount">0</span> modules)<span id="batteryCapWarning" style="color:#ef4444;display:none;"> Max <span id="maxModulesLabel">6</span> modules / <span id="maxKwhLabel">48</span> kWh</span></div>
-                    </div>
-                </div>
-                <div id="cecWarning" class="warn-box" style="display:none;"></div>
-                <div id="cecApproved" class="success-box" style="display:none;"></div>
-                <div class="form-group"><label>Battery Mounting Type</label><select id="mountingType"><option value="ground">Ground Mount</option><option value="wall">Wall Mount</option></select></div>
-                <div id="mountInfo" class="info-box" style="display:none;"></div>
-            </div>
-            <div class="section">
-                <div class="section-title">Energy Controller (Inverter)</div>
+                <div class="form-group"><label>Battery Capacity (kWh)</label><input type="number" id="desiredBatteryKwh" value="13" min="0" max="48" step="1"></div>
                 <div class="form-group"><label>Energy Controller</label><select id="inverterSelect"></select></div>
-                <div id="inverterInfo" class="info-box" style="display:none;"></div>
+                <div class="grid-2">
+                    <div class="form-group"><label>Battery Mounting Location</label><select id="mountingType"><option value="ground">Ground Mount</option><option value="wall">Wall Mount</option></select></div>
+                    <div class="form-group"><label>Extra Mount Cost</label><div class="info-box" id="mountCostDisplay" style="margin-top:0;font-size:13px;font-weight:700;color:#e000f0;">$0</div></div>
+                </div>
+            </div>
+            </div>
+            <div class="grid-2-sections">
+            <div style="padding:0 20px;">
+                <div id="controllerMountBox" class="info-box" style="display:none;">
+                    <div style="font-weight:700;padding-bottom:8px;margin-bottom:8px;border-bottom:1px solid #bfdbfe;">Controller / Mounting Configuration</div>
+                    <div id="controllerMountRows"></div>
+                </div>
                 <div id="inverterWarning" class="warn-box" style="display:none;"></div>
             </div>
+            <div style="padding:0 20px;">
+                <div id="batteryConfigPanel" class="info-box" style="display:none;">
+                    <div style="font-weight:700;padding-bottom:8px;margin-bottom:8px;border-bottom:1px solid #bfdbfe;">Total: <span id="batteryTotalDisplay">0</span> kWh (<span id="batteryModuleCount">0</span> modules)<span id="batteryCapWarning" style="color:#ef4444;display:none;"> Max <span id="maxModulesLabel">6</span> modules / <span id="maxKwhLabel">48</span> kWh</span></div>
+                    <div id="batteryAdjusterRows"></div>
+                </div>
+                <span id="batteryBreakdown" style="display:none;"></span>
+                <div id="cecWarning" class="warn-box" style="display:none;"></div>
+                <div id="cecApproved" style="display:none;"></div>
+            </div>
+            </div>
             <div class="section">
-                <div class="section-title">Gateway (Backup Power)</div>
+                <div class="section-title">Additions</div>
                 <div class="addon-item"><input type="checkbox" id="addGateway"><label for="addGateway">Add Gateway for blackout protection</label></div>
                 <div id="gatewayOptions" style="display:none;"><div class="form-group"><label>Gateway Model</label><select id="gatewaySelect"></select></div></div>
+                <div class="addon-item"><input type="checkbox" id="addPowerSensor" checked><label for="addPowerSensor">Power Sensor</label><span class="addon-price" id="powerSensorPrice">$101</span></div>
+                <div class="addon-item"><input type="checkbox" id="add4GModule"><label for="add4GModule">4G Comms Module (poor Wi-Fi)</label><span class="addon-price" id="price4GModule">$177</span></div>
+                <div class="addon-item"><input type="checkbox" id="addSub1GKit"><label for="addSub1GKit">Sub1G Sensor Kit</label><span class="addon-price" id="priceSub1GKit">$127</span></div>
+                <div class="addon-item"><input type="checkbox" id="addEvCharger"><label for="addEvCharger">EV Charger</label></div>
+                <div id="evChargerOptions" style="display:none;">
+                    <div class="form-group"><label>Charger Model</label>
+                        <select id="evChargerType"><option value="none"> -  Select  - </option></select>
+                    </div>
+                </div>
+                <div class="addon-item"><input type="checkbox" id="addonHotWater"><label for="addonHotWater">Hot Water Timer</label><span class="addon-price" id="hotWaterPrice">$350</span></div>
+            </div>
+            <div class="section">
+                <div class="section-title">Site Specific Add-ons</div>
+                <div id="customAddons"></div>
+                <button class="add-custom-btn" onclick="addCustomAddon()">+ Add Custom Item</button>
             </div>
             <div class="section">
                 <div class="section-title">Roof &amp; Mounting</div>
@@ -89,19 +109,6 @@
                 </div>
             </div>
             <div class="section">
-                <div class="section-title">Accessories</div>
-                <div class="addon-item"><input type="checkbox" id="addPowerSensor" checked><label for="addPowerSensor">Power Sensor</label><span class="addon-price" id="powerSensorPrice">$101</span></div>
-                <div class="addon-item"><input type="checkbox" id="add4GModule"><label for="add4GModule">4G Comms Module (poor Wi-Fi)</label><span class="addon-price" id="price4GModule">$177</span></div>
-                <div class="addon-item"><input type="checkbox" id="addSub1GKit"><label for="addSub1GKit">Sub1G Sensor Kit</label><span class="addon-price" id="priceSub1GKit">$127</span></div>
-                <div class="addon-item"><input type="checkbox" id="addEvCharger"><label for="addEvCharger">EV Charger</label></div>
-                <div id="evChargerOptions" style="display:none;">
-                    <div class="form-group"><label>Charger Model</label>
-                        <select id="evChargerType"><option value="none"> -  Select  - </option></select>
-                    </div>
-                </div>
-                <div class="addon-item"><input type="checkbox" id="addonHotWater"><label for="addonHotWater">Hot Water Timer</label><span class="addon-price" id="hotWaterPrice">$350</span></div>
-            </div>
-            <div class="section">
                 <div class="section-title">Installation Services</div>
                 <div class="grid-2">
                     <div class="form-group"><label>PV Install ($/kW)</label><input type="number" id="installPerKwPv" value="300" min="0" step="1"></div>
@@ -112,11 +119,6 @@
                         <option value="none">None</option>
                     </select>
                 </div>
-            </div>
-            <div class="section">
-                <div class="section-title">Custom Add-ons</div>
-                <div id="customAddons"></div>
-                <button class="add-custom-btn" onclick="addCustomAddon()">+ Add Custom Item</button>
             </div>
             <div class="section">
                 <div class="section-title">STC Rebates &amp; Margin</div>
@@ -163,7 +165,7 @@
                 <div class="summary-row total"><span>Total Installation</span><span id="totalInstall">$0</span></div>
             </div>
             <div class="summary-card">
-                <div class="summary-title">Custom Add-ons</div>
+                <div class="summary-title">Site Specific Add-ons</div>
                 <div class="summary-row"><span>Custom Items</span><span id="costCustomAddons">$0</span></div>
             </div>
             <div class="summary-card">

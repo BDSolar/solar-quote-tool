@@ -61,7 +61,6 @@ const state = {
 
 function syncStateFromDOM() {
     state.phase = document.getElementById('phaseType').value;
-    state.panelMode = document.getElementById('panelInputMode').value;
     state.roofType = document.getElementById('roofType').value;
     state.orientation = document.getElementById('panelOrientation').value;
     state.numRows = parseInt(document.getElementById('numRows').value) || 1;
@@ -90,16 +89,9 @@ function syncStateFromDOM() {
         state.panelSupplierCode = panelOpt.dataset.supplierCode || '';
     }
 
-    // Panel count / system size
-    if (state.panelMode === 'panels') {
-        state.panelCount = parseInt(document.getElementById('panelCount').value) || 0;
-        state.sysKw = (state.panelCount * state.panelWattage) / 1000;
-        document.getElementById('systemSizeInput').value = state.sysKw.toFixed(2);
-    } else {
-        state.sysKw = parseFloat(document.getElementById('systemSizeInput').value) || 0;
-        state.panelCount = Math.ceil((state.sysKw * 1000) / state.panelWattage);
-        document.getElementById('panelCount').value = state.panelCount;
-    }
+    // Panel count - always from input, calculate system size
+    state.panelCount = parseInt(document.getElementById('panelCount').value) || 0;
+    state.sysKw = (state.panelCount * state.panelWattage) / 1000;
 
     // Inverter from dropdown
     const invSel = document.getElementById('inverterSelect');
@@ -404,7 +396,6 @@ function bindEvents() {
     });
     document.getElementById('phaseType').addEventListener('change', () => { userChangedInverter = false; populateInverters(); populateGateways(); updateSensorPrice(); calculateQuote(); });
     document.getElementById('panelSelect').addEventListener('change', calculateQuote);
-    document.getElementById('panelInputMode').addEventListener('change', togglePanelMode);
     document.getElementById('desiredBatteryKwh').addEventListener('input', () => { manualBatteryMode = false; userChangedInverter = false; });
     document.getElementById('inverterSelect').addEventListener('change', () => { userChangedInverter = true; calculateQuote(); });
     document.getElementById('roofType').addEventListener('change', updateRoofInfo);
@@ -566,13 +557,6 @@ function populateMeterBoardUpgrade() {
 // PANEL MODE TOGGLE
 // ====================
 
-function togglePanelMode() {
-    const m = document.getElementById('panelInputMode').value;
-    document.getElementById('panelCountGroup').style.display = m === 'panels' ? 'block' : 'none';
-    document.getElementById('systemSizeGroup').style.display = m === 'kw' ? 'block' : 'none';
-    calculateQuote();
-}
-
 // ====================
 // BATTERY MANAGEMENT
 // ====================
@@ -720,7 +704,8 @@ function calculateQuote() {
 
         syncStateFromDOM();
 
-        document.getElementById('systemCalc').textContent = 'System: ' + state.sysKw.toFixed(2) + ' kW (' + state.panelCount + ' panels)';
+        const sizeEl = document.getElementById('systemSizeDisplay');
+        if (sizeEl) sizeEl.textContent = state.sysKw.toFixed(2) + ' kW';
 
         const desired = state.desiredBatteryKwh;
         let actualKwh = 0;
@@ -732,7 +717,7 @@ function calculateQuote() {
             if (actualKwh > desired) document.getElementById('batteryBreakdown').innerHTML += ' <span style="color:#34d399;">(+' + (actualKwh - desired) + 'kWh, cheaper)</span>';
         } else if (manualBatteryMode) { actualKwh = getBatterySummary().totalKwh; }
         state.actualBatteryKwh = actualKwh;
-        document.getElementById('batteryConfigPanel').style.display = desired > 0 ? 'block' : 'none';
+        document.getElementById('batteryConfigPanel').style.display = 'block';
 
         // Always calculate recommended inverter (even if user changed)
         const recSku = autoSelectInverter(state.sysKw, actualKwh, state.phase);
@@ -745,19 +730,13 @@ function calculateQuote() {
             syncStateFromDOM(); // Re-sync after inverter change
         }
 
-        document.getElementById('inverterInfo').style.display = 'block';
-        const upgradeCost = state.invPrice - recPrice;
-        let invInfoText = 'Max PV: ' + state.invMaxPv + 'kW | Inverter: ' + state.invKw + 'kW | Oversizing: ' + (state.phase === 'single_phase' ? '200%' : '160%');
-        if (upgradeCost > 0) invInfoText += ' | Upgrade: +' + fmtIncGst(upgradeCost);
-        document.getElementById('inverterInfo').innerHTML = invInfoText;
         if (state.sysKw > state.invMaxPv) { document.getElementById('inverterWarning').style.display = 'block'; document.getElementById('inverterWarning').innerHTML = '[!] PV (' + state.sysKw.toFixed(1) + 'kW) exceeds max (' + state.invMaxPv + 'kW). Select larger inverter.'; }
         else { document.getElementById('inverterWarning').style.display = 'none'; }
 
         const cec = checkCec(state.invSku, actualKwh, state.phase);
         if (actualKwh > 0) {
-            document.getElementById('cecApproved').style.display = cec.ok ? 'block' : 'none'; document.getElementById('cecApproved').textContent = cec.ok ? cec.msg : '';
             document.getElementById('cecWarning').style.display = !cec.ok ? 'block' : 'none'; document.getElementById('cecWarning').textContent = !cec.ok ? cec.msg : '';
-        } else { document.getElementById('cecWarning').style.display = 'none'; document.getElementById('cecApproved').style.display = 'none'; }
+        } else { document.getElementById('cecWarning').style.display = 'none'; }
 
         updateInverterValidity();
 
@@ -804,24 +783,43 @@ function calculateQuote() {
         const mountingResult = getMountingKitItems(state.panelCount, state.roofType, state.orientation, state.numRows, state.numArrays, state.tiltAngle, state.panelWidthMm, state.panelHeightMm);
         const costRoofKit = mountingResult.total;
 
-        // Update mount info - only show for wall mount with extra kits needed
-        const mountInfoEl = document.getElementById('mountInfo');
-        if (mountInfoEl) {
-            if (bat.totalModules > 0 && state.mountingType === 'wall' && extraMountKits > 0) {
-                const totalStackModules = bat.totalModules + 1;
-                const gp = state.gpMargin / 100;
-                const extraMountCost = extraMountKits * wallMountPrice;
-                const sellExtraMount = Math.round(extraMountCost * (1 + gp) * GST);
-                const sellExtraStack = Math.round(extraStackCost * (1 + gp) * GST);
-                let mountText = totalStackModules + ' modules (inc controller) across ' + mountKits + ' wall mount stacks';
-                mountText += ' | Extra mount kit: +$' + sellExtraMount.toLocaleString();
-                mountText += ' | Extra stack install: +$' + sellExtraStack.toLocaleString();
-                mountInfoEl.innerHTML = mountText;
-                mountInfoEl.style.display = 'block';
+        // Controller/Mounting display
+        document.getElementById('controllerMountBox').style.display = 'block';
+        const upgradeCost = state.invPrice - recPrice;
+        const cmRows = document.getElementById('controllerMountRows');
+        let cmHtml = '';
+        cmHtml += '<div style="display:flex;align-items:center;justify-content:space-between;margin:12px 0;">'
+            + '<span><strong>Max PV:</strong> ' + state.invMaxPv + 'kW | <strong>Inverter:</strong> ' + state.invKw + 'kW | <strong>Oversizing:</strong> ' + (state.phase === 'single_phase' ? '200%' : '160%');
+        if (upgradeCost > 0) cmHtml += ' | <strong>Upgrade:</strong> +' + fmtIncGst(upgradeCost);
+        cmHtml += '</span></div>';
+        if (bat.totalModules > 0) {
+            const totalStackModules = bat.totalModules + 1;
+            const gp = state.gpMargin / 100;
+            if (state.mountingType === 'wall') {
+                cmHtml += '<div style="display:flex;align-items:center;justify-content:space-between;margin:12px 0;"><span><strong>Mount:</strong> ' + totalStackModules + ' modules (inc controller) across ' + mountKits + ' wall stack' + (mountKits > 1 ? 's' : '') + '</span></div>';
             } else {
-                mountInfoEl.style.display = 'none';
+                cmHtml += '<div style="display:flex;align-items:center;justify-content:space-between;margin:12px 0;"><span><strong>Mount:</strong> ' + totalStackModules + ' modules (inc controller) — 1x Ground Mount</span></div>';
+            }
+        } else {
+            cmHtml += '<div style="display:flex;align-items:center;justify-content:space-between;margin:12px 0;"><span><strong>Mount:</strong> No battery selected</span></div>';
+        }
+        cmRows.innerHTML = cmHtml;
+
+        // Update extra mount cost display
+        const mountCostEl = document.getElementById('mountCostDisplay');
+        if (mountCostEl) {
+            if (bat.totalModules > 0 && state.mountingType === 'wall' && extraMountKits > 0) {
+                const gp2 = state.gpMargin / 100;
+                const extraMountCost = extraMountKits * wallMountPrice;
+                const sellExtraMount = Math.round(extraMountCost * (1 + gp2) * GST);
+                const sellExtraStack = Math.round(extraStackCost * (1 + gp2) * GST);
+                const totalExtraCost = sellExtraMount + sellExtraStack;
+                mountCostEl.textContent = '+$' + totalExtraCost.toLocaleString();
+            } else {
+                mountCostEl.textContent = '$0';
             }
         }
+
         let costMeterBoard = 0;
         const mbSel = document.getElementById('meterBoardUpgrade');
         const mbVal = mbSel.value;

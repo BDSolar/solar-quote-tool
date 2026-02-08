@@ -21,6 +21,7 @@ select { appearance: none; -webkit-appearance: none; background-image: url("data
 input:focus, select:focus { outline: none; border-color: #e000f0; box-shadow: 0 0 0 3px rgba(224,0,240,0.15); }
 select option { background: #1e1e1e; color: #f0f0f0; }
 .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.grid-2-sections { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .info-box { background: #1a1025; border-left: 4px solid #e000f0; padding: 10px 12px; border-radius: 4px; font-size: 13px; color: #d8b4fe; margin: 8px 0; }
 .warn-box { background: #1a1708; border-left: 4px solid #f59e0b; padding: 10px 12px; border-radius: 4px; font-size: 13px; color: #fbbf24; margin: 8px 0; }
 .success-box { background: #071a12; border-left: 4px solid #059669; padding: 10px 12px; border-radius: 4px; font-size: 13px; color: #34d399; margin: 8px 0; }
@@ -47,4 +48,4 @@ select option { background: #1e1e1e; color: #f0f0f0; }
 .readonly-field { background-color: #161616 !important; color: #6b7280 !important; }
 /* Scrollbar styling */
 
-@media (max-width: 968px) { .content { grid-template-columns: 1fr; } .form-section { border-right: none; border-bottom: 1px solid #222; } }
+@media (max-width: 968px) { .content { grid-template-columns: 1fr; } .form-section { border-right: none; border-bottom: 1px solid #222; } .grid-2-sections { grid-template-columns: 1fr; } }
