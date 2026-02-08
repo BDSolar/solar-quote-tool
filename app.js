@@ -338,7 +338,8 @@ async function loadConfig() {
     document.getElementById('batteryRebatePerKwh').value = CONFIG.rebates?.battery_rebate_per_kwh ?? 311;
     document.getElementById('gpMargin').value = CONFIG.gp_margin ?? 30;
     document.getElementById('salesCommission').value = CONFIG.sales_commission ?? 7;
-    document.getElementById('hotWaterPrice').textContent = '$' + (CONFIG.addons?.hot_water_timer ?? 350);
+    const hwEl = document.getElementById('hotWaterPrice');
+    if (hwEl) hwEl.textContent = '$' + (CONFIG.addons?.hot_water_timer ?? 350);
     // Populate meter board upgrade dropdown
     populateMeterBoardUpgrade();
     // Build all UI from config
