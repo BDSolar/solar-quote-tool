@@ -15,6 +15,16 @@
             <p id="headerSubtitle">Sigenergy Residential Quote Builder</p>
         </div>
     </div>
+    <div id="quoteSearchBar" style="display:flex;gap:8px;margin-bottom:16px;align-items:center;">
+        <input type="text" id="quoteSearchInput" placeholder="Search quotes by name, address, or phone..." style="flex:1;">
+        <button class="add-custom-btn" style="margin:0;white-space:nowrap;" onclick="searchQuotes()">Search</button>
+        <button class="add-custom-btn" style="margin:0;white-space:nowrap;background:#1e1e1e;border:1px solid #333;" onclick="clearQuote()">New Quote</button>
+    </div>
+    <div id="quoteSearchResults" style="display:none;margin-bottom:16px;"></div>
+    <div id="activeQuoteBar" style="display:none;margin-bottom:16px;padding:10px 16px;background:#141414;border:1px solid #e000f0;border-radius:8px;font-size:13px;color:#d1d5db;align-items:center;gap:8px;">
+        <span id="activeQuoteInfo"></span>
+        <span id="activeQuoteId" style="color:#6b7280;font-size:11px;margin-left:8px;"></span>
+    </div>
     <div class="content">
         <div class="form-section">
             <div class="section">
@@ -41,7 +51,7 @@
                 <div class="form-group"><label>Solar Panel</label><select id="panelSelect"></select></div>
                 <div class="form-group"><label>Panel Configuration</label><select id="panelInputMode"><option value="panels">Enter Number of Panels</option><option value="kw">Enter System Size (kW)</option></select></div>
                 <div class="grid-2">
-                    <div class="form-group" id="panelCountGroup"><label>Number of Panels</label><input type="number" id="panelCount" value="20" min="0"></div>
+                    <div class="form-group" id="panelCountGroup"><label>Number of Panels</label><input type="number" id="panelCount" value="28" min="0"></div>
                     <div class="form-group" id="systemSizeGroup" style="display:none;"><label>System Size (kW)</label><input type="number" id="systemSizeInput" value="9" min="0" step="0.1"></div>
                 </div>
                 <div class="info-box"><strong id="systemCalc">System: 9.00 kW (20 panels)</strong></div>
@@ -51,7 +61,7 @@
                 <div id="batteryTypeGroup" style="display:none;">
                     <div class="form-group"><label>Battery Type</label><select id="batteryTypeSelect"></select></div>
                 </div>
-                <div class="form-group"><label>Desired Battery Capacity (kWh)</label><input type="number" id="desiredBatteryKwh" value="0" min="0" max="48" step="1"></div>
+                <div class="form-group"><label>Desired Battery Capacity (kWh)</label><input type="number" id="desiredBatteryKwh" value="13" min="0" max="48" step="1"></div>
                 <div id="batteryConfigPanel" class="info-box" style="display:none;">
                     <strong>Recommended Config:</strong> <span id="batteryBreakdown"></span>
                     <div id="batteryAdjuster" style="margin-top:10px;padding-top:10px;border-top:1px solid #bfdbfe;">
@@ -61,6 +71,7 @@
                     </div>
                 </div>
                 <div id="minModulesWarning" class="warn-box" style="display:none;"></div>
+                <div id="phaseCapWarning" class="warn-box" style="display:none;"></div>
                 <div id="cecWarning" class="warn-box" style="display:none;"></div>
                 <div id="cecApproved" class="success-box" style="display:none;"></div>
             </div>
@@ -92,7 +103,10 @@
                 <div id="tiltAngleGroup" style="display:none;">
                     <div class="form-group"><label>Tilt Angle (Flat Roof)</label><select id="tiltAngle"><option value="10_15">10-15&deg; ($11.99/panel)</option><option value="15_30">15-30&deg; ($13.99/panel)</option><option value="30_60">30-60&deg; ($14.99/panel)</option></select></div>
                 </div>
-                <div class="form-group" id="batteryMountGroup"><label>Battery Mounting Type</label><select id="mountingType"><option value="wall">Wall Mount ($222 inc GST)</option><option value="ground">Ground Mount ($222 inc GST)</option></select></div>
+                <div class="grid-2" id="batteryMountGroup">
+                    <div class="form-group"><label>Battery Mounting Type</label><select id="mountingType"><option value="wall">Wall Mount</option><option value="ground" selected>Ground Mount</option></select></div>
+                    <div class="form-group"><label>Extra Mount Cost</label><div class="info-box" id="extraMountCostInfo" style="margin-top:0;font-size:13px;">$0</div></div>
+                </div>
             </div>
             <div class="section">
                 <div class="section-title">Accessories</div>
@@ -108,8 +122,7 @@
             </div>
             <div class="section">
                 <div class="section-title">Other Add-ons</div>
-                <div class="addon-item"><input type="checkbox" id="addonHotWater"><label for="addonHotWater">Hot Water Timer</label><span class="addon-price" id="hotWaterPrice">$350</span></div>
-                <div class="addon-item"><input type="checkbox" id="addonMeterBoard"><label for="addonMeterBoard">New Meter Board</label><span class="addon-price" id="meterBoardPrice">$800</span></div>
+                <div id="addonsContainer"></div>
                 <div id="customAddons"></div>
                 <button class="add-custom-btn" onclick="addCustomAddon()">+ Add Custom Item</button>
             </div>
@@ -123,11 +136,14 @@
                     <div class="form-group"><label>Battery Rebate ($/kWh)</label><input type="number" id="batteryRebatePerKwh" value="311" step="1" class="readonly-field" readonly></div>
                     <div class="form-group"><label>GP Margin (%)</label><input type="number" id="gpMargin" value="30" min="0" max="100" step="0.1"></div>
                 </div>
+                <div class="grid-2">
+                    <div class="form-group"><label>Sales Commission (%)</label><input type="number" id="salesCommission" value="7" min="0" max="100" step="0.1"></div>
+                    <div class="form-group"></div>
+                </div>
             </div>
         </div>
         <div class="quote-summary">
             <div style="text-align:right;font-size:11px;color:#6b7280;margin-bottom:4px;">All prices inc GST</div>
-            <div class="summary-card"><div class="summary-title">System Overview</div><div class="system-specs" id="systemSpecs">Configure system to see details</div></div>
             <div class="summary-card">
                 <div class="summary-title">PV Equipment</div>
                 <div class="summary-row"><span>Panels</span><span id="costPanels">$0</span></div>
@@ -156,11 +172,13 @@
                 <div class="summary-title">Quote Total</div>
                 <div class="summary-row total"><span>Total COG</span><span id="totalCog">$0</span></div>
                 <div class="summary-row"><span id="gpLabel">GP (30%)</span><span id="gpAmount">$0</span></div>
+                <div class="summary-row"><span id="commLabel">Commission (7%)</span><span id="commAmount">$0</span></div>
                 <div class="summary-row total"><span>Price Before Rebates</span><span id="priceBeforeRebates">$0</span></div>
                 <div class="summary-row rebate"><span id="pvRebateLabel">PV STC Rebate</span><span id="stcPvRebate">-$0</span></div>
                 <div class="summary-row rebate"><span>Battery STC Rebate</span><span id="stcBatteryRebate">-$0</span></div>
                 <div class="summary-row final"><span>Customer Price (inc GST)</span><span id="finalPrice">$0</span></div>
             </div>
+            <button class="generate-btn" onclick="saveQuote()" style="background: linear-gradient(135deg, #e000f0 0%, #9000a0 100%); margin-bottom: 8px;">Save Quote</button>
             <button class="generate-btn" onclick="generateQuote()"> Generate Quote PDF</button>
             <button class="generate-btn" style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); border: 1px solid #e000f0; margin-top: 8px;" onclick="showBOM()">View Bill of Materials</button>
         </div>
@@ -180,6 +198,8 @@
     </div>
 </div>
 
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

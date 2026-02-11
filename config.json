@@ -308,7 +308,9 @@
 
     "addons": {
         "hot_water_timer": 350, "hot_water_timer_code": "BDS:HWT-001",
-        "meter_board": 800, "meter_board_code": "BDS:MB-001"
+        "meter_board_partial": 800, "meter_board_partial_code": "BDS:MB-PART",
+        "meter_board_full": 1200, "meter_board_full_code": "BDS:MB-FULL",
+        "meter_board_relocation": 1800, "meter_board_relocation_code": "BDS:MB-RELOC"
     },
 
     "gp_margin": 30,
