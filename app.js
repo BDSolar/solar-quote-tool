@@ -101,7 +101,7 @@ function syncStateFromDOM() {
     state.batteryRebatePerKwh = parseFloat(document.getElementById('batteryRebatePerKwh').value) || 0;
     state.installPvPerKw = parseFloat(document.getElementById('installPerKwPv').value) || 0;
     state.installBatPerStack = parseFloat(document.getElementById('installPerStack').value) || 0;
-    state.desiredBatteryKwh = parseFloat(document.getElementById('desiredBatteryKwh').value) || 0;
+    state.desiredBatteryKwh = Math.min(parseFloat(document.getElementById('desiredBatteryKwh').value) || 0, 96);
     const panelSel = document.getElementById('panelSelect');
     const panelOpt = panelSel.options[panelSel.selectedIndex];
     if (panelOpt) {
@@ -239,7 +239,7 @@ function switchManufacturer() {
     selectedAccessories = []; selectedAddons = [];
     resetBatteryQtys(); populateBatteryTypes(); buildBatteryUI(); populateInverters(); populateGateways(); populateEvChargers(); buildAccessoriesUI(); buildAddonsUI(); updateBatteryMountVisibility(); updateHeaderSubtitle(); updateInverterSectionLabel();
     document.getElementById('desiredBatteryKwh').value = 0;
-    document.getElementById('desiredBatteryKwh').max = getBatteryRules().max_kwh;
+    document.getElementById('desiredBatteryKwh').max = 96;
     calculateQuote();
 }
 
@@ -260,7 +260,7 @@ function switchBatteryType() {
     currentBatteryTypeIdx = parseInt(document.getElementById('batteryTypeSelect').value) || 0;
     manualBatteryMode = false; userChangedInverter = false; resetBatteryQtys(); buildBatteryUI();
     document.getElementById('desiredBatteryKwh').value = 0;
-    document.getElementById('desiredBatteryKwh').max = getBatteryRules().max_kwh;
+    document.getElementById('desiredBatteryKwh').max = 96;
     calculateQuote();
 }
 
@@ -418,7 +418,7 @@ function bindEvents() {
     document.getElementById('phaseType').addEventListener('change', () => { syncStateFromDOM(); userChangedInverter = false; populateInverters(); populateGateways(); updateAccessoryPrices(); calculateQuote(); });
     document.getElementById('panelSelect').addEventListener('change', calculateQuote);
     document.getElementById('panelInputMode').addEventListener('change', togglePanelMode);
-    document.getElementById('desiredBatteryKwh').addEventListener('input', () => { manualBatteryMode = false; userChangedInverter = false; calculateQuote(); });
+    document.getElementById('desiredBatteryKwh').addEventListener('input', () => { const el = document.getElementById('desiredBatteryKwh'); if (parseFloat(el.value) > 96) el.value = 96; manualBatteryMode = false; userChangedInverter = false; calculateQuote(); });
     document.getElementById('inverterSelect').addEventListener('change', () => { userChangedInverter = true; calculateQuote(); });
     document.getElementById('roofType').addEventListener('change', updateRoofInfo);
     document.getElementById('panelOrientation').addEventListener('change', () => { updateMountingKitInfo(); calculateQuote(); });
