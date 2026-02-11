@@ -293,7 +293,7 @@ function buildAccessoriesUI() {
     // Build dropdown
     const row = document.createElement('div'); row.style.cssText = 'display:flex;gap:8px;margin-bottom:10px;';
     const sel = document.createElement('select'); sel.id = 'accessoryDropdown'; sel.style.flex = '1';
-    sel.innerHTML = '<option value="">— Select accessory —</option>';
+    sel.innerHTML = '<option value="">â€” Select accessory â€”</option>';
     accs.forEach((acc, idx) => {
         const price = acc.phase_dependent ? (state.phase === 'single_phase' ? acc.price_single : acc.price_three) : acc.price;
         const o = document.createElement('option'); o.value = idx; o.textContent = acc.label + ' ($' + price + ')'; sel.appendChild(o);
@@ -354,9 +354,9 @@ function getAddonOptions() {
     const mbp = CONFIG.addons?.meter_board_partial ?? 800;
     const mbf = CONFIG.addons?.meter_board_full ?? 1200;
     const mbr = CONFIG.addons?.meter_board_relocation ?? 1800;
-    opts.push({ id: 'meter_board_partial', label: 'Meter Board — Partial', price: mbp, supplier_code: CONFIG.addons?.meter_board_partial_code || 'BDS:MB-PART' });
-    opts.push({ id: 'meter_board_full', label: 'Meter Board — Full', price: mbf, supplier_code: CONFIG.addons?.meter_board_full_code || 'BDS:MB-FULL' });
-    opts.push({ id: 'meter_board_relocation', label: 'Meter Board — Full + Relocation', price: mbr, supplier_code: CONFIG.addons?.meter_board_relocation_code || 'BDS:MB-RELOC' });
+    opts.push({ id: 'meter_board_partial', label: 'Meter Board â€” Partial', price: mbp, supplier_code: CONFIG.addons?.meter_board_partial_code || 'BDS:MB-PART' });
+    opts.push({ id: 'meter_board_full', label: 'Meter Board â€” Full', price: mbf, supplier_code: CONFIG.addons?.meter_board_full_code || 'BDS:MB-FULL' });
+    opts.push({ id: 'meter_board_relocation', label: 'Meter Board â€” Full + Relocation', price: mbr, supplier_code: CONFIG.addons?.meter_board_relocation_code || 'BDS:MB-RELOC' });
     return opts;
 }
 
@@ -365,7 +365,7 @@ function buildAddonsUI() {
     const opts = getAddonOptions();
     const row = document.createElement('div'); row.style.cssText = 'display:flex;gap:8px;margin-bottom:10px;';
     const sel = document.createElement('select'); sel.id = 'addonDropdown'; sel.style.flex = '1';
-    sel.innerHTML = '<option value="">— Select add-on —</option>';
+    sel.innerHTML = '<option value="">â€” Select add-on â€”</option>';
     opts.forEach((o, idx) => { const opt = document.createElement('option'); opt.value = idx; opt.textContent = o.label + ' ($' + o.price + ')'; sel.appendChild(opt); });
     const btn = document.createElement('button'); btn.className = 'add-custom-btn'; btn.style.marginTop = '0'; btn.textContent = '+ Add';
     btn.addEventListener('click', () => {
@@ -416,7 +416,7 @@ function bindEvents() {
     document.getElementById('phaseType').addEventListener('change', () => { userChangedInverter = false; populateInverters(); populateGateways(); updateAccessoryPrices(); calculateQuote(); });
     document.getElementById('panelSelect').addEventListener('change', calculateQuote);
     document.getElementById('panelInputMode').addEventListener('change', togglePanelMode);
-    document.getElementById('desiredBatteryKwh').addEventListener('input', () => { manualBatteryMode = false; userChangedInverter = false; });
+    document.getElementById('desiredBatteryKwh').addEventListener('input', () => { manualBatteryMode = false; userChangedInverter = false; calculateQuote(); });
     document.getElementById('inverterSelect').addEventListener('change', () => { userChangedInverter = true; calculateQuote(); });
     document.getElementById('roofType').addEventListener('change', updateRoofInfo);
     document.getElementById('panelOrientation').addEventListener('change', () => { updateMountingKitInfo(); calculateQuote(); });
