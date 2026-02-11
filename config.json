@@ -32,9 +32,9 @@
             "battery_types": [
                 {
                     "id": "sig_default",
-                    "label": "SigenStor (5kWh / 8kWh)",
+                    "label": "SigenStor (8kWh)",
                     "modules": [
-                        { "kwh": 5, "usable_kwh": 5.2, "price": 2905, "label": "5 kWh", "supplier_code": "SIG:BAT-5.0" },
+                        { "kwh": 5, "usable_kwh": 5.2, "price": 2905, "label": "5 kWh", "supplier_code": "SIG:BAT-5.0", "enabled": false },
                         { "kwh": 8, "usable_kwh": 7.8, "price": 3632, "label": "8 kWh", "supplier_code": "SIG:BAT-8.0" }
                     ],
                     "can_mix": true,
