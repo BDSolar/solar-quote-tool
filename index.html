@@ -69,17 +69,17 @@
                 </div>
                 <div class="grid-2">
                     <div class="form-group"><label id="gatewayDropdownLabel">Gateway</label><select id="gatewaySelect"></select></div>
-                    <div class="addon-item" style="margin-bottom:0;align-self:end;"><input type="checkbox" id="addPowerSensor" checked><label for="addPowerSensor">Power Sensor</label><span class="addon-price" id="powerSensorPrice">$101</span></div>
+                    <div class="form-group"><label>Power Sensor</label><div style="width:100%;padding:7px 12px;border:1px solid var(--separator-hover);border-radius:var(--radius-sm);font-size:14px;font-weight:400;background:var(--bg-input);color:var(--text-primary);height:36px;display:flex;align-items:center;justify-content:space-between;letter-spacing:-0.01em;"><span id="powerSensorModel">Sigen Sensor TP-CT100</span><span style="color:var(--green);font-size:12px;font-weight:500;">Included</span></div></div>
                 </div>
                 <div id="batteryConfigPanel" class="info-box" style="display:none;">
                     <strong>Recommended Config:</strong> <span id="batteryBreakdown"></span>
                 </div>
                 <div id="inverterInfo" class="info-box" style="display:none;"></div>
-                <div id="inverterWarning" class="warn-box" style="display:none;"></div>
-                <div id="minModulesWarning" class="warn-box" style="display:none;"></div>
-                <div id="phaseCapWarning" class="warn-box" style="display:none;"></div>
-                <div id="cecWarning" class="warn-box" style="display:none;"></div>
-                <div id="cecApproved" class="success-box" style="display:none;"></div>
+                <div id="inverterWarning" class="cec-shield warning" style="display:none;"></div>
+                <div id="minModulesWarning" class="cec-shield warning" style="display:none;"></div>
+                <div id="phaseCapWarning" class="cec-shield warning" style="display:none;"></div>
+                <div id="cecWarning" class="cec-shield warning" style="display:none;"></div>
+                <div id="cecApproved" class="cec-shield approved" style="display:none;"></div>
             </div>
             <div class="section">
                 <div class="section-title">Installation &amp; Mounting</div>

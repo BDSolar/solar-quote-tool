@@ -306,6 +306,47 @@ select option {
     margin: 8px 0;
 }
 
+.cec-shield {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border-radius: var(--radius-sm);
+    margin: 8px 0;
+}
+.cec-shield.approved {
+    background: var(--green-bg);
+    border: 1px solid rgba(48, 209, 88, 0.15);
+}
+.cec-shield.warning {
+    background: var(--yellow-bg);
+    border: 1px solid rgba(255, 214, 10, 0.15);
+}
+.cec-shield svg {
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
+}
+.cec-shield .shield-text {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+.cec-shield .shield-label {
+    font-size: 12px;
+    font-weight: 600;
+}
+.cec-shield.approved .shield-label {
+    color: var(--green);
+}
+.cec-shield.warning .shield-label {
+    color: var(--yellow);
+}
+.cec-shield .shield-detail {
+    font-size: 11px;
+    color: var(--text-secondary);
+}
+
 .addon-item {
     display: flex;
     align-items: center;
