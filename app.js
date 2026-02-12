@@ -973,7 +973,7 @@ function renderDualStackBreakdown() {
             const selected = opt.sku === currentSku ? ' selected' : '';
             const disabled = !opt.cecValid ? ' disabled' : '';
             const style = !opt.cecValid ? ' style="color:#666;"' : '';
-            s += '<option value="' + opt.sku + '"' + selected + disabled + style + '>' + opt.cecKey + ' (' + opt.kw + 'kW)' + (!opt.cecValid ? ' ÃƒÂ¢Ã…â€œÃ¢â‚¬â€' : '') + '</option>';
+            s += '<option value="' + opt.sku + '"' + selected + disabled + style + '>' + opt.cecKey + ' (' + opt.kw + 'kW)' + (!opt.cecValid ? ' ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â' : '') + '</option>';
         }
         s += '</select>';
         return s;
@@ -989,7 +989,7 @@ function renderDualStackBreakdown() {
         + '</div>';
     html += '<div style="display:flex;align-items:center;gap:6px;">'
         + '<span style="color:#ccc;font-size:0.85em;">' + s1parts.join(' + ') + ' = ' + dualStackResult.stack1.kwh + ' kWh</span>'
-        + '<span style="' + btnStyle + '" onclick="adjustDualStack(1,\'-\')">ÃƒÂ¢Ã‹â€ Ã¢â‚¬â„¢</span>'
+        + '<span style="' + btnStyle + '" onclick="adjustDualStack(1,\'-\')">ÃƒÆ’Ã‚Â¢Ãƒâ€¹Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢</span>'
         + '<span style="' + btnStyle + '" onclick="adjustDualStack(1,\'+\')">+</span>'
         + '</div>';
     html += '</div>';
@@ -1004,7 +1004,7 @@ function renderDualStackBreakdown() {
         + '</div>';
     html += '<div style="display:flex;align-items:center;gap:6px;">'
         + '<span style="color:#ccc;font-size:0.85em;">' + s2parts.join(' + ') + ' = ' + dualStackResult.stack2.kwh + ' kWh</span>'
-        + '<span style="' + btnStyle + '" onclick="adjustDualStack(2,\'-\')">ÃƒÂ¢Ã‹â€ Ã¢â‚¬â„¢</span>'
+        + '<span style="' + btnStyle + '" onclick="adjustDualStack(2,\'-\')">ÃƒÆ’Ã‚Â¢Ãƒâ€¹Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢</span>'
         + '<span style="' + btnStyle + '" onclick="adjustDualStack(2,\'+\')">+</span>'
         + '</div>';
     html += '</div>';
@@ -1086,6 +1086,21 @@ function calculateQuote() {
 
         document.getElementById('systemCalc').textContent = 'System: ' + state.sysKw.toFixed(2) + ' kW (' + state.panelCount + ' panels)';
 
+        // Gateway UI: mandatory for Sigenergy with batteries
+        const sigGwMandatory = currentManufacturer === 'sigenergy' && state.desiredBatteryKwh > 0;
+        const gwCheckbox = document.getElementById('addGateway');
+        const gwOptions = document.getElementById('gatewayOptions');
+        const gwCheckLabel = gwCheckbox?.nextElementSibling;
+        if (sigGwMandatory) {
+            gwCheckbox.checked = true;
+            gwCheckbox.disabled = true;
+            if (gwCheckLabel) gwCheckLabel.textContent = 'Gateway included (required with battery)';
+            gwOptions.style.display = 'block';
+        } else {
+            gwCheckbox.disabled = false;
+            if (gwCheckLabel) gwCheckLabel.textContent = 'Add backup power protection';
+            gwOptions.style.display = gwCheckbox.checked ? 'block' : 'none';
+        }
         const desired = state.desiredBatteryKwh;
         let actualKwh = 0;
         const isDualStack = currentManufacturer === 'sigenergy' && desired > 48;
@@ -1269,7 +1284,15 @@ function calculateQuote() {
             costInverter = state.invPrice;
             costBattery = bat.equipmentCost;
             costGateway = 0;
-            if (document.getElementById('addGateway').checked) { const gw = document.getElementById('gatewaySelect'); costGateway = parseFloat(gw.options[gw.selectedIndex]?.dataset.price) || 0; }
+            if (currentManufacturer === 'sigenergy' && bat.totalModules > 0) {
+                // Gateway mandatory for Sigenergy with batteries — use cheapest or user-selected if higher
+                const gateways = getMfg().gateways?.[state.phase] || [];
+                const cheapest = gateways.length ? Math.min(...gateways.map(g => g.price)) : 0;
+                costGateway = cheapest;
+                const gw = document.getElementById('gatewaySelect');
+                const userGwPrice = parseFloat(gw.options[gw.selectedIndex]?.dataset.price) || 0;
+                if (userGwPrice > costGateway) costGateway = userGwPrice;
+            } else if (document.getElementById('addGateway').checked) { const gw = document.getElementById('gatewaySelect'); costGateway = parseFloat(gw.options[gw.selectedIndex]?.dataset.price) || 0; }
             const mfgMount = getMfg().battery_mounting || {};
             costMount = (bat.totalModules > 0 && mfgMount.show !== false) ? (mfgMount[state.mountingType === 'wall' ? 'mount_wall' : 'mount_ground'] ?? 0) : 0;
             installBat = (bat.totalModules > 0) ? state.installBatPerStack : 0;
@@ -1389,7 +1412,19 @@ function buildBOM() {
             if (bat.totalModules >= (bt.series_box_threshold || 999)) batItems.push({ desc: 'Series Box', sku: '', qty: 1, unit: bt.series_box_cost, total: bt.series_box_cost, supplier_code: bt.series_box_code || '' });
         }
 
-        if (document.getElementById('addGateway').checked) {
+        if (currentManufacturer === 'sigenergy' && bat.totalModules > 0) {
+            // Gateway mandatory for Sigenergy — use cheapest or user-selected if higher
+            const gateways = getMfg().gateways?.[state.phase] || [];
+            const cheapestGw = gateways.length ? gateways.reduce((a, b) => a.price <= b.price ? a : b) : null;
+            const gw = document.getElementById('gatewaySelect'), gwOpt = gw.options[gw.selectedIndex];
+            const userGwPrice = parseFloat(gwOpt?.dataset.price) || 0;
+            const useUser = userGwPrice > (cheapestGw?.price || 0);
+            const gwDesc = useUser ? gwOpt?.textContent : cheapestGw?.desc;
+            const gwSku = useUser ? (gwOpt?.value || '') : (cheapestGw?.sku || '');
+            const gwPrice = useUser ? userGwPrice : (cheapestGw?.price || 0);
+            const gwCode = useUser ? (gwOpt?.dataset.supplierCode || '') : (cheapestGw?.supplier_code || '');
+            if (gwPrice > 0) batItems.push({ desc: 'Gateway: ' + (gwDesc || ''), sku: gwSku, qty: 1, unit: gwPrice, total: gwPrice, supplier_code: gwCode });
+        } else if (document.getElementById('addGateway').checked) {
             const gw = document.getElementById('gatewaySelect'), gwOpt = gw.options[gw.selectedIndex];
             const gwPrice = parseFloat(gwOpt?.dataset.price) || 0;
             if (gwPrice > 0) batItems.push({ desc: (currentManufacturer === 'sigenergy' ? 'Gateway' : 'EPS Box') + ': ' + (gwOpt?.textContent || ''), sku: gwOpt?.value || '', qty: 1, unit: gwPrice, total: gwPrice, supplier_code: gwOpt?.dataset.supplierCode || '' });
@@ -1510,8 +1545,10 @@ function collectQuoteData() {
         // Searchable fields (lowercase for case-insensitive search)
         search_name: (document.getElementById('customerName').value || '').toLowerCase(),
         search_phone: (document.getElementById('customerPhone').value || '').replace(/\s/g, ''),
+        search_email: (document.getElementById('customerEmail').value || '').toLowerCase(),
         search_address: (document.getElementById('installAddress').value || '').toLowerCase(),
         search_suburb: (document.getElementById('installSuburb').value || '').toLowerCase(),
+        search_postcode: (document.getElementById('installPostcode').value || '').trim(),
         system: {
             manufacturer: currentManufacturer,
             batteryTypeIdx: currentBatteryTypeIdx,
@@ -1918,7 +1955,7 @@ function generateQuote() {
 
     const summaryItems = [
         { label: 'System Size', value: state.sysKw.toFixed(2) + ' kW' },
-        { label: 'Panels', value: state.panelCount + ' Ã— ' + state.panelWattage + 'W' },
+        { label: 'Panels', value: state.panelCount + ' Ãƒâ€” ' + state.panelWattage + 'W' },
         { label: 'Battery', value: totalKwh > 0 ? totalKwh + ' kWh' : 'None' },
         { label: invLabel, value: invSku }
     ];
@@ -1933,7 +1970,7 @@ function generateQuote() {
         doc.setFont('helvetica', 'bold');
         // Truncate long inverter names
         let val = item.value;
-        if (val.length > 28) val = val.substring(0, 26) + 'â€¦';
+        if (val.length > 28) val = val.substring(0, 26) + 'Ã¢â‚¬Â¦';
         doc.text(val, cx, y + 13, { align: 'center' });
         doc.setFont('helvetica', 'normal');
     });
@@ -2075,7 +2112,7 @@ function generateQuote() {
     ];
     terms.forEach(t => {
         doc.setFontSize(7);
-        doc.text('â€¢  ' + t, margin, y);
+        doc.text('Ã¢â‚¬Â¢  ' + t, margin, y);
         y += 3.5;
     });
 
