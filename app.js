@@ -973,7 +973,7 @@ function renderDualStackBreakdown() {
             const selected = opt.sku === currentSku ? ' selected' : '';
             const disabled = !opt.cecValid ? ' disabled' : '';
             const style = !opt.cecValid ? ' style="color:#666;"' : '';
-            s += '<option value="' + opt.sku + '"' + selected + disabled + style + '>' + opt.cecKey + ' (' + opt.kw + 'kW)' + (!opt.cecValid ? ' Ã¢Å“â€”' : '') + '</option>';
+            s += '<option value="' + opt.sku + '"' + selected + disabled + style + '>' + opt.cecKey + ' (' + opt.kw + 'kW)' + (!opt.cecValid ? ' ÃƒÂ¢Ã…â€œÃ¢â‚¬â€' : '') + '</option>';
         }
         s += '</select>';
         return s;
@@ -989,7 +989,7 @@ function renderDualStackBreakdown() {
         + '</div>';
     html += '<div style="display:flex;align-items:center;gap:6px;">'
         + '<span style="color:#ccc;font-size:0.85em;">' + s1parts.join(' + ') + ' = ' + dualStackResult.stack1.kwh + ' kWh</span>'
-        + '<span style="' + btnStyle + '" onclick="adjustDualStack(1,\'-\')">Ã¢Ë†â€™</span>'
+        + '<span style="' + btnStyle + '" onclick="adjustDualStack(1,\'-\')">ÃƒÂ¢Ã‹â€ Ã¢â‚¬â„¢</span>'
         + '<span style="' + btnStyle + '" onclick="adjustDualStack(1,\'+\')">+</span>'
         + '</div>';
     html += '</div>';
@@ -1004,7 +1004,7 @@ function renderDualStackBreakdown() {
         + '</div>';
     html += '<div style="display:flex;align-items:center;gap:6px;">'
         + '<span style="color:#ccc;font-size:0.85em;">' + s2parts.join(' + ') + ' = ' + dualStackResult.stack2.kwh + ' kWh</span>'
-        + '<span style="' + btnStyle + '" onclick="adjustDualStack(2,\'-\')">Ã¢Ë†â€™</span>'
+        + '<span style="' + btnStyle + '" onclick="adjustDualStack(2,\'-\')">ÃƒÂ¢Ã‹â€ Ã¢â‚¬â„¢</span>'
         + '<span style="' + btnStyle + '" onclick="adjustDualStack(2,\'+\')">+</span>'
         + '</div>';
     html += '</div>';
@@ -1806,6 +1806,7 @@ function generateQuote() {
     const pc = document.getElementById('installPostcode').value;
     if (!pc || !lookupZone(pc)) { alert('Please enter a valid postcode before generating a quote.'); document.getElementById('installPostcode').focus(); return; }
 
+    if (!window.jspdf) { alert('PDF library failed to load. Please check your internet connection and refresh the page.'); return; }
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
     const pageW = doc.internal.pageSize.getWidth();   // 210
@@ -1917,7 +1918,7 @@ function generateQuote() {
 
     const summaryItems = [
         { label: 'System Size', value: state.sysKw.toFixed(2) + ' kW' },
-        { label: 'Panels', value: state.panelCount + ' × ' + state.panelWattage + 'W' },
+        { label: 'Panels', value: state.panelCount + ' Ã— ' + state.panelWattage + 'W' },
         { label: 'Battery', value: totalKwh > 0 ? totalKwh + ' kWh' : 'None' },
         { label: invLabel, value: invSku }
     ];
@@ -1932,7 +1933,7 @@ function generateQuote() {
         doc.setFont('helvetica', 'bold');
         // Truncate long inverter names
         let val = item.value;
-        if (val.length > 28) val = val.substring(0, 26) + '…';
+        if (val.length > 28) val = val.substring(0, 26) + 'â€¦';
         doc.text(val, cx, y + 13, { align: 'center' });
         doc.setFont('helvetica', 'normal');
     });
@@ -2074,7 +2075,7 @@ function generateQuote() {
     ];
     terms.forEach(t => {
         doc.setFontSize(7);
-        doc.text('•  ' + t, margin, y);
+        doc.text('â€¢  ' + t, margin, y);
         y += 3.5;
     });
 
