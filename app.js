@@ -12,6 +12,7 @@ let selectedAccessories = [];
 let selectedAddons = [];
 let currentQuoteId = null;
 let dualStackResult = null; // holds dual-stack optimizer output when active
+let dualStackManual = null; // { stack1Kwh, stack2Kwh } when user manually adjusts stacks
 
 // ====================
 // FIREBASE INIT
@@ -235,7 +236,7 @@ function populateManufacturers() {
 
 function switchManufacturer() {
     currentManufacturer = document.getElementById('manufacturerSelect').value;
-    currentBatteryTypeIdx = 0; manualBatteryMode = false; userChangedInverter = false;
+    currentBatteryTypeIdx = 0; manualBatteryMode = false; userChangedInverter = false; dualStackManual = null;
     selectedAccessories = []; selectedAddons = [];
     resetBatteryQtys(); populateBatteryTypes(); buildBatteryUI(); populateInverters(); populateGateways(); populateEvChargers(); buildAccessoriesUI(); buildAddonsUI(); updateBatteryMountVisibility(); updateHeaderSubtitle(); updateInverterSectionLabel();
     document.getElementById('desiredBatteryKwh').value = 0;
@@ -415,10 +416,10 @@ function bindEvents() {
     document.getElementById('installPostcode').addEventListener('input', function() { this.value = this.value.replace(/\D/g, '').slice(0, 4); updateZoneDisplay(); calculateQuote(); });
     document.getElementById('manufacturerSelect').addEventListener('change', switchManufacturer);
     document.getElementById('batteryTypeSelect').addEventListener('change', switchBatteryType);
-    document.getElementById('phaseType').addEventListener('change', () => { syncStateFromDOM(); userChangedInverter = false; populateInverters(); populateGateways(); updateAccessoryPrices(); calculateQuote(); });
+    document.getElementById('phaseType').addEventListener('change', () => { syncStateFromDOM(); userChangedInverter = false; dualStackManual = null; populateInverters(); populateGateways(); updateAccessoryPrices(); calculateQuote(); });
     document.getElementById('panelSelect').addEventListener('change', calculateQuote);
     document.getElementById('panelInputMode').addEventListener('change', togglePanelMode);
-    document.getElementById('desiredBatteryKwh').addEventListener('input', () => { const el = document.getElementById('desiredBatteryKwh'); if (parseFloat(el.value) > 96) el.value = 96; manualBatteryMode = false; userChangedInverter = false; calculateQuote(); });
+    document.getElementById('desiredBatteryKwh').addEventListener('input', () => { const el = document.getElementById('desiredBatteryKwh'); if (parseFloat(el.value) > 96) el.value = 96; manualBatteryMode = false; userChangedInverter = false; dualStackManual = null; calculateQuote(); });
     document.getElementById('inverterSelect').addEventListener('change', () => { userChangedInverter = true; calculateQuote(); });
     document.getElementById('roofType').addEventListener('change', updateRoofInfo);
     document.getElementById('panelOrientation').addEventListener('change', () => { updateMountingKitInfo(); calculateQuote(); });
@@ -702,6 +703,206 @@ function optimizeDualStack(desired) {
     return bestResult;
 }
 
+// Build dual-stack result from specific stack kWh targets (for manual adjustment)
+function buildDualStackFromTargets(s1kwhTarget, s2kwhTarget) {
+    const mfg = getMfg(), phase = state.phase;
+    const models = mfg.inverters?.[phase] || [];
+    const cec = mfg.cec_approved;
+    const combos = (cec?.type === 'inverter_battery_combo') ? cec[phase] : {};
+    const modules = getBatteryModules();
+    const mountPrice = mfg.battery_mounting?.[state.mountingType === 'wall' ? 'mount_wall' : 'mount_ground'] ?? 202;
+    const gateways = mfg.gateways?.[phase] || [];
+    const gwPrice = gateways.length ? Math.min(...gateways.map(g => g.price)) : 0;
+    const gwObj = gateways.find(g => g.price === gwPrice) || gateways[0] || null;
+    const labourPerStack = state.installBatPerStack;
+
+    // All CEC-approved kWh values
+    const allCecKwh = new Set();
+    Object.values(combos).forEach(arr => arr.forEach(k => { if (k > 0) allCecKwh.add(k); }));
+    const cecKwhList = [...allCecKwh].sort((a, b) => a - b);
+
+    // bestStackBatteries - same as in optimizeDualStack
+    function bestStackBatteries(targetKwh) {
+        if (targetKwh <= 0) return null;
+        const maxMod = 6, maxKwh = 48;
+        const sorted = [...modules].sort((a, b) => (a.price / a.kwh) - (b.price / b.kwh));
+        let best = null, bestCost = Infinity;
+        function srch(idx, qtys, tKwh, tUsable, tCost, tMod) {
+            if (tKwh >= targetKwh) {
+                if (!cecKwhList.includes(tKwh)) return;
+                if (tCost < bestCost || (tCost === bestCost && tKwh < (best?.totalKwh || Infinity))) {
+                    best = { qtys: Object.assign({}, qtys), totalKwh: tKwh, equipCost: tCost, usableKwh: tUsable };
+                    bestCost = tCost;
+                }
+            }
+            if (idx >= sorted.length) return;
+            const bat = sorted[idx];
+            const mq = Math.min(maxMod - tMod, Math.floor((maxKwh - tKwh) / bat.kwh) + 1);
+            for (let q = 0; q <= mq; q++) {
+                const nk = tKwh + q * bat.kwh, nu = tUsable + q * (bat.usable_kwh || bat.kwh), nm = tMod + q;
+                if (nm > maxMod || nk > maxKwh + bat.kwh) break;
+                qtys[bat.kwh] = q;
+                srch(idx + 1, qtys, nk, nu, tCost + q * bat.price, nm);
+            }
+            qtys[bat.kwh] = 0;
+        }
+        const initQ = {}; modules.forEach(b => initQ[b.kwh] = 0);
+        srch(0, initQ, 0, 0, 0, 0);
+        return best;
+    }
+
+    function bestEC(stackKwh, pvKw) {
+        let cheapest = null;
+        for (const m of models) {
+            const k = getCecKey(m.sku);
+            if (!combos[k] || !combos[k].includes(stackKwh)) continue;
+            if (m.max_pv_kw < pvKw) continue;
+            if (!cheapest || m.price < cheapest.price) cheapest = m;
+        }
+        return cheapest;
+    }
+
+    const bat1 = bestStackBatteries(s1kwhTarget);
+    const bat2 = bestStackBatteries(s2kwhTarget);
+    if (!bat1 || !bat2) return null;
+
+    const s1kwh = bat1.totalKwh, s2kwh = bat2.totalKwh;
+    const totalModules1 = Object.values(bat1.qtys).reduce((s, v) => s + v, 0);
+    const totalModules2 = Object.values(bat2.qtys).reduce((s, v) => s + v, 0);
+
+    // Try all PV splits to find best EC combo
+    const gpMargin = state.gpMargin / 100;
+    const rebatePerKwh = state.batteryRebatePerKwh;
+    let bestResult = null, bestNetCost = Infinity;
+
+    for (let p1 = 0; p1 <= state.panelCount; p1++) {
+        const p2 = state.panelCount - p1;
+        const pv1kw = (p1 * state.panelWattage) / 1000;
+        const pv2kw = (p2 * state.panelWattage) / 1000;
+        const ec1 = bestEC(s1kwh, pv1kw);
+        const ec2 = bestEC(s2kwh, pv2kw);
+        if (!ec1 || !ec2) continue;
+        const equipCost = ec1.price + ec2.price + bat1.equipCost + bat2.equipCost
+            + (2 * mountPrice) + gwPrice + (2 * labourPerStack);
+        const totalUsable = bat1.usableKwh + bat2.usableKwh;
+        const netCost = (equipCost * (1 + gpMargin)) - (totalUsable * rebatePerKwh);
+        if (netCost < bestNetCost) {
+            bestNetCost = netCost;
+            bestResult = {
+                isDualStack: true,
+                stack1: { ec: ec1, batteryQtys: bat1.qtys, kwh: s1kwh, usableKwh: bat1.usableKwh, equipCost: bat1.equipCost, modules: totalModules1, panels: p1, pvKw: pv1kw },
+                stack2: { ec: ec2, batteryQtys: bat2.qtys, kwh: s2kwh, usableKwh: bat2.usableKwh, equipCost: bat2.equipCost, modules: totalModules2, panels: p2, pvKw: pv2kw },
+                totalKwh: s1kwh + s2kwh,
+                totalUsableKwh: totalUsable,
+                totalBatteryCost: bat1.equipCost + bat2.equipCost,
+                totalEcCost: ec1.price + ec2.price,
+                mountCost: 2 * mountPrice,
+                gwPrice: gwPrice,
+                gateway: gwObj,
+                labourCost: 2 * labourPerStack,
+                netCost: bestNetCost
+            };
+        }
+    }
+    return bestResult;
+}
+
+// Get smallest enabled battery module kWh
+function getSmallestEnabledModuleKwh() {
+    const modules = getBatteryModules();
+    if (!modules.length) return 8;
+    return Math.min(...modules.map(m => m.kwh));
+}
+
+// Get min CEC-approved kWh for a single stack
+function getMinCecStackKwh() {
+    const mfg = getMfg(), phase = state.phase;
+    const cec = mfg.cec_approved;
+    const combos = (cec?.type === 'inverter_battery_combo') ? cec[phase] : {};
+    const allKwh = new Set();
+    Object.values(combos).forEach(arr => arr.forEach(k => { if (k > 0) allKwh.add(k); }));
+    return allKwh.size ? Math.min(...allKwh) : 5;
+}
+
+// Handle dual-stack manual +/- adjustment
+function adjustDualStack(stackNum, direction) {
+    if (!dualStackResult) return;
+    const step = getSmallestEnabledModuleKwh();
+    const minKwh = getMinCecStackKwh();
+    const maxKwh = 48;
+
+    const currentS1 = dualStackManual ? dualStackManual.stack1Kwh : dualStackResult.stack1.kwh;
+    const currentS2 = dualStackManual ? dualStackManual.stack2Kwh : dualStackResult.stack2.kwh;
+
+    let newS1 = currentS1, newS2 = currentS2;
+    if (stackNum === 1) {
+        newS1 = direction === '+' ? currentS1 + step : currentS1 - step;
+    } else {
+        newS2 = direction === '+' ? currentS2 + step : currentS2 - step;
+    }
+
+    // Validate
+    const warnEl = document.getElementById('dualStackManualWarn');
+    if (newS1 < minKwh || newS2 < minKwh) {
+        if (warnEl) { warnEl.style.display = 'block'; warnEl.textContent = '[!] Minimum ' + minKwh + ' kWh per stack (smallest CEC-approved value)'; }
+        return;
+    }
+    if (newS1 > maxKwh || newS2 > maxKwh) {
+        if (warnEl) { warnEl.style.display = 'block'; warnEl.textContent = '[!] Maximum 48 kWh per stack (6 modules max)'; }
+        return;
+    }
+
+    // Try to build the new config
+    const result = buildDualStackFromTargets(newS1, newS2);
+    if (!result) {
+        if (warnEl) { warnEl.style.display = 'block'; warnEl.textContent = '[!] No valid configuration for Stack 1: ' + newS1 + ' kWh + Stack 2: ' + newS2 + ' kWh'; }
+        return;
+    }
+
+    // Success - set manual override and recalculate everything
+    dualStackManual = { stack1Kwh: newS1, stack2Kwh: newS2 };
+    calculateQuote();
+}
+
+// Render dual-stack breakdown with +/- buttons
+function renderDualStackBreakdown() {
+    if (!dualStackResult) return;
+    const modules = getBatteryModules();
+    const s1parts = [], s2parts = [];
+    modules.forEach(b => { const q = dualStackResult.stack1.batteryQtys[b.kwh] || 0; if (q > 0) s1parts.push(q + 'x ' + b.kwh + 'kWh'); });
+    modules.forEach(b => { const q = dualStackResult.stack2.batteryQtys[b.kwh] || 0; if (q > 0) s2parts.push(q + 'x ' + b.kwh + 'kWh'); });
+    const ec1Key = getCecKey(dualStackResult.stack1.ec.sku);
+    const ec2Key = getCecKey(dualStackResult.stack2.ec.sku);
+
+    const btnStyle = 'display:inline-block;width:28px;height:28px;line-height:26px;text-align:center;'
+        + 'background:#1a1a2e;border:1px solid #e000f0;color:#e000f0;border-radius:4px;cursor:pointer;'
+        + 'font-size:16px;font-weight:700;margin:0 3px;user-select:none;';
+
+    let html = '<span style="color:#e000f0;font-weight:600;">DUAL-STACK</span>';
+    if (dualStackManual) {
+        html += ' <span style="color:#34d399;font-size:0.8em;">(manual)</span>';
+    }
+    html += '<div id="dualStackManualWarn" style="display:none;color:#ef4444;margin:4px 0;font-size:0.85em;"></div>';
+
+    html += '<div style="display:flex;align-items:center;gap:6px;margin:4px 0;">'
+        + '<span>Stack 1: ' + s1parts.join(' + ') + ' = ' + dualStackResult.stack1.kwh + ' kWh - ' + ec1Key + ' (' + dualStackResult.stack1.panels + ' panels)</span>'
+        + '<span style="' + btnStyle + '" onclick="adjustDualStack(1,\'-\')">-</span>'
+        + '<span style="' + btnStyle + '" onclick="adjustDualStack(1,\'+\')">+</span>'
+        + '</div>';
+
+    html += '<div style="display:flex;align-items:center;gap:6px;margin:4px 0;">'
+        + '<span>Stack 2: ' + s2parts.join(' + ') + ' = ' + dualStackResult.stack2.kwh + ' kWh - ' + ec2Key + ' (' + dualStackResult.stack2.panels + ' panels)</span>'
+        + '<span style="' + btnStyle + '" onclick="adjustDualStack(2,\'-\')">-</span>'
+        + '<span style="' + btnStyle + '" onclick="adjustDualStack(2,\'+\')">+</span>'
+        + '</div>';
+
+    if (dualStackManual) {
+        html += '<div style="margin-top:4px;"><span style="color:#e000f0;cursor:pointer;font-size:0.8em;text-decoration:underline;" onclick="dualStackManual=null;calculateQuote();">Reset to optimized</span></div>';
+    }
+
+    document.getElementById('batteryBreakdown').innerHTML = html;
+}
+
 // ====================
 // CEC & INVERTER LOGIC
 // ====================
@@ -778,7 +979,13 @@ function calculateQuote() {
 
         if (isDualStack) {
             // Dual-stack path
-            dualStackResult = optimizeDualStack(desired);
+            if (dualStackManual) {
+                // Manual override - rebuild from user's chosen targets
+                dualStackResult = buildDualStackFromTargets(dualStackManual.stack1Kwh, dualStackManual.stack2Kwh);
+            } else {
+                // Auto-optimize
+                dualStackResult = optimizeDualStack(desired);
+            }
             if (dualStackResult) {
                 actualKwh = dualStackResult.totalKwh;
                 // Set batteryQtys to combined for UI display
@@ -788,24 +995,18 @@ function calculateQuote() {
                     batteryQtys[b.kwh] = (dualStackResult.stack1.batteryQtys[b.kwh] || 0) + (dualStackResult.stack2.batteryQtys[b.kwh] || 0);
                 });
                 updateBatteryUI();
-                // Override breakdown display with dual-stack detail
-                const s1parts = [], s2parts = [];
-                modules.forEach(b => { const q = dualStackResult.stack1.batteryQtys[b.kwh] || 0; if (q > 0) s1parts.push(q + 'x ' + b.kwh + 'kWh'); });
-                modules.forEach(b => { const q = dualStackResult.stack2.batteryQtys[b.kwh] || 0; if (q > 0) s2parts.push(q + 'x ' + b.kwh + 'kWh'); });
-                const ec1Key = getCecKey(dualStackResult.stack1.ec.sku);
-                const ec2Key = getCecKey(dualStackResult.stack2.ec.sku);
-                let dsTxt = '<span style="color:#e000f0;font-weight:600;">DUAL-STACK</span><br>';
-                dsTxt += 'Stack 1: ' + s1parts.join(' + ') + ' = ' + dualStackResult.stack1.kwh + ' kWh - ' + ec1Key + ' (' + dualStackResult.stack1.panels + ' panels)<br>';
-                dsTxt += 'Stack 2: ' + s2parts.join(' + ') + ' = ' + dualStackResult.stack2.kwh + ' kWh - ' + ec2Key + ' (' + dualStackResult.stack2.panels + ' panels)';
-                document.getElementById('batteryBreakdown').innerHTML = dsTxt;
+                // Render breakdown with +/- buttons
+                renderDualStackBreakdown();
             } else {
                 actualKwh = 0;
                 dualStackResult = null;
+                dualStackManual = null;
                 document.getElementById('batteryBreakdown').innerHTML = '<span style="color:#ef4444;">[!] No valid dual-stack combination found for ' + desired + ' kWh</span>';
             }
         } else {
             // Single-stack path (existing behaviour)
             dualStackResult = null;
+            dualStackManual = null;
             if (!manualBatteryMode && desired > 0) {
                 const opt = optimizeBattery(desired);
                 batteryQtys = opt.qtys; actualKwh = opt.total;
