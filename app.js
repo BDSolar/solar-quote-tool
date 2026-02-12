@@ -9,7 +9,6 @@ let batteryQtys = {};
 let currentManufacturer = 'sigenergy';
 let currentBatteryTypeIdx = 0;
 let selectedAccessories = [];
-let selectedAddons = [];
 let currentQuoteId = null;
 let dualStackResult = null; // holds dual-stack optimizer output when active
 let dualStackEcOverride = { stack1: null, stack2: null }; // user EC upgrade overrides per stack
@@ -212,7 +211,7 @@ async function loadConfig() {
     document.getElementById('stcDeemingPeriod').value = CONFIG.rebates?.stc_deeming_period ?? 5;
     document.getElementById('batteryRebatePerKwh').value = CONFIG.rebates?.battery_rebate_per_kwh ?? 311;
     document.getElementById('gpMargin').value = CONFIG.gp_margin ?? 30;
-    populateManufacturers(); populatePanels(); populateBatteryTypes(); buildBatteryUI(); populateInverters(); populateGateways(); populateEvChargers(); buildAccessoriesUI(); buildAddonsUI(); updateBatteryMountVisibility(); bindEvents(); updateRoofInfo(); updateMountingKitInfo(); updateZoneDisplay(); updateHeaderSubtitle(); updateInverterSectionLabel(); updatePowerSensorModel(); calculateQuote();
+    populateManufacturers(); populatePanels(); populateBatteryTypes(); buildBatteryUI(); populateInverters(); populateGateways(); buildAccessoriesUI(); updateBatteryMountVisibility(); bindEvents(); updateRoofInfo(); updateMountingKitInfo(); updateZoneDisplay(); updateHeaderSubtitle(); updateInverterSectionLabel(); updatePowerSensorModel(); calculateQuote();
 }
 
 // ====================
@@ -228,8 +227,8 @@ function populateManufacturers() {
 function switchManufacturer() {
     currentManufacturer = document.getElementById('manufacturerSelect').value;
     currentBatteryTypeIdx = 0; userChangedInverter = false; dualStackResult = null; dualStackEcOverride = { stack1: null, stack2: null };
-    selectedAccessories = []; selectedAddons = [];
-    batteryQtys = {}; populateBatteryTypes(); buildBatteryUI(); populateInverters(); populateGateways(); populateEvChargers(); buildAccessoriesUI(); buildAddonsUI(); updateBatteryMountVisibility(); updateHeaderSubtitle(); updateInverterSectionLabel();
+    selectedAccessories = selectedAccessories.filter(function(a) { return a.type === 'addon'; });
+    batteryQtys = {}; populateBatteryTypes(); buildBatteryUI(); populateInverters(); populateGateways(); buildAccessoriesUI(); updateBatteryMountVisibility(); updateHeaderSubtitle(); updateInverterSectionLabel();
     document.getElementById('desiredBatteryKwh').value = 0;
     document.getElementById('desiredBatteryKwh').max = 96;
     calculateQuote();
@@ -267,46 +266,134 @@ function buildBatteryUI() {
 // ACCESSORIES UI
 // ====================
 
-function buildAccessoriesUI() {
-    const accs = (getMfg().accessories || []).filter(a => a.id !== 'power_sensor'), container = document.getElementById('accessoriesContainer'); container.innerHTML = '';
-    // Build dropdown
-    const row = document.createElement('div'); row.style.cssText = 'display:flex;gap:8px;margin-bottom:10px;';
-    const sel = document.createElement('select'); sel.id = 'accessoryDropdown'; sel.style.flex = '1';
-    sel.innerHTML = '<option value="">-- Select accessory --</option>';
-    accs.forEach((acc, idx) => {
-        const price = acc.phase_dependent ? (state.phase === 'single_phase' ? acc.price_single : acc.price_three) : acc.price;
-        const o = document.createElement('option'); o.value = idx; o.textContent = acc.label + ' ($' + price + ')'; sel.appendChild(o);
+function getAllDropdownItems() {
+    var items = [];
+    // Manufacturer-specific accessories (excluding power sensor)
+    var accs = (getMfg().accessories || []).filter(function(a) { return a.id !== 'power_sensor'; });
+    accs.forEach(function(acc) {
+        var price = acc.phase_dependent ? (state.phase === 'single_phase' ? acc.price_single : acc.price_three) : acc.price;
+        items.push({ id: acc.id, label: acc.label, price: price, type: 'accessory', source: acc });
     });
-    const btn = document.createElement('button'); btn.className = 'add-custom-btn'; btn.style.marginTop = '0'; btn.textContent = '+ Add';
-    btn.addEventListener('click', () => {
-        const idx = parseInt(sel.value); if (isNaN(idx)) return;
-        const acc = accs[idx];
-        if (selectedAccessories.find(a => a.id === acc.id)) return; // prevent duplicates
-        selectedAccessories.push({ ...acc });
+    // EV Charger (if manufacturer has chargers)
+    var evChargers = getMfg().ev_chargers || {};
+    if (Object.keys(evChargers).length > 0) {
+        items.push({ id: 'ev_charger', label: 'EV Charger', price: 0, type: 'ev_charger' });
+    }
+    // Universal add-ons
+    var hwt = CONFIG.addons?.hot_water_timer ?? 350;
+    items.push({ id: 'hot_water_timer', label: 'Hot Water Timer', price: hwt, type: 'addon', supplier_code: CONFIG.addons?.hot_water_timer_code || 'BDS:HWT-001' });
+    var mbp = CONFIG.addons?.meter_board_partial ?? 800;
+    var mbf = CONFIG.addons?.meter_board_full ?? 1200;
+    var mbr = CONFIG.addons?.meter_board_relocation ?? 1800;
+    items.push({ id: 'meter_board_partial', label: 'Meter Board - Partial', price: mbp, type: 'addon', supplier_code: CONFIG.addons?.meter_board_partial_code || 'BDS:MB-PART' });
+    items.push({ id: 'meter_board_full', label: 'Meter Board - Full', price: mbf, type: 'addon', supplier_code: CONFIG.addons?.meter_board_full_code || 'BDS:MB-FULL' });
+    items.push({ id: 'meter_board_relocation', label: 'Meter Board - Full + Relocation', price: mbr, type: 'addon', supplier_code: CONFIG.addons?.meter_board_relocation_code || 'BDS:MB-RELOC' });
+    return items;
+}
+
+function buildAccessoriesUI() {
+    var container = document.getElementById('accessoriesContainer'); container.innerHTML = '';
+    var items = getAllDropdownItems();
+    // Dropdown row
+    var row = document.createElement('div'); row.style.cssText = 'display:flex;gap:8px;margin-bottom:10px;';
+    var sel = document.createElement('select'); sel.id = 'accessoryDropdown'; sel.style.flex = '1';
+    sel.innerHTML = '<option value="">-- Select item --</option>';
+    items.forEach(function(item, idx) {
+        var o = document.createElement('option'); o.value = idx;
+        o.textContent = item.label + (item.type !== 'ev_charger' ? ' ($' + item.price + ')' : '');
+        sel.appendChild(o);
+    });
+    var btn = document.createElement('button'); btn.className = 'add-custom-btn'; btn.style.marginTop = '0'; btn.textContent = '+ Add';
+    btn.addEventListener('click', function() {
+        var idx = parseInt(sel.value); if (isNaN(idx)) return;
+        var item = items[idx];
+        if (selectedAccessories.find(function(a) { return a.id === item.id; })) return;
+        // Meter board tiers are mutually exclusive
+        if (item.id.startsWith('meter_board_')) {
+            selectedAccessories = selectedAccessories.filter(function(a) { return !a.id.startsWith('meter_board_'); });
+        }
+        var entry = { id: item.id, label: item.label, price: item.price, type: item.type, supplier_code: item.supplier_code || '' };
+        if (item.source) entry.source = item.source;
+        if (item.type === 'ev_charger') entry.evModel = null;
+        selectedAccessories.push(entry);
         renderSelectedAccessories();
         sel.value = '';
         calculateQuote();
     });
     row.appendChild(sel); row.appendChild(btn); container.appendChild(row);
     // List container
-    const list = document.createElement('div'); list.id = 'accessoryList'; container.appendChild(list);
-    // Auto-add defaults on first build (only if selectedAccessories is empty after manufacturer switch)
+    var list = document.createElement('div'); list.id = 'accessoryList'; container.appendChild(list);
+    // Auto-add defaults on first build
     if (selectedAccessories.length === 0) {
-        accs.filter(a => a.default_checked).forEach(a => selectedAccessories.push({ ...a }));
+        var accs = (getMfg().accessories || []).filter(function(a) { return a.id !== 'power_sensor'; });
+        accs.filter(function(a) { return a.default_checked; }).forEach(function(a) {
+            var price = a.phase_dependent ? (state.phase === 'single_phase' ? a.price_single : a.price_three) : a.price;
+            selectedAccessories.push({ id: a.id, label: a.label, price: price, type: 'accessory', source: a, supplier_code: a.supplier_code || '' });
+        });
     }
     renderSelectedAccessories();
-    const evSec = document.getElementById('evChargerSection');
-    if (evSec) { const hasEv = getMfg().ev_chargers && Object.keys(getMfg().ev_chargers).length > 0; evSec.style.display = hasEv ? 'block' : 'none'; }
+}
+
+function buildEvChargerSubDropdown(entry, wrapper, priceSpan) {
+    var evChargers = getMfg().ev_chargers || {};
+    var subDiv = document.createElement('div'); subDiv.style.cssText = 'margin:4px 0 8px 0;';
+    var subSel = document.createElement('select'); subSel.className = 'ev-charger-sub';
+    subSel.innerHTML = '<option value="none"> - Select model - </option>';
+    var groups = { dc: [], ac_cable: [], ac_socket: [] };
+    Object.entries(evChargers).forEach(function(pair) {
+        var key = pair[0], val = pair[1];
+        if (key.startsWith('dc_')) groups.dc.push({ key: key, desc: val.desc, price: val.price, supplier_code: val.supplier_code || '' });
+        else if (key.includes('_cable')) groups.ac_cable.push({ key: key, desc: val.desc, price: val.price, supplier_code: val.supplier_code || '' });
+        else if (key.includes('_socket')) groups.ac_socket.push({ key: key, desc: val.desc, price: val.price, supplier_code: val.supplier_code || '' });
+    });
+    var addGroup = function(label, items) {
+        if (!items.length) return;
+        var sep = document.createElement('option'); sep.disabled = true; sep.textContent = '--- ' + label + ' ---'; sep.style.cssText = 'font-weight:bold;color:#9ca3af;'; subSel.appendChild(sep);
+        items.forEach(function(item) {
+            var o = document.createElement('option'); o.value = item.key;
+            o.textContent = '  ' + item.desc + ' ($' + item.price.toLocaleString() + ')';
+            subSel.appendChild(o);
+        });
+    };
+    addGroup('DC (connects to ' + getInverterLabel() + ')', groups.dc);
+    addGroup('AC with Cable', groups.ac_cable);
+    addGroup('AC Socket Only', groups.ac_socket);
+    // Restore saved selection
+    if (entry.evModel) subSel.value = entry.evModel;
+    subSel.addEventListener('change', function() {
+        var key = subSel.value;
+        if (key === 'none') { entry.evModel = null; entry.price = 0; entry.evDesc = ''; entry.evSupplierCode = ''; }
+        else { var ev = evChargers[key]; entry.evModel = key; entry.price = ev.price; entry.evDesc = ev.desc; entry.evSupplierCode = ev.supplier_code || ''; }
+        if (priceSpan) {
+            priceSpan.textContent = entry.price > 0 ? '$' + entry.price.toLocaleString() : 'Select below';
+            priceSpan.style.color = entry.price > 0 ? '' : '#9ca3af';
+            priceSpan.style.fontStyle = entry.price > 0 ? '' : 'italic';
+        }
+        calculateQuote();
+    });
+    subDiv.appendChild(subSel);
+    wrapper.appendChild(subDiv);
 }
 
 function renderSelectedAccessories() {
-    const list = document.getElementById('accessoryList'); if (!list) return; list.innerHTML = '';
-    selectedAccessories.forEach((acc, i) => {
-        const price = acc.phase_dependent ? (state.phase === 'single_phase' ? acc.price_single : acc.price_three) : acc.price;
-        const div = document.createElement('div'); div.className = 'addon-item';
-        div.innerHTML = '<label style="flex:1;cursor:default;font-size:13px;color:#d1d5db;">' + esc(acc.label) + '</label><span class="addon-price">$' + price + '</span><button style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:16px;margin-left:8px;padding:0 4px;" title="Remove">&times;</button>';
-        div.querySelector('button').addEventListener('click', () => { selectedAccessories.splice(i, 1); renderSelectedAccessories(); calculateQuote(); });
-        list.appendChild(div);
+    var list = document.getElementById('accessoryList'); if (!list) return; list.innerHTML = '';
+    selectedAccessories.forEach(function(acc, i) {
+        var price = 0;
+        if (acc.type === 'accessory' && acc.source && acc.source.phase_dependent) {
+            price = state.phase === 'single_phase' ? acc.source.price_single : acc.source.price_three;
+            acc.price = price;
+        } else {
+            price = acc.price;
+        }
+        var wrapper = document.createElement('div'); wrapper.style.cssText = 'margin-bottom:6px;';
+        var div = document.createElement('div'); div.className = 'addon-item';
+        var priceStr = acc.type === 'ev_charger' ? (price > 0 ? '$' + price.toLocaleString() : 'Select below') : '$' + price;
+        div.innerHTML = '<label style="flex:1;cursor:default;font-size:13px;color:#d1d5db;">' + esc(acc.label) + '</label><span class="addon-price" style="' + (acc.type === 'ev_charger' && price === 0 ? 'color:#9ca3af;font-style:italic;' : '') + '">' + priceStr + '</span><button style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:16px;margin-left:8px;padding:0 4px;" title="Remove">&times;</button>';
+        div.querySelector('button').addEventListener('click', (function(idx) { return function() { selectedAccessories.splice(idx, 1); renderSelectedAccessories(); calculateQuote(); }; })(i));
+        wrapper.appendChild(div);
+        // EV charger sub-dropdown
+        if (acc.type === 'ev_charger') buildEvChargerSubDropdown(acc, wrapper, div.querySelector('.addon-price'));
+        list.appendChild(wrapper);
     });
 }
 
@@ -318,22 +405,35 @@ function updatePowerSensorModel() {
     el.textContent = state.phase === 'single_phase' ? 'Sigen Sensor SP-CT100' : 'Sigen Sensor TP-CT100';
 }
 
-function getAccessoryCost() { let t = 0; selectedAccessories.forEach(acc => { t += acc.phase_dependent ? (state.phase === 'single_phase' ? acc.price_single : acc.price_three) : acc.price; }); t += getPowerSensorCost(); return t; }
+function getAccessoryCost() {
+    var t = 0;
+    selectedAccessories.forEach(function(acc) { t += acc.price || 0; });
+    t += getPowerSensorCost();
+    return t;
+}
 
 function getPowerSensorCost() {
-    const acc = (getMfg().accessories || []).find(a => a.id === 'power_sensor');
+    var acc = (getMfg().accessories || []).find(function(a) { return a.id === 'power_sensor'; });
     if (!acc) return 0;
     return state.phase === 'single_phase' ? acc.price_single : acc.price_three;
 }
 
 function getAccessoryBomItems() {
-    let items = [];
-    selectedAccessories.forEach(acc => {
-        const price = acc.phase_dependent ? (state.phase === 'single_phase' ? acc.price_single : acc.price_three) : acc.price;
-        const code = acc.phase_dependent ? (state.phase === 'single_phase' ? (acc.supplier_code_single || '') : (acc.supplier_code_three || '')) : (acc.supplier_code || '');
-        items.push({ desc: acc.label, sku: '', qty: 1, unit: price, total: price, supplier_code: code });
+    var items = [];
+    selectedAccessories.forEach(function(acc) {
+        if (acc.type === 'ev_charger') {
+            if (acc.evModel && acc.price > 0) {
+                items.push({ desc: 'EV Charger: ' + (acc.evDesc || acc.evModel), sku: acc.evModel, qty: 1, unit: acc.price, total: acc.price, supplier_code: acc.evSupplierCode || '' });
+            }
+        } else if (acc.type === 'accessory' && acc.source) {
+            var price = acc.source.phase_dependent ? (state.phase === 'single_phase' ? acc.source.price_single : acc.source.price_three) : acc.source.price;
+            var code = acc.source.phase_dependent ? (state.phase === 'single_phase' ? (acc.source.supplier_code_single || '') : (acc.source.supplier_code_three || '')) : (acc.source.supplier_code || '');
+            items.push({ desc: acc.label, sku: '', qty: 1, unit: price, total: price, supplier_code: code });
+        } else {
+            items.push({ desc: acc.label, sku: '', qty: 1, unit: acc.price, total: acc.price, supplier_code: acc.supplier_code || '' });
+        }
     });
-    var psAcc = (getMfg().accessories || []).find(a => a.id === 'power_sensor');
+    var psAcc = (getMfg().accessories || []).find(function(a) { return a.id === 'power_sensor'; });
     if (psAcc) {
         var psPrice = state.phase === 'single_phase' ? psAcc.price_single : psAcc.price_three;
         var psCode = state.phase === 'single_phase' ? (psAcc.supplier_code_single || '') : (psAcc.supplier_code_three || '');
@@ -342,56 +442,7 @@ function getAccessoryBomItems() {
     return items;
 }
 
-function updateBatteryMountVisibility() { const el = document.getElementById('batteryMountGroup'); if (el) el.style.display = (getMfg().battery_mounting?.show !== false) ? 'grid' : 'none'; }
-
-function getAddonOptions() {
-    const opts = [];
-    const hwt = CONFIG.addons?.hot_water_timer ?? 350;
-    opts.push({ id: 'hot_water_timer', label: 'Hot Water Timer', price: hwt, supplier_code: CONFIG.addons?.hot_water_timer_code || 'BDS:HWT-001' });
-    const mbp = CONFIG.addons?.meter_board_partial ?? 800;
-    const mbf = CONFIG.addons?.meter_board_full ?? 1200;
-    const mbr = CONFIG.addons?.meter_board_relocation ?? 1800;
-    opts.push({ id: 'meter_board_partial', label: 'Meter Board - Partial', price: mbp, supplier_code: CONFIG.addons?.meter_board_partial_code || 'BDS:MB-PART' });
-    opts.push({ id: 'meter_board_full', label: 'Meter Board - Full', price: mbf, supplier_code: CONFIG.addons?.meter_board_full_code || 'BDS:MB-FULL' });
-    opts.push({ id: 'meter_board_relocation', label: 'Meter Board - Full + Relocation', price: mbr, supplier_code: CONFIG.addons?.meter_board_relocation_code || 'BDS:MB-RELOC' });
-    return opts;
-}
-
-function buildAddonsUI() {
-    const container = document.getElementById('addonsContainer'); if (!container) return; container.innerHTML = '';
-    const opts = getAddonOptions();
-    const row = document.createElement('div'); row.style.cssText = 'display:flex;gap:8px;margin-bottom:10px;';
-    const sel = document.createElement('select'); sel.id = 'addonDropdown'; sel.style.flex = '1';
-    sel.innerHTML = '<option value="">-- Select add-on --</option>';
-    opts.forEach((o, idx) => { const opt = document.createElement('option'); opt.value = idx; opt.textContent = o.label + ' ($' + o.price + ')'; sel.appendChild(opt); });
-    const btn = document.createElement('button'); btn.className = 'add-custom-btn'; btn.style.marginTop = '0'; btn.textContent = '+ Add';
-    btn.addEventListener('click', () => {
-        const idx = parseInt(sel.value); if (isNaN(idx)) return;
-        const addon = opts[idx];
-        if (selectedAddons.find(a => a.id === addon.id)) return;
-        // Meter board tiers are mutually exclusive
-        if (addon.id.startsWith('meter_board_')) {
-            selectedAddons = selectedAddons.filter(a => !a.id.startsWith('meter_board_'));
-        }
-        selectedAddons.push({ ...addon });
-        renderSelectedAddons();
-        sel.value = '';
-        calculateQuote();
-    });
-    row.appendChild(sel); row.appendChild(btn); container.appendChild(row);
-    const list = document.createElement('div'); list.id = 'addonList'; container.appendChild(list);
-    renderSelectedAddons();
-}
-
-function renderSelectedAddons() {
-    const list = document.getElementById('addonList'); if (!list) return; list.innerHTML = '';
-    selectedAddons.forEach((addon, i) => {
-        const div = document.createElement('div'); div.className = 'addon-item';
-        div.innerHTML = '<label style="flex:1;cursor:default;font-size:13px;color:#d1d5db;">' + esc(addon.label) + '</label><span class="addon-price">$' + addon.price + '</span><button style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:16px;margin-left:8px;padding:0 4px;" title="Remove">&times;</button>';
-        div.querySelector('button').addEventListener('click', () => { selectedAddons.splice(i, 1); renderSelectedAddons(); calculateQuote(); });
-        list.appendChild(div);
-    });
-}
+function updateBatteryMountVisibility() { var el = document.getElementById('batteryMountGroup'); if (el) el.style.display = (getMfg().battery_mounting?.show !== false) ? 'grid' : 'none'; }
 
 // ====================
 // ZONE LOOKUP
@@ -405,7 +456,7 @@ function updateZoneDisplay() { const pc = document.getElementById('installPostco
 // ====================
 
 function bindEvents() {
-    const dedicatedIds = ['inverterSelect','phaseType','desiredBatteryKwh','manufacturerSelect','batteryTypeSelect','roofType','panelOrientation','numRows','numArrays','tiltAngle','gatewaySelect','addEvCharger','installPostcode'];
+    const dedicatedIds = ['inverterSelect','phaseType','desiredBatteryKwh','manufacturerSelect','batteryTypeSelect','roofType','panelOrientation','numRows','numArrays','tiltAngle','gatewaySelect','installPostcode'];
     document.querySelectorAll('input, select').forEach(el => { if (!dedicatedIds.includes(el.id)) { el.addEventListener('input', calculateQuote); el.addEventListener('change', calculateQuote); } });
     document.getElementById('installPostcode').addEventListener('input', function() { this.value = this.value.replace(/\D/g, '').slice(0, 4); updateZoneDisplay(); calculateQuote(); });
     document.getElementById('manufacturerSelect').addEventListener('change', switchManufacturer);
@@ -420,7 +471,6 @@ function bindEvents() {
     document.getElementById('numArrays').addEventListener('input', () => { updateMountingKitInfo(); calculateQuote(); });
     document.getElementById('tiltAngle').addEventListener('change', () => { updateMountingKitInfo(); calculateQuote(); });
     document.getElementById('gatewaySelect').addEventListener('change', calculateQuote);
-    document.getElementById('addEvCharger').addEventListener('change', () => { document.getElementById('evChargerOptions').style.display = document.getElementById('addEvCharger').checked ? 'block' : 'none'; calculateQuote(); });
     document.querySelectorAll('input[type="number"]').forEach(el => {
         el.addEventListener('click', function(e) { const rect = this.getBoundingClientRect(); if (e.clientX > rect.right - 30) { const mid = rect.top + rect.height / 2; if (e.clientY < mid) this.stepUp(); else this.stepDown(); this.dispatchEvent(new Event('input', { bubbles: true })); } });
         el.addEventListener('mousemove', function(e) { const rect = this.getBoundingClientRect(); this.style.cursor = (e.clientX > rect.right - 30) ? 'pointer' : 'text'; });
@@ -459,16 +509,7 @@ function populateGateways() {
     gateways.forEach(m => { const o = document.createElement('option'); o.value = m.sku; o.textContent = m.desc; o.dataset.price = m.price; o.dataset.supplierCode = m.supplier_code || ''; sel.appendChild(o); });
 }
 
-function populateEvChargers() {
-    const evChargers = getMfg().ev_chargers || {}, sel = document.getElementById('evChargerType');
-    sel.innerHTML = '<option value="none"> -  Select - </option>';
-    const groups = { dc: [], ac_cable: [], ac_socket: [] };
-    Object.entries(evChargers).forEach(([key, val]) => { if (key.startsWith('dc_')) groups.dc.push({ key, ...val }); else if (key.includes('_cable')) groups.ac_cable.push({ key, ...val }); else if (key.includes('_socket')) groups.ac_socket.push({ key, ...val }); });
-    const addGroup = (label, items) => { if (!items.length) return; const grp = document.createElement('optgroup'); grp.label = label; items.forEach(item => { const o = document.createElement('option'); o.value = item.key; o.textContent = item.desc + ' ($' + item.price.toLocaleString() + ')'; grp.appendChild(o); }); sel.appendChild(grp); };
-    addGroup('DC (connects to ' + getInverterLabel() + ')', groups.dc);
-    addGroup('AC with Cable', groups.ac_cable);
-    addGroup('AC Socket Only', groups.ac_socket);
-}
+
 
 
 
@@ -1168,21 +1209,19 @@ function calculateQuote() {
         }
 
         let costAcc = getAccessoryCost();
-        let costEv = 0;
-        if (document.getElementById('addEvCharger').checked) { const t = document.getElementById('evChargerType').value; const evs = getMfg().ev_chargers || {}; if (t !== 'none' && evs[t]) costEv = evs[t].price; }
 
         const installPv = state.sysKw * state.installPvPerKw;
         const roof = CONFIG.installation?.roof_types?.[state.roofType] || { surcharge: 0 };
         const costRoofSurcharge = roof.surcharge;
         const mountingResult = getMountingKitItems(state.panelCount, state.roofType, state.orientation, state.numRows, state.numArrays, state.tiltAngle, state.panelWidthMm, state.panelHeightMm);
         const costRoofKit = mountingResult.total;
-        let costAddons = 0;
-        selectedAddons.forEach(a => { costAddons += a.price; });
-        for (let i = 1; i <= customAddonCount; i++) { const ce = document.getElementById('customCost-' + i), ne = document.getElementById('customName-' + i); if (ce && ne && ne.value.trim()) costAddons += parseFloat(ce.value) || 0; }
+        let costCustom = 0;
+        for (let i = 1; i <= customAddonCount; i++) { const ce = document.getElementById('customCost-' + i), ne = document.getElementById('customName-' + i); if (ce && ne && ne.value.trim()) costCustom += parseFloat(ce.value) || 0; }
+        costAcc += costCustom;
 
         const totalPv = costPanels + costRoofKit + costRoofSurcharge;
         const totalBattery = costInverter + costBattery + costGateway + costMount;
-        const totalInstall = installPv + installBat + costAcc + costEv + costAddons;
+        const totalInstall = installPv + installBat + costAcc;
         const totalCog = totalPv + totalBattery + totalInstall;
 
         const zoneResult = lookupZone(document.getElementById('installPostcode').value);
@@ -1203,8 +1242,8 @@ function calculateQuote() {
         const extraMountEl = document.getElementById('extraMountCostInfo'); if (extraMountEl) extraMountEl.textContent = costMount > 0 ? fmtIncGst(costMount) : '$0';
         document.getElementById('costInstallPv').textContent = fmtIncGst(installPv); document.getElementById('costInstallBattery').textContent = fmtIncGst(installBat);
         document.getElementById('costRoofSurcharge').textContent = fmtIncGst(costRoofSurcharge);
-        document.getElementById('costAccessories').textContent = fmtIncGst(costAcc); document.getElementById('costEvCharger').textContent = fmtIncGst(costEv);
-        document.getElementById('costAddons').textContent = fmtIncGst(costAddons); document.getElementById('totalInstall').textContent = fmtIncGst(totalInstall);
+        document.getElementById('costAccessories').textContent = fmtIncGst(costAcc);
+        document.getElementById('totalInstall').textContent = fmtIncGst(totalInstall);
         document.getElementById('totalCog').textContent = fmtIncGst(totalCog); document.getElementById('gpLabel').textContent = 'GP (' + state.gpMargin + '%)'; document.getElementById('gpAmount').textContent = fmtIncGst(gpAmt);
         document.getElementById('commLabel').textContent = 'Commission (' + state.salesCommission + '%)'; document.getElementById('commAmount').textContent = fmtIncGst(commAmt);
         document.getElementById('priceBeforeRebates').textContent = fmtIncGst(priceBeforeRebates);
@@ -1301,19 +1340,10 @@ function buildBOM() {
     }
     bom.push({ category: 'Battery & ' + invLabel, items: batItems });
 
-    // === ACCESSORIES ===
+    // === ACCESSORIES & ADD-ONS ===
     let accItems = getAccessoryBomItems();
-    if (document.getElementById('addEvCharger').checked) {
-        const t = document.getElementById('evChargerType').value; const evs = getMfg().ev_chargers || {};
-        if (t !== 'none' && evs[t]) accItems.push({ desc: 'EV Charger: ' + evs[t].desc, sku: t, qty: 1, unit: evs[t].price, total: evs[t].price, supplier_code: evs[t].supplier_code || '' });
-    }
-    if (accItems.length > 0) bom.push({ category: 'Accessories', items: accItems });
-
-    // === ADD-ONS ===
-    let addonItems = [];
-    selectedAddons.forEach(a => { addonItems.push({ desc: a.label, sku: '', qty: 1, unit: a.price, total: a.price, supplier_code: a.supplier_code || '' }); });
-    for (let i = 1; i <= customAddonCount; i++) { const ne = document.getElementById('customName-' + i), ce = document.getElementById('customCost-' + i); if (ne && ce && ne.value.trim()) { const p = parseFloat(ce.value) || 0; addonItems.push({ desc: ne.value.trim(), sku: 'Custom', qty: 1, unit: p, total: p, supplier_code: 'BDS:CUSTOM' }); } }
-    if (addonItems.length > 0) bom.push({ category: 'Add-ons', items: addonItems });
+    for (let i = 1; i <= customAddonCount; i++) { const ne = document.getElementById('customName-' + i), ce = document.getElementById('customCost-' + i); if (ne && ce && ne.value.trim()) { const p = parseFloat(ce.value) || 0; accItems.push({ desc: ne.value.trim(), sku: 'Custom', qty: 1, unit: p, total: p, supplier_code: 'BDS:CUSTOM' }); } }
+    if (accItems.length > 0) bom.push({ category: 'Accessories & Add-Ons', items: accItems });
 
     // === INSTALLATION ===
     let installItems = [];
@@ -1423,10 +1453,11 @@ function collectQuoteData() {
             inverterSelectIdx: document.getElementById('inverterSelect').selectedIndex,
             userChangedInverter: userChangedInverter,
             gatewaySelectIdx: document.getElementById('gatewaySelect').selectedIndex,
-            addEvCharger: document.getElementById('addEvCharger').checked,
-            evChargerSelectIdx: document.getElementById('evChargerType').selectedIndex,
-            selectedAccessories: selectedAccessories.map(a => ({ ...a })),
-            selectedAddons: selectedAddons.map(a => ({ ...a }))
+            selectedAccessories: selectedAccessories.map(function(a) {
+                var copy = { id: a.id, label: a.label, price: a.price, type: a.type, supplier_code: a.supplier_code || '' };
+                if (a.type === 'ev_charger') { copy.evModel = a.evModel; copy.evDesc = a.evDesc || ''; copy.evSupplierCode = a.evSupplierCode || ''; }
+                return copy;
+            })
         },
         mounting: {
             roofType: state.roofType,
@@ -1562,7 +1593,7 @@ async function loadQuote(quoteId) {
             currentManufacturer = data.system.manufacturer;
             document.getElementById('manufacturerSelect').value = currentManufacturer;
             currentBatteryTypeIdx = data.system.batteryTypeIdx || 0;
-            populateBatteryTypes(); populateInverters(); populateGateways(); populateEvChargers(); buildAccessoriesUI(); buildAddonsUI(); updateBatteryMountVisibility(); updateHeaderSubtitle(); updateInverterSectionLabel();
+            populateBatteryTypes(); populateInverters(); populateGateways(); buildAccessoriesUI(); updateBatteryMountVisibility(); updateHeaderSubtitle(); updateInverterSectionLabel();
         }
 
         // Restore customer info
@@ -1593,14 +1624,18 @@ async function loadQuote(quoteId) {
         if (s.gatewaySelectIdx != null) document.getElementById('gatewaySelect').selectedIndex = s.gatewaySelectIdx;
         else if (s.addGateway && document.getElementById('gatewaySelect').options.length > 1) document.getElementById('gatewaySelect').selectedIndex = 1;
 
-        document.getElementById('addEvCharger').checked = s.addEvCharger || false;
-        document.getElementById('evChargerOptions').style.display = s.addEvCharger ? 'block' : 'none';
-        if (s.evChargerSelectIdx != null) document.getElementById('evChargerType').selectedIndex = s.evChargerSelectIdx;
-
-        selectedAccessories = (s.selectedAccessories || []).filter(a => a.id !== 'power_sensor').map(a => ({ ...a }));
+        // Restore accessories (unified - backward compatible with old saves)
+        var loadedAccs = (s.selectedAccessories || []).filter(function(a) { return a.id !== 'power_sensor'; });
+        // Merge old selectedAddons into accessories if present (backward compat)
+        if (s.selectedAddons && s.selectedAddons.length > 0) {
+            s.selectedAddons.forEach(function(a) { loadedAccs.push({ id: a.id, label: a.label, price: a.price, type: 'addon', supplier_code: a.supplier_code || '' }); });
+        }
+        // Backward compat: old EV charger checkbox
+        if (s.addEvCharger) {
+            loadedAccs.push({ id: 'ev_charger', label: 'EV Charger', price: 0, type: 'ev_charger', evModel: null });
+        }
+        selectedAccessories = loadedAccs;
         renderSelectedAccessories();
-        selectedAddons = (s.selectedAddons || []).map(a => ({ ...a }));
-        renderSelectedAddons();
 
         // Restore mounting
         const m = data.mounting || {};
@@ -1654,10 +1689,7 @@ function clearQuote() {
     document.getElementById('desiredBatteryKwh').value = 13;
     document.getElementById('panelCount').value = 28;
     document.getElementById('gatewaySelect').selectedIndex = 0;
-    document.getElementById('addEvCharger').checked = false;
-    document.getElementById('evChargerOptions').style.display = 'none';
     selectedAccessories = []; renderSelectedAccessories();
-    selectedAddons = []; renderSelectedAddons();
     customAddonCount = 0; document.getElementById('customAddons').innerHTML = '';
     userChangedInverter = false; dualStackResult = null; dualStackEcOverride = { stack1: null, stack2: null };
     batteryQtys = {};

@@ -238,6 +238,17 @@ select option {
     color: var(--text-primary);
 }
 
+select.ev-charger-sub {
+    width: 100%;
+    font-size: 13px;
+    padding: 6px 8px;
+    height: auto !important;
+    min-height: 36px;
+    appearance: auto !important;
+    -webkit-appearance: menulist !important;
+    background-image: none !important;
+}
+
 .grid-2 {
     display: grid;
     grid-template-columns: 1fr 1fr;
