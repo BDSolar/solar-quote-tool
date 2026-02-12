@@ -63,7 +63,14 @@
                 <div id="batteryTypeGroup" style="display:none;">
                     <div class="form-group"><label>Battery Type</label><select id="batteryTypeSelect"></select></div>
                 </div>
-                <div class="form-group"><label>Desired Battery Capacity (kWh)</label><input type="number" id="desiredBatteryKwh" value="13" min="0" max="96" step="1"></div>
+                <div class="grid-2">
+                    <div class="form-group"><label>Battery Capacity (kWh)</label><input type="number" id="desiredBatteryKwh" value="13" min="0" max="96" step="1"></div>
+                    <div class="form-group"><label id="inverterDropdownLabel">Energy Controller</label><select id="inverterSelect"></select></div>
+                </div>
+                <div class="grid-2">
+                    <div class="form-group"><label id="gatewayDropdownLabel">Gateway</label><select id="gatewaySelect"></select></div>
+                    <div class="addon-item" style="margin-bottom:0;align-self:end;"><input type="checkbox" id="addPowerSensor" checked><label for="addPowerSensor">Power Sensor</label><span class="addon-price" id="powerSensorPrice">$101</span></div>
+                </div>
                 <div id="batteryConfigPanel" class="info-box" style="display:none;">
                     <strong>Recommended Config:</strong> <span id="batteryBreakdown"></span>
                     <div id="batteryAdjuster" style="margin-top:10px;padding-top:10px;border-top:1px solid #bfdbfe;">
@@ -72,21 +79,12 @@
                         <div style="margin-top:8px;padding-top:8px;border-top:1px solid #bfdbfe;font-weight:600;">Total: <span id="batteryTotalDisplay">0</span> kWh (<span id="batteryModuleCount">0</span> modules) <span id="minModulesInfo" style="color:#fbbf24;font-size:12px;display:none;"></span><span id="batteryCapWarning" style="color:#ef4444;display:none;"> Max <span id="maxModulesLabel">6</span> modules / <span id="maxKwhLabel">48</span> kWh (<span id="maxPhaseLabel">single</span> phase)</span></div>
                     </div>
                 </div>
+                <div id="inverterInfo" class="info-box" style="display:none;"></div>
+                <div id="inverterWarning" class="warn-box" style="display:none;"></div>
                 <div id="minModulesWarning" class="warn-box" style="display:none;"></div>
                 <div id="phaseCapWarning" class="warn-box" style="display:none;"></div>
                 <div id="cecWarning" class="warn-box" style="display:none;"></div>
                 <div id="cecApproved" class="success-box" style="display:none;"></div>
-            </div>
-            <div class="section">
-                <div class="section-title" id="inverterSectionTitle">Energy Controller (Inverter)</div>
-                <div class="form-group"><label id="inverterDropdownLabel">Energy Controller</label><select id="inverterSelect"></select></div>
-                <div id="inverterInfo" class="info-box" style="display:none;"></div>
-                <div id="inverterWarning" class="warn-box" style="display:none;"></div>
-            </div>
-            <div class="section">
-                <div class="section-title" id="gatewaySectionTitle">Gateway (Backup Power)</div>
-                <div class="addon-item"><input type="checkbox" id="addGateway"><label for="addGateway">Add backup power protection</label></div>
-                <div id="gatewayOptions" style="display:none;"><div class="form-group"><label>Model</label><select id="gatewaySelect"></select></div></div>
             </div>
             <div class="section">
                 <div class="section-title">Installation &amp; Mounting</div>

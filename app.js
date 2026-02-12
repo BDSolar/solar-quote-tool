@@ -213,7 +213,7 @@ async function loadConfig() {
     document.getElementById('stcDeemingPeriod').value = CONFIG.rebates?.stc_deeming_period ?? 5;
     document.getElementById('batteryRebatePerKwh').value = CONFIG.rebates?.battery_rebate_per_kwh ?? 311;
     document.getElementById('gpMargin').value = CONFIG.gp_margin ?? 30;
-    populateManufacturers(); populatePanels(); populateBatteryTypes(); buildBatteryUI(); populateInverters(); populateGateways(); populateEvChargers(); buildAccessoriesUI(); buildAddonsUI(); updateBatteryMountVisibility(); bindEvents(); updateRoofInfo(); updateMountingKitInfo(); updateZoneDisplay(); updateHeaderSubtitle(); updateInverterSectionLabel(); calculateQuote();
+    populateManufacturers(); populatePanels(); populateBatteryTypes(); buildBatteryUI(); populateInverters(); populateGateways(); populateEvChargers(); buildAccessoriesUI(); buildAddonsUI(); updateBatteryMountVisibility(); bindEvents(); updateRoofInfo(); updateMountingKitInfo(); updateZoneDisplay(); updateHeaderSubtitle(); updateInverterSectionLabel(); updatePowerSensorPrice(); calculateQuote();
 }
 
 function resetBatteryQtys() { batteryQtys = {}; getBatteryModules().forEach(b => { batteryQtys[b.kwh] = 0; }); }
@@ -232,14 +232,14 @@ function switchManufacturer() {
     currentManufacturer = document.getElementById('manufacturerSelect').value;
     currentBatteryTypeIdx = 0; manualBatteryMode = false; userChangedInverter = false; dualStackManual = null; dualStackEcOverride = null;
     selectedAccessories = []; selectedAddons = [];
-    resetBatteryQtys(); populateBatteryTypes(); buildBatteryUI(); populateInverters(); populateGateways(); populateEvChargers(); buildAccessoriesUI(); buildAddonsUI(); updateBatteryMountVisibility(); updateHeaderSubtitle(); updateInverterSectionLabel();
+    resetBatteryQtys(); populateBatteryTypes(); buildBatteryUI(); populateInverters(); populateGateways(); populateEvChargers(); buildAccessoriesUI(); buildAddonsUI(); updateBatteryMountVisibility(); updateHeaderSubtitle(); updateInverterSectionLabel(); updatePowerSensorPrice();
     document.getElementById('desiredBatteryKwh').value = 0;
     document.getElementById('desiredBatteryKwh').max = 96;
     calculateQuote();
 }
 
 function updateHeaderSubtitle() { const el = document.getElementById('headerSubtitle'); if (el) el.textContent = (getMfg().label || 'Solar') + ' Residential Quote Builder'; }
-function updateInverterSectionLabel() { const el = document.getElementById('inverterSectionTitle'); if (el) el.textContent = getInverterLabel() + ' (Inverter)'; }
+function updateInverterSectionLabel() { const lbl = document.getElementById('inverterDropdownLabel'); if (lbl) lbl.textContent = getInverterLabel(); }
 
 // ====================
 // BATTERY TYPE SWITCHING
@@ -286,7 +286,7 @@ function buildBatteryUI() {
 // ====================
 
 function buildAccessoriesUI() {
-    const accs = getMfg().accessories || [], container = document.getElementById('accessoriesContainer'); container.innerHTML = '';
+    const accs = (getMfg().accessories || []).filter(a => a.id !== 'power_sensor'), container = document.getElementById('accessoriesContainer'); container.innerHTML = '';
     // Build dropdown
     const row = document.createElement('div'); row.style.cssText = 'display:flex;gap:8px;margin-bottom:10px;';
     const sel = document.createElement('select'); sel.id = 'accessoryDropdown'; sel.style.flex = '1';
@@ -328,9 +328,25 @@ function renderSelectedAccessories() {
     });
 }
 
-function updateAccessoryPrices() { renderSelectedAccessories(); buildAccessoriesUI(); }
+function updateAccessoryPrices() { renderSelectedAccessories(); buildAccessoriesUI(); updatePowerSensorPrice(); }
 
-function getAccessoryCost() { let t = 0; selectedAccessories.forEach(acc => { t += acc.phase_dependent ? (state.phase === 'single_phase' ? acc.price_single : acc.price_three) : acc.price; }); return t; }
+function updatePowerSensorPrice() {
+    const el = document.getElementById('powerSensorPrice');
+    if (!el) return;
+    const acc = (getMfg().accessories || []).find(a => a.id === 'power_sensor');
+    if (!acc) return;
+    const price = state.phase === 'single_phase' ? acc.price_single : acc.price_three;
+    el.textContent = '$' + price;
+}
+
+function getAccessoryCost() { let t = 0; selectedAccessories.forEach(acc => { t += acc.phase_dependent ? (state.phase === 'single_phase' ? acc.price_single : acc.price_three) : acc.price; }); t += getPowerSensorCost(); return t; }
+
+function getPowerSensorCost() {
+    if (!document.getElementById('addPowerSensor').checked) return 0;
+    const acc = (getMfg().accessories || []).find(a => a.id === 'power_sensor');
+    if (!acc) return 0;
+    return state.phase === 'single_phase' ? acc.price_single : acc.price_three;
+}
 
 function getAccessoryBomItems() {
     let items = [];
@@ -339,6 +355,14 @@ function getAccessoryBomItems() {
         const code = acc.phase_dependent ? (state.phase === 'single_phase' ? (acc.supplier_code_single || '') : (acc.supplier_code_three || '')) : (acc.supplier_code || '');
         items.push({ desc: acc.label, sku: '', qty: 1, unit: price, total: price, supplier_code: code });
     });
+    if (document.getElementById('addPowerSensor').checked) {
+        const acc = (getMfg().accessories || []).find(a => a.id === 'power_sensor');
+        if (acc) {
+            const price = state.phase === 'single_phase' ? acc.price_single : acc.price_three;
+            const code = state.phase === 'single_phase' ? (acc.supplier_code_single || '') : (acc.supplier_code_three || '');
+            items.push({ desc: acc.label, sku: '', qty: 1, unit: price, total: price, supplier_code: code });
+        }
+    }
     return items;
 }
 
@@ -405,7 +429,7 @@ function updateZoneDisplay() { const pc = document.getElementById('installPostco
 // ====================
 
 function bindEvents() {
-    const dedicatedIds = ['inverterSelect','phaseType','desiredBatteryKwh','manufacturerSelect','batteryTypeSelect','roofType','panelOrientation','numRows','numArrays','tiltAngle','addGateway','addEvCharger','installPostcode'];
+    const dedicatedIds = ['inverterSelect','phaseType','desiredBatteryKwh','manufacturerSelect','batteryTypeSelect','roofType','panelOrientation','numRows','numArrays','tiltAngle','gatewaySelect','addEvCharger','addPowerSensor','installPostcode'];
     document.querySelectorAll('input, select').forEach(el => { if (!dedicatedIds.includes(el.id)) { el.addEventListener('input', calculateQuote); el.addEventListener('change', calculateQuote); } });
     document.getElementById('installPostcode').addEventListener('input', function() { this.value = this.value.replace(/\D/g, '').slice(0, 4); updateZoneDisplay(); calculateQuote(); });
     document.getElementById('manufacturerSelect').addEventListener('change', switchManufacturer);
@@ -419,7 +443,8 @@ function bindEvents() {
     document.getElementById('numRows').addEventListener('input', () => { updateMountingKitInfo(); calculateQuote(); });
     document.getElementById('numArrays').addEventListener('input', () => { updateMountingKitInfo(); calculateQuote(); });
     document.getElementById('tiltAngle').addEventListener('change', () => { updateMountingKitInfo(); calculateQuote(); });
-    document.getElementById('addGateway').addEventListener('change', () => { document.getElementById('gatewayOptions').style.display = document.getElementById('addGateway').checked ? 'block' : 'none'; calculateQuote(); });
+    document.getElementById('gatewaySelect').addEventListener('change', calculateQuote);
+    document.getElementById('addPowerSensor').addEventListener('change', calculateQuote);
     document.getElementById('addEvCharger').addEventListener('change', () => { document.getElementById('evChargerOptions').style.display = document.getElementById('addEvCharger').checked ? 'block' : 'none'; calculateQuote(); });
     document.querySelectorAll('input[type="number"]').forEach(el => {
         el.addEventListener('click', function(e) { const rect = this.getBoundingClientRect(); if (e.clientX > rect.right - 30) { const mid = rect.top + rect.height / 2; if (e.clientY < mid) this.stepUp(); else this.stepDown(); this.dispatchEvent(new Event('input', { bubbles: true })); } });
@@ -455,9 +480,8 @@ function populateInverters() {
 
 function populateGateways() {
     const gateways = getMfg().gateways?.[state.phase] || [], sel = document.getElementById('gatewaySelect'); sel.innerHTML = '';
+    const none = document.createElement('option'); none.value = 'none'; none.textContent = 'None'; none.dataset.price = '0'; sel.appendChild(none);
     gateways.forEach(m => { const o = document.createElement('option'); o.value = m.sku; o.textContent = m.desc; o.dataset.price = m.price; o.dataset.supplierCode = m.supplier_code || ''; sel.appendChild(o); });
-    const lbl = document.getElementById('gatewaySectionTitle');
-    if (lbl) lbl.textContent = currentManufacturer === 'sigenergy' ? 'Gateway (Backup Power)' : 'EPS Box (Backup Power)';
 }
 
 function populateEvChargers() {
@@ -1078,20 +1102,16 @@ function calculateQuote() {
 
         document.getElementById('panelKwDisplay').textContent = state.sysKw.toFixed(2) + ' kW';
 
-        // Gateway UI: mandatory for Sigenergy with batteries
+        // Gateway UI: mandatory for Sigenergy with batteries -- auto-select cheapest
         const sigGwMandatory = currentManufacturer === 'sigenergy' && state.desiredBatteryKwh > 0;
-        const gwCheckbox = document.getElementById('addGateway');
-        const gwOptions = document.getElementById('gatewayOptions');
-        const gwCheckLabel = gwCheckbox?.nextElementSibling;
+        const gwSel = document.getElementById('gatewaySelect');
         if (sigGwMandatory) {
-            gwCheckbox.checked = true;
-            gwCheckbox.disabled = true;
-            if (gwCheckLabel) gwCheckLabel.textContent = 'Gateway included (required with battery)';
-            gwOptions.style.display = 'block';
+            // If currently set to None, auto-select cheapest (index 1 = first real gateway)
+            if (gwSel.value === 'none' && gwSel.options.length > 1) gwSel.selectedIndex = 1;
+            // Hide the None option so user can't deselect
+            if (gwSel.options[0] && gwSel.options[0].value === 'none') gwSel.options[0].disabled = true;
         } else {
-            gwCheckbox.disabled = false;
-            if (gwCheckLabel) gwCheckLabel.textContent = 'Add backup power protection';
-            gwOptions.style.display = gwCheckbox.checked ? 'block' : 'none';
+            if (gwSel.options[0] && gwSel.options[0].value === 'none') gwSel.options[0].disabled = false;
         }
         const desired = state.desiredBatteryKwh;
         let actualKwh = 0;
@@ -1266,25 +1286,15 @@ function calculateQuote() {
             costGateway = dualStackResult.gwPrice; // mandatory gateway
             costMount = dualStackResult.mountCost;
             installBat = dualStackResult.labourCost;
-            // If user also checked gateway and picked a more expensive one, use that instead
-            if (document.getElementById('addGateway').checked) {
-                const gw = document.getElementById('gatewaySelect');
-                const userGwPrice = parseFloat(gw.options[gw.selectedIndex]?.dataset.price) || 0;
-                if (userGwPrice > costGateway) costGateway = userGwPrice;
-            }
+            // If user picked a more expensive gateway, use that instead
+            const gw = document.getElementById('gatewaySelect');
+            const userGwPrice = parseFloat(gw.options[gw.selectedIndex]?.dataset.price) || 0;
+            if (userGwPrice > costGateway) costGateway = userGwPrice;
         } else {
             costInverter = state.invPrice;
             costBattery = bat.equipmentCost;
-            costGateway = 0;
-            if (currentManufacturer === 'sigenergy' && bat.totalModules > 0) {
-                // Gateway mandatory for Sigenergy with batteries -- use cheapest or user-selected if higher
-                const gateways = getMfg().gateways?.[state.phase] || [];
-                const cheapest = gateways.length ? Math.min(...gateways.map(g => g.price)) : 0;
-                costGateway = cheapest;
-                const gw = document.getElementById('gatewaySelect');
-                const userGwPrice = parseFloat(gw.options[gw.selectedIndex]?.dataset.price) || 0;
-                if (userGwPrice > costGateway) costGateway = userGwPrice;
-            } else if (document.getElementById('addGateway').checked) { const gw = document.getElementById('gatewaySelect'); costGateway = parseFloat(gw.options[gw.selectedIndex]?.dataset.price) || 0; }
+            const gw = document.getElementById('gatewaySelect');
+            costGateway = parseFloat(gw.options[gw.selectedIndex]?.dataset.price) || 0;
             const mfgMount = getMfg().battery_mounting || {};
             costMount = (bat.totalModules > 0 && mfgMount.show !== false) ? (mfgMount[state.mountingType === 'wall' ? 'mount_wall' : 'mount_ground'] ?? 0) : 0;
             installBat = (bat.totalModules > 0) ? state.installBatPerStack : 0;
@@ -1405,18 +1415,12 @@ function buildBOM() {
         }
 
         if (currentManufacturer === 'sigenergy' && bat.totalModules > 0) {
-            // Gateway mandatory for Sigenergy -- use cheapest or user-selected if higher
-            const gateways = getMfg().gateways?.[state.phase] || [];
-            const cheapestGw = gateways.length ? gateways.reduce((a, b) => a.price <= b.price ? a : b) : null;
+            // Gateway mandatory for Sigenergy -- use selected gateway from dropdown
             const gw = document.getElementById('gatewaySelect'), gwOpt = gw.options[gw.selectedIndex];
-            const userGwPrice = parseFloat(gwOpt?.dataset.price) || 0;
-            const useUser = userGwPrice > (cheapestGw?.price || 0);
-            const gwDesc = useUser ? gwOpt?.textContent : cheapestGw?.desc;
-            const gwSku = useUser ? (gwOpt?.value || '') : (cheapestGw?.sku || '');
-            const gwPrice = useUser ? userGwPrice : (cheapestGw?.price || 0);
-            const gwCode = useUser ? (gwOpt?.dataset.supplierCode || '') : (cheapestGw?.supplier_code || '');
-            if (gwPrice > 0) batItems.push({ desc: 'Gateway: ' + (gwDesc || ''), sku: gwSku, qty: 1, unit: gwPrice, total: gwPrice, supplier_code: gwCode });
-        } else if (document.getElementById('addGateway').checked) {
+            const gwPrice = parseFloat(gwOpt?.dataset.price) || 0;
+            const gwCode = gwOpt?.dataset.supplierCode || '';
+            if (gwPrice > 0) batItems.push({ desc: 'Gateway: ' + (gwOpt?.textContent || ''), sku: gwOpt?.value || '', qty: 1, unit: gwPrice, total: gwPrice, supplier_code: gwCode });
+        } else if (document.getElementById('gatewaySelect').value !== 'none') {
             const gw = document.getElementById('gatewaySelect'), gwOpt = gw.options[gw.selectedIndex];
             const gwPrice = parseFloat(gwOpt?.dataset.price) || 0;
             if (gwPrice > 0) batItems.push({ desc: (currentManufacturer === 'sigenergy' ? 'Gateway' : 'EPS Box') + ': ' + (gwOpt?.textContent || ''), sku: gwOpt?.value || '', qty: 1, unit: gwPrice, total: gwPrice, supplier_code: gwOpt?.dataset.supplierCode || '' });
@@ -1553,8 +1557,8 @@ function collectQuoteData() {
             manualBatteryMode: manualBatteryMode,
             inverterSelectIdx: document.getElementById('inverterSelect').selectedIndex,
             userChangedInverter: userChangedInverter,
-            addGateway: document.getElementById('addGateway').checked,
             gatewaySelectIdx: document.getElementById('gatewaySelect').selectedIndex,
+            addPowerSensor: document.getElementById('addPowerSensor').checked,
             addEvCharger: document.getElementById('addEvCharger').checked,
             evChargerSelectIdx: document.getElementById('evChargerType').selectedIndex,
             selectedAccessories: selectedAccessories.map(a => ({ ...a })),
@@ -1728,15 +1732,17 @@ async function loadQuote(quoteId) {
         userChangedInverter = s.userChangedInverter || false;
         if (s.inverterSelectIdx != null) document.getElementById('inverterSelect').selectedIndex = s.inverterSelectIdx;
 
-        document.getElementById('addGateway').checked = s.addGateway || false;
-        document.getElementById('gatewayOptions').style.display = s.addGateway ? 'block' : 'none';
         if (s.gatewaySelectIdx != null) document.getElementById('gatewaySelect').selectedIndex = s.gatewaySelectIdx;
+        else if (s.addGateway && document.getElementById('gatewaySelect').options.length > 1) document.getElementById('gatewaySelect').selectedIndex = 1;
+
+        document.getElementById('addPowerSensor').checked = s.addPowerSensor !== false;
+        updatePowerSensorPrice();
 
         document.getElementById('addEvCharger').checked = s.addEvCharger || false;
         document.getElementById('evChargerOptions').style.display = s.addEvCharger ? 'block' : 'none';
         if (s.evChargerSelectIdx != null) document.getElementById('evChargerType').selectedIndex = s.evChargerSelectIdx;
 
-        selectedAccessories = (s.selectedAccessories || []).map(a => ({ ...a }));
+        selectedAccessories = (s.selectedAccessories || []).filter(a => a.id !== 'power_sensor').map(a => ({ ...a }));
         renderSelectedAccessories();
         selectedAddons = (s.selectedAddons || []).map(a => ({ ...a }));
         renderSelectedAddons();
@@ -1796,8 +1802,8 @@ function clearQuote() {
     document.getElementById('installPostcode').value = '';
     document.getElementById('desiredBatteryKwh').value = 13;
     document.getElementById('panelCount').value = 28;
-    document.getElementById('addGateway').checked = false;
-    document.getElementById('gatewayOptions').style.display = 'none';
+    document.getElementById('gatewaySelect').selectedIndex = 0;
+    document.getElementById('addPowerSensor').checked = true;
     document.getElementById('addEvCharger').checked = false;
     document.getElementById('evChargerOptions').style.display = 'none';
     selectedAccessories = []; renderSelectedAccessories();
