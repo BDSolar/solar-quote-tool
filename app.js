@@ -973,7 +973,7 @@ function renderDualStackBreakdown() {
             const selected = opt.sku === currentSku ? ' selected' : '';
             const disabled = !opt.cecValid ? ' disabled' : '';
             const style = !opt.cecValid ? ' style="color:#666;"' : '';
-            s += '<option value="' + opt.sku + '"' + selected + disabled + style + '>' + opt.cecKey + ' (' + opt.kw + 'kW)' + (!opt.cecValid ? ' ✗' : '') + '</option>';
+            s += '<option value="' + opt.sku + '"' + selected + disabled + style + '>' + opt.cecKey + ' (' + opt.kw + 'kW)' + (!opt.cecValid ? ' âœ—' : '') + '</option>';
         }
         s += '</select>';
         return s;
@@ -989,7 +989,7 @@ function renderDualStackBreakdown() {
         + '</div>';
     html += '<div style="display:flex;align-items:center;gap:6px;">'
         + '<span style="color:#ccc;font-size:0.85em;">' + s1parts.join(' + ') + ' = ' + dualStackResult.stack1.kwh + ' kWh</span>'
-        + '<span style="' + btnStyle + '" onclick="adjustDualStack(1,\'-\')">−</span>'
+        + '<span style="' + btnStyle + '" onclick="adjustDualStack(1,\'-\')">âˆ’</span>'
         + '<span style="' + btnStyle + '" onclick="adjustDualStack(1,\'+\')">+</span>'
         + '</div>';
     html += '</div>';
@@ -1004,7 +1004,7 @@ function renderDualStackBreakdown() {
         + '</div>';
     html += '<div style="display:flex;align-items:center;gap:6px;">'
         + '<span style="color:#ccc;font-size:0.85em;">' + s2parts.join(' + ') + ' = ' + dualStackResult.stack2.kwh + ' kWh</span>'
-        + '<span style="' + btnStyle + '" onclick="adjustDualStack(2,\'-\')">−</span>'
+        + '<span style="' + btnStyle + '" onclick="adjustDualStack(2,\'-\')">âˆ’</span>'
         + '<span style="' + btnStyle + '" onclick="adjustDualStack(2,\'+\')">+</span>'
         + '</div>';
     html += '</div>';
@@ -1529,7 +1529,9 @@ function collectQuoteData() {
             addEvCharger: document.getElementById('addEvCharger').checked,
             evChargerSelectIdx: document.getElementById('evChargerType').selectedIndex,
             selectedAccessories: selectedAccessories.map(a => ({ ...a })),
-            selectedAddons: selectedAddons.map(a => ({ ...a }))
+            selectedAddons: selectedAddons.map(a => ({ ...a })),
+            dualStackManual: dualStackManual ? { ...dualStackManual } : null,
+            dualStackEcOverride: dualStackEcOverride ? { ...dualStackEcOverride } : null
         },
         mounting: {
             roofType: state.roofType,
@@ -1742,6 +1744,10 @@ async function loadQuote(quoteId) {
         customAddonCount = 0;
         document.getElementById('customAddons').innerHTML = '';
         ca.forEach(item => { addCustomAddon(); document.getElementById('customName-' + customAddonCount).value = item.name; document.getElementById('customCost-' + customAddonCount).value = item.cost; });
+
+        // Restore dual-stack overrides (before calculateQuote)
+        dualStackManual = s.dualStackManual || null;
+        dualStackEcOverride = s.dualStackEcOverride || null;
 
         // Hide search results
         document.getElementById('quoteSearchResults').style.display = 'none';
