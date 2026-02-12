@@ -973,7 +973,7 @@ function renderDualStackBreakdown() {
             const selected = opt.sku === currentSku ? ' selected' : '';
             const disabled = !opt.cecValid ? ' disabled' : '';
             const style = !opt.cecValid ? ' style="color:#666;"' : '';
-            s += '<option value="' + opt.sku + '"' + selected + disabled + style + '>' + opt.cecKey + ' (' + opt.kw + 'kW)' + (!opt.cecValid ? ' âœ—' : '') + '</option>';
+            s += '<option value="' + opt.sku + '"' + selected + disabled + style + '>' + opt.cecKey + ' (' + opt.kw + 'kW)' + (!opt.cecValid ? ' Ã¢Å“â€”' : '') + '</option>';
         }
         s += '</select>';
         return s;
@@ -989,7 +989,7 @@ function renderDualStackBreakdown() {
         + '</div>';
     html += '<div style="display:flex;align-items:center;gap:6px;">'
         + '<span style="color:#ccc;font-size:0.85em;">' + s1parts.join(' + ') + ' = ' + dualStackResult.stack1.kwh + ' kWh</span>'
-        + '<span style="' + btnStyle + '" onclick="adjustDualStack(1,\'-\')">âˆ’</span>'
+        + '<span style="' + btnStyle + '" onclick="adjustDualStack(1,\'-\')">Ã¢Ë†â€™</span>'
         + '<span style="' + btnStyle + '" onclick="adjustDualStack(1,\'+\')">+</span>'
         + '</div>';
     html += '</div>';
@@ -1004,7 +1004,7 @@ function renderDualStackBreakdown() {
         + '</div>';
     html += '<div style="display:flex;align-items:center;gap:6px;">'
         + '<span style="color:#ccc;font-size:0.85em;">' + s2parts.join(' + ') + ' = ' + dualStackResult.stack2.kwh + ' kWh</span>'
-        + '<span style="' + btnStyle + '" onclick="adjustDualStack(2,\'-\')">âˆ’</span>'
+        + '<span style="' + btnStyle + '" onclick="adjustDualStack(2,\'-\')">Ã¢Ë†â€™</span>'
         + '<span style="' + btnStyle + '" onclick="adjustDualStack(2,\'+\')">+</span>'
         + '</div>';
     html += '</div>';
@@ -1805,9 +1805,291 @@ document.addEventListener('DOMContentLoaded', () => {
 function generateQuote() {
     const pc = document.getElementById('installPostcode').value;
     if (!pc || !lookupZone(pc)) { alert('Please enter a valid postcode before generating a quote.'); document.getElementById('installPostcode').focus(); return; }
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const pageW = doc.internal.pageSize.getWidth();   // 210
+    const pageH = doc.internal.pageSize.getHeight();   // 297
+    const margin = 15;
+    const contentW = pageW - margin * 2;
+    let y = margin;
+
+    // --- Gather data ---
+    syncStateFromDOM();
+    const bom = buildBOM();
+    const bat = getBatterySummary();
+    const invLabel = getInverterLabel();
     const name = document.getElementById('customerName').value || 'Customer';
-    const addr = [document.getElementById('installAddress').value, document.getElementById('installSuburb')?.value, document.getElementById('installState')?.value, pc].filter(Boolean).join(', ');
-    alert('Quote for ' + name + '\nAddress: ' + (addr || 'TBD') + '\nTotal: ' + document.getElementById('finalPrice').textContent + '\n\n(PDF generation coming soon)');
+    const phone = document.getElementById('customerPhone').value || '';
+    const email = document.getElementById('customerEmail').value || '';
+    const addr = document.getElementById('installAddress').value || '';
+    const suburb = document.getElementById('installSuburb').value || '';
+    const st = document.getElementById('installState').value || '';
+    const addrLine = [addr, suburb, st, pc].filter(Boolean).join(', ');
+    const date = new Date().toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' });
+
+    // Pricing (same logic as calculateQuote / showBOM)
+    const grandTotal = bom.reduce((s, g) => s + g.items.reduce((s2, i) => s2 + i.total, 0), 0);
+    const gp = state.gpMargin, gpAmt = grandTotal * (gp / 100);
+    const priceBeforeComm = grandTotal + gpAmt;
+    const commAmt = priceBeforeComm * GST * (state.salesCommission / 100) / GST;
+    const priceBeforeRebates = priceBeforeComm + commAmt;
+    const zoneResult = lookupZone(pc);
+    const zoneRating = zoneResult ? zoneResult.rating : 0;
+    const pvStcCount = zoneRating > 0 ? Math.floor(state.sysKw * zoneRating * state.deemingPeriod) : 0;
+    const pvReb = pvStcCount * state.stcPrice;
+    const isDualStack = dualStackResult && currentManufacturer === 'sigenergy' && state.desiredBatteryKwh > 48;
+    const batReb = isDualStack ? dualStackResult.totalUsableKwh * state.batteryRebatePerKwh : bat.usableKwh * state.batteryRebatePerKwh;
+    const finalPrice = priceBeforeRebates - pvReb - batReb;
+
+    // Markup multiplier (to convert COG line items to sell price)
+    const markup = priceBeforeRebates / grandTotal;
+
+    // Helpers
+    const fmtPdf = v => '$' + Math.round(v).toLocaleString('en-AU');
+    const fmtPdfInc = v => '$' + Math.round(v * GST).toLocaleString('en-AU');
+
+    // Colors
+    const magenta = [224, 0, 240];
+    const darkBg = [20, 20, 20];
+    const midGrey = [42, 42, 42];
+    const lightText = [240, 240, 240];
+    const mutedText = [156, 163, 175];
+
+    // --- PAGE BACKGROUND ---
+    const drawPageBg = () => {
+        doc.setFillColor(...darkBg);
+        doc.rect(0, 0, pageW, pageH, 'F');
+    };
+    drawPageBg();
+
+    // --- HEADER ---
+    doc.setFontSize(22);
+    doc.setTextColor(...magenta);
+    doc.setFont('helvetica', 'bold');
+    doc.text('BLACK DIAMOND SOLAR', margin, y + 7);
+    doc.setFontSize(9);
+    doc.setTextColor(...mutedText);
+    doc.setFont('helvetica', 'normal');
+    doc.text('blackdiamondsolar.co', margin, y + 13);
+
+    // Date & quote ref (right side)
+    doc.setFontSize(10);
+    doc.setTextColor(...lightText);
+    doc.text(date, pageW - margin, y + 7, { align: 'right' });
+    doc.setFontSize(8);
+    doc.setTextColor(...mutedText);
+    const quoteRef = 'BDS-' + new Date().toISOString().slice(2, 10).replace(/-/g, '') + '-' + Math.random().toString(36).substring(2, 6).toUpperCase();
+    doc.text('Ref: ' + quoteRef, pageW - margin, y + 12, { align: 'right' });
+
+    y += 20;
+
+    // Magenta divider
+    doc.setDrawColor(...magenta);
+    doc.setLineWidth(0.5);
+    doc.line(margin, y, pageW - margin, y);
+    y += 8;
+
+    // --- CUSTOMER DETAILS ---
+    doc.setFontSize(11);
+    doc.setTextColor(...lightText);
+    doc.setFont('helvetica', 'bold');
+    doc.text(name, margin, y);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(...mutedText);
+    if (addrLine) { y += 5; doc.text(addrLine, margin, y); }
+    if (phone) { y += 4.5; doc.text(phone, margin, y); }
+    if (email) { y += 4.5; doc.text(email, margin, y); }
+    y += 8;
+
+    // --- SYSTEM SUMMARY BOX ---
+    const boxH = 20;
+    doc.setFillColor(26, 26, 46);
+    doc.roundedRect(margin, y, contentW, boxH, 2, 2, 'F');
+    doc.setDrawColor(...magenta);
+    doc.setLineWidth(0.3);
+    doc.roundedRect(margin, y, contentW, boxH, 2, 2, 'S');
+
+    const totalKwh = isDualStack ? dualStackResult.totalKwh : bat.totalKwh;
+    const totalUsableKwh = isDualStack ? dualStackResult.totalUsableKwh : bat.usableKwh;
+    const invSku = isDualStack ? (dualStackResult.stack1.ec.sku + ' + ' + dualStackResult.stack2.ec.sku) : state.invSku;
+
+    const summaryItems = [
+        { label: 'System Size', value: state.sysKw.toFixed(2) + ' kW' },
+        { label: 'Panels', value: state.panelCount + ' × ' + state.panelWattage + 'W' },
+        { label: 'Battery', value: totalKwh > 0 ? totalKwh + ' kWh' : 'None' },
+        { label: invLabel, value: invSku }
+    ];
+    const colW = contentW / summaryItems.length;
+    summaryItems.forEach((item, i) => {
+        const cx = margin + colW * i + colW / 2;
+        doc.setFontSize(7);
+        doc.setTextColor(...mutedText);
+        doc.text(item.label, cx, y + 7, { align: 'center' });
+        doc.setFontSize(9);
+        doc.setTextColor(...lightText);
+        doc.setFont('helvetica', 'bold');
+        // Truncate long inverter names
+        let val = item.value;
+        if (val.length > 28) val = val.substring(0, 26) + '…';
+        doc.text(val, cx, y + 13, { align: 'center' });
+        doc.setFont('helvetica', 'normal');
+    });
+    y += boxH + 8;
+
+    // --- PRICING TABLE ---
+    // Build customer-facing rows from BOM groups
+    // Each BOM group becomes a section; items show desc + qty + sell price (inc GST)
+    const tableRows = [];
+    bom.forEach(group => {
+        // Group header row
+        tableRows.push({ isGroupHeader: true, category: group.category });
+        group.items.forEach(item => {
+            // Strip supplier codes and "Stack 1:" / "Stack 2:" prefixes kept as-is for clarity
+            let desc = item.desc;
+            // Remove (Labour) and (Custom) sku labels
+            const sellUnit = item.unit * markup * GST;
+            const sellTotal = item.total * markup * GST;
+            tableRows.push({
+                desc: desc,
+                qty: item.qty,
+                unit: fmtPdf(Math.round(sellUnit)),
+                total: fmtPdf(Math.round(sellTotal))
+            });
+        });
+    });
+
+    // Use autoTable
+    doc.autoTable({
+        startY: y,
+        margin: { left: margin, right: margin },
+        theme: 'plain',
+        styles: {
+            fillColor: darkBg,
+            textColor: [209, 213, 219],
+            fontSize: 8,
+            cellPadding: { top: 2.5, bottom: 2.5, left: 4, right: 4 },
+            lineWidth: 0,
+            font: 'helvetica'
+        },
+        headStyles: {
+            fillColor: [30, 30, 30],
+            textColor: mutedText,
+            fontSize: 7,
+            fontStyle: 'bold',
+            cellPadding: { top: 3, bottom: 3, left: 4, right: 4 }
+        },
+        head: [['Description', 'Qty', 'Unit (inc GST)', 'Total (inc GST)']],
+        columnStyles: {
+            0: { cellWidth: contentW - 60 },
+            1: { cellWidth: 14, halign: 'center' },
+            2: { cellWidth: 23, halign: 'right' },
+            3: { cellWidth: 23, halign: 'right' }
+        },
+        body: tableRows.map(row => {
+            if (row.isGroupHeader) {
+                return [{ content: row.category, colSpan: 4, styles: { fontStyle: 'bold', textColor: magenta, fontSize: 8, fillColor: [20, 20, 30], cellPadding: { top: 4, bottom: 2, left: 4, right: 4 } } }];
+            }
+            return [row.desc, row.qty, row.unit, row.total];
+        }),
+        didDrawPage: (data) => {
+            // Redraw background on new pages
+            if (data.pageNumber > 1) {
+                // Background already drawn via willDrawPage
+            }
+        },
+        willDrawPage: () => {
+            drawPageBg();
+        }
+    });
+
+    y = doc.lastAutoTable.finalY + 6;
+
+    // --- Check if we need a new page for totals ---
+    if (y + 55 > pageH - margin) {
+        doc.addPage();
+        drawPageBg();
+        y = margin;
+    }
+
+    // --- TOTALS SECTION ---
+    const totalsX = pageW - margin - 70;
+    const totalsW = 70;
+    const labelX = totalsX;
+    const valueX = pageW - margin;
+
+    const drawTotalRow = (label, value, opts = {}) => {
+        if (opts.divider) {
+            doc.setDrawColor(...(opts.dividerColor || midGrey));
+            doc.setLineWidth(opts.dividerWidth || 0.3);
+            doc.line(totalsX, y - 1, pageW - margin, y - 1);
+            y += 1;
+        }
+        doc.setFontSize(opts.fontSize || 9);
+        doc.setTextColor(...(opts.labelColor || mutedText));
+        doc.setFont('helvetica', opts.fontStyle || 'normal');
+        doc.text(label, labelX, y);
+        doc.setTextColor(...(opts.valueColor || lightText));
+        doc.text(value, valueX, y, { align: 'right' });
+        y += opts.spacing || 5;
+    };
+
+    drawTotalRow('Price Before Rebates', fmtPdfInc(priceBeforeRebates), { divider: true });
+    if (pvReb > 0) drawTotalRow('PV STC Rebate (' + pvStcCount + ' STCs)', '-' + fmtPdfInc(pvReb), { valueColor: [52, 211, 153] });
+    if (batReb > 0) drawTotalRow('Battery STC Rebate', '-' + fmtPdfInc(batReb), { valueColor: [52, 211, 153] });
+
+    y += 2;
+    drawTotalRow('Customer Price (inc GST)', fmtPdfInc(finalPrice), {
+        divider: true, dividerColor: magenta, dividerWidth: 0.8,
+        fontSize: 12, fontStyle: 'bold', labelColor: magenta, valueColor: magenta, spacing: 8
+    });
+
+    // --- FOOTER SECTION ---
+    y += 6;
+    if (y + 30 > pageH - margin) {
+        doc.addPage();
+        drawPageBg();
+        y = margin;
+    }
+
+    doc.setDrawColor(...midGrey);
+    doc.setLineWidth(0.2);
+    doc.line(margin, y, pageW - margin, y);
+    y += 6;
+
+    doc.setFontSize(8);
+    doc.setTextColor(...mutedText);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Terms & Conditions', margin, y);
+    doc.setFont('helvetica', 'normal');
+    y += 4;
+
+    const terms = [
+        'This quote is valid for 14 days from the date above.',
+        'All prices include GST. STC rebates are applied as a point-of-sale discount.',
+        'Installation timeline subject to site inspection and council approvals.',
+        'Warranty: Panels 25 years, Inverter/Battery per manufacturer terms.',
+        'Payment terms: 50% deposit, balance prior to installation.'
+    ];
+    terms.forEach(t => {
+        doc.setFontSize(7);
+        doc.text('•  ' + t, margin, y);
+        y += 3.5;
+    });
+
+    y += 4;
+    doc.setFontSize(8);
+    doc.setTextColor(...magenta);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Black Diamond Solar', margin, y);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(...mutedText);
+    doc.text('  |  blackdiamondsolar.co', margin + doc.getTextWidth('Black Diamond Solar'), y);
+
+    // --- SAVE ---
+    const safeName = name.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 30);
+    doc.save('BDS_Quote_' + safeName + '_' + date.replace(/ /g, '-') + '.pdf');
 }
 
 // ====================
