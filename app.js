@@ -89,7 +89,7 @@ const state = {
 
 function syncStateFromDOM() {
     state.phase = document.getElementById('phaseType').value;
-    state.panelMode = document.getElementById('panelInputMode').value;
+    state.panelMode = 'panels';
     state.roofType = document.getElementById('roofType').value;
     state.orientation = document.getElementById('panelOrientation').value;
     state.numRows = parseInt(document.getElementById('numRows').value) || 1;
@@ -116,15 +116,8 @@ function syncStateFromDOM() {
         state.panelHeightMm = parseInt(panelOpt.dataset.heightMm) || 1800;
         state.panelSupplierCode = panelOpt.dataset.supplierCode || '';
     }
-    if (state.panelMode === 'panels') {
-        state.panelCount = parseInt(document.getElementById('panelCount').value) || 0;
-        state.sysKw = (state.panelCount * state.panelWattage) / 1000;
-        document.getElementById('systemSizeInput').value = state.sysKw.toFixed(2);
-    } else {
-        state.sysKw = parseFloat(document.getElementById('systemSizeInput').value) || 0;
-        state.panelCount = Math.ceil((state.sysKw * 1000) / state.panelWattage);
-        document.getElementById('panelCount').value = state.panelCount;
-    }
+    state.panelCount = parseInt(document.getElementById('panelCount').value) || 0;
+    state.sysKw = (state.panelCount * state.panelWattage) / 1000;
     const invSel = document.getElementById('inverterSelect');
     const invOpt = invSel.options[invSel.selectedIndex];
     if (invOpt) {
@@ -412,14 +405,13 @@ function updateZoneDisplay() { const pc = document.getElementById('installPostco
 // ====================
 
 function bindEvents() {
-    const dedicatedIds = ['inverterSelect','phaseType','desiredBatteryKwh','manufacturerSelect','batteryTypeSelect','panelInputMode','roofType','panelOrientation','numRows','numArrays','tiltAngle','addGateway','addEvCharger','installPostcode'];
+    const dedicatedIds = ['inverterSelect','phaseType','desiredBatteryKwh','manufacturerSelect','batteryTypeSelect','roofType','panelOrientation','numRows','numArrays','tiltAngle','addGateway','addEvCharger','installPostcode'];
     document.querySelectorAll('input, select').forEach(el => { if (!dedicatedIds.includes(el.id)) { el.addEventListener('input', calculateQuote); el.addEventListener('change', calculateQuote); } });
     document.getElementById('installPostcode').addEventListener('input', function() { this.value = this.value.replace(/\D/g, '').slice(0, 4); updateZoneDisplay(); calculateQuote(); });
     document.getElementById('manufacturerSelect').addEventListener('change', switchManufacturer);
     document.getElementById('batteryTypeSelect').addEventListener('change', switchBatteryType);
     document.getElementById('phaseType').addEventListener('change', () => { syncStateFromDOM(); userChangedInverter = false; dualStackManual = null; dualStackEcOverride = null; populateInverters(); populateGateways(); updateAccessoryPrices(); calculateQuote(); });
     document.getElementById('panelSelect').addEventListener('change', calculateQuote);
-    document.getElementById('panelInputMode').addEventListener('change', togglePanelMode);
     document.getElementById('desiredBatteryKwh').addEventListener('input', () => { const el = document.getElementById('desiredBatteryKwh'); if (parseFloat(el.value) > 96) el.value = 96; manualBatteryMode = false; userChangedInverter = false; dualStackManual = null; dualStackEcOverride = null; calculateQuote(); });
     document.getElementById('inverterSelect').addEventListener('change', () => { userChangedInverter = true; calculateQuote(); });
     document.getElementById('roofType').addEventListener('change', updateRoofInfo);
@@ -479,7 +471,7 @@ function populateEvChargers() {
     addGroup('AC Socket Only', groups.ac_socket);
 }
 
-function togglePanelMode() { const m = document.getElementById('panelInputMode').value; document.getElementById('panelCountGroup').style.display = m === 'panels' ? 'block' : 'none'; document.getElementById('systemSizeGroup').style.display = m === 'kw' ? 'block' : 'none'; calculateQuote(); }
+
 
 // ====================
 // BATTERY MANAGEMENT
@@ -1084,7 +1076,7 @@ function calculateQuote() {
         if (!CONFIG.manufacturers) return;
         syncStateFromDOM();
 
-        document.getElementById('systemCalc').textContent = 'System: ' + state.sysKw.toFixed(2) + ' kW (' + state.panelCount + ' panels)';
+        document.getElementById('panelKwDisplay').textContent = state.sysKw.toFixed(2) + ' kW';
 
         // Gateway UI: mandatory for Sigenergy with batteries
         const sigGwMandatory = currentManufacturer === 'sigenergy' && state.desiredBatteryKwh > 0;
@@ -1723,14 +1715,8 @@ async function loadQuote(quoteId) {
         document.getElementById('phaseType').value = s.phase || 'single_phase';
         populateInverters(); populateGateways();
 
-        document.getElementById('panelInputMode').value = s.panelMode || 'panels';
-        togglePanelMode();
         if (s.panelSelectIdx != null) document.getElementById('panelSelect').selectedIndex = s.panelSelectIdx;
-        if (s.panelMode === 'panels') {
-            document.getElementById('panelCount').value = s.panelCount || 28;
-        } else {
-            document.getElementById('systemSizeInput').value = (s.panelCount * (document.getElementById('panelSelect').options[document.getElementById('panelSelect').selectedIndex]?.dataset?.wattage || 450) / 1000).toFixed(1);
-        }
+        document.getElementById('panelCount').value = s.panelCount || 28;
 
         document.getElementById('desiredBatteryKwh').value = s.desiredBatteryKwh || 0;
         if (s.batteryQtys) {
@@ -1810,7 +1796,6 @@ function clearQuote() {
     document.getElementById('installPostcode').value = '';
     document.getElementById('desiredBatteryKwh').value = 13;
     document.getElementById('panelCount').value = 28;
-    document.getElementById('panelInputMode').value = 'panels';
     document.getElementById('addGateway').checked = false;
     document.getElementById('gatewayOptions').style.display = 'none';
     document.getElementById('addEvCharger').checked = false;
@@ -1823,7 +1808,7 @@ function clearQuote() {
     document.getElementById('quoteSearchResults').style.display = 'none';
     document.getElementById('quoteSearchInput').value = '';
     document.getElementById('activeQuoteBar').style.display = 'none';
-    updateZoneDisplay(); togglePanelMode(); calculateQuote();
+    updateZoneDisplay(); calculateQuote();
 }
 
 function showActiveQuote(name, id) {
