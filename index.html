@@ -31,7 +31,7 @@
     <div class="content">
         <div class="form-section">
             <div class="section">
-                <div class="section-title"><span class="accent-dot"></span>Customer Information</div>
+                <div class="section-title">Customer Information</div>
                 <div class="form-group"><label>Customer Name</label><input type="text" id="customerName" placeholder="Enter customer name"></div>
                 <div class="grid-2">
                     <div class="form-group"><label>Phone</label><input type="tel" id="customerPhone" placeholder="e.g. 0412 345 678"></div>
@@ -48,7 +48,7 @@
                 </div>
             </div>
             <div class="section">
-                <div class="section-title"><span class="accent-dot"></span>System Configuration</div>
+                <div class="section-title">System Configuration</div>
                 <div class="form-group"><label>Manufacturer</label><select id="manufacturerSelect"></select></div>
                 <div class="form-group"><label>Phase Type</label><select id="phaseType"><option value="single_phase">Single Phase</option><option value="three_phase">Three Phase</option></select></div>
                 <div class="form-group"><label>Solar Panel</label><select id="panelSelect"></select></div>
@@ -60,7 +60,7 @@
                 <div class="info-box"><strong id="systemCalc">System: 9.00 kW (20 panels)</strong></div>
             </div>
             <div class="section">
-                <div class="section-title"><span class="accent-dot"></span>Battery Configuration</div>
+                <div class="section-title">Battery Configuration</div>
                 <div id="batteryTypeGroup" style="display:none;">
                     <div class="form-group"><label>Battery Type</label><select id="batteryTypeSelect"></select></div>
                 </div>
@@ -79,18 +79,18 @@
                 <div id="cecApproved" class="success-box" style="display:none;"></div>
             </div>
             <div class="section">
-                <div class="section-title" id="inverterSectionTitle"><span class="accent-dot"></span>Energy Controller (Inverter)</div>
+                <div class="section-title" id="inverterSectionTitle">Energy Controller (Inverter)</div>
                 <div class="form-group"><label id="inverterDropdownLabel">Energy Controller</label><select id="inverterSelect"></select></div>
                 <div id="inverterInfo" class="info-box" style="display:none;"></div>
                 <div id="inverterWarning" class="warn-box" style="display:none;"></div>
             </div>
             <div class="section">
-                <div class="section-title" id="gatewaySectionTitle"><span class="accent-dot"></span>Gateway (Backup Power)</div>
+                <div class="section-title" id="gatewaySectionTitle">Gateway (Backup Power)</div>
                 <div class="addon-item"><input type="checkbox" id="addGateway"><label for="addGateway">Add backup power protection</label></div>
                 <div id="gatewayOptions" style="display:none;"><div class="form-group"><label>Model</label><select id="gatewaySelect"></select></div></div>
             </div>
             <div class="section">
-                <div class="section-title"><span class="accent-dot"></span>Installation &amp; Mounting</div>
+                <div class="section-title">Installation &amp; Mounting</div>
                 <div class="grid-2">
                     <div class="form-group"><label>PV Install ($/kW)</label><input type="number" id="installPerKwPv" value="300" min="0" step="1"></div>
                     <div class="form-group"><label>Battery Install (per stack)</label><input type="number" id="installPerStack" value="1600" min="0" step="1"></div>
@@ -112,7 +112,7 @@
                 </div>
             </div>
             <div class="section">
-                <div class="section-title"><span class="accent-dot"></span>Accessories</div>
+                <div class="section-title">Accessories</div>
                 <div id="accessoriesContainer"></div>
                 <div id="evChargerSection">
                     <div class="addon-item"><input type="checkbox" id="addEvCharger"><label for="addEvCharger">EV Charger</label></div>
@@ -124,13 +124,13 @@
                 </div>
             </div>
             <div class="section">
-                <div class="section-title"><span class="accent-dot"></span>Other Add-ons</div>
+                <div class="section-title">Other Add-ons</div>
                 <div id="addonsContainer"></div>
                 <div id="customAddons"></div>
                 <button class="add-custom-btn" onclick="addCustomAddon()">+ Add Custom Item</button>
             </div>
             <div class="section">
-                <div class="section-title"><span class="accent-dot"></span>STC Rebates &amp; Margin</div>
+                <div class="section-title">STC Rebates &amp; Margin</div>
                 <div class="grid-2">
                     <div class="form-group"><label>STC Price ($/cert)</label><input type="number" id="stcPrice" value="40" step="0.5" min="0"></div>
                     <div class="form-group"><label>Deeming Period (yrs)</label><input type="number" id="stcDeemingPeriod" value="5" step="1" min="1" max="10" class="readonly-field" readonly></div>

@@ -126,20 +126,21 @@ body {
 .section:first-child { border-top: none; padding-top: 0; }
 
 .section-title {
-    font-size: 17px;
+    font-size: 28px;
     font-weight: 600;
     color: var(--text-primary);
-    margin-bottom: 16px;
+    margin-bottom: 20px;
     padding-bottom: 0;
     border-bottom: none;
     text-transform: none;
-    letter-spacing: -0.01em;
+    letter-spacing: -0.005em;
+    line-height: 1.1;
 }
 
 .accent-dot {
     display: inline-block;
-    width: 6px;
-    height: 6px;
+    width: 8px;
+    height: 8px;
     border-radius: 50%;
     background: var(--accent);
     margin-right: 10px;
