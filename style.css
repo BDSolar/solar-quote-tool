@@ -182,7 +182,7 @@ select {
 
 input:hover {
     border-color: var(--separator-strong);
-    background-color: var(--bg-hover);
+    background-color: var(--accent-subtle);
 }
 
 select:hover {
@@ -195,7 +195,7 @@ input:focus {
     outline: none;
     border-color: var(--accent);
     box-shadow: 0 0 0 3px var(--accent-glow), 0 0 0 1px var(--accent);
-    background-color: var(--bg-hover);
+    background-color: var(--accent-subtle);
 }
 
 select:focus {
