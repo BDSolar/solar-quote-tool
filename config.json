@@ -264,7 +264,7 @@
     },
 
     "rebates": {
-        "stc_price": 40,
+        "stc_price": 37,
         "stc_deeming_period": 5,
         "battery_rebate_per_kwh": 311,
         "stc_zones": [
@@ -313,7 +313,7 @@
         "meter_board_relocation": 1800, "meter_board_relocation_code": "BDS:MB-RELOC"
     },
 
-    "gp_margin": 30,
+    "gp_margin": 37.5,
 
     "mounting_kits": {
         "kits": {
