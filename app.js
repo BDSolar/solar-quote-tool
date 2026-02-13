@@ -300,7 +300,7 @@ function buildAccessoriesUI() {
     sel.innerHTML = '<option value="">-- Select item --</option>';
     items.forEach(function(item, idx) {
         var o = document.createElement('option'); o.value = idx;
-        o.textContent = item.label + (item.type !== 'ev_charger' ? ' ($' + item.price + ')' : '');
+        o.textContent = item.label;
         sel.appendChild(o);
     });
     var btn = document.createElement('button'); btn.className = 'add-custom-btn'; btn.style.marginTop = '0'; btn.textContent = '+ Add';
@@ -351,7 +351,7 @@ function buildEvChargerSubDropdown(entry, wrapper, priceSpan) {
         var sep = document.createElement('option'); sep.disabled = true; sep.textContent = '--- ' + label + ' ---'; sep.style.cssText = 'font-weight:bold;color:#9ca3af;'; subSel.appendChild(sep);
         items.forEach(function(item) {
             var o = document.createElement('option'); o.value = item.key;
-            o.textContent = '  ' + item.desc + ' ($' + item.price.toLocaleString() + ')';
+            o.textContent = '  ' + item.desc;
             subSel.appendChild(o);
         });
     };
@@ -387,8 +387,7 @@ function renderSelectedAccessories() {
         }
         var wrapper = document.createElement('div'); wrapper.style.cssText = 'margin-bottom:6px;';
         var div = document.createElement('div'); div.className = 'addon-item';
-        var priceStr = acc.type === 'ev_charger' ? (price > 0 ? '$' + price.toLocaleString() : 'Select below') : '$' + price;
-        div.innerHTML = '<label style="flex:1;cursor:default;font-size:13px;color:#d1d5db;">' + esc(acc.label) + '</label><span class="addon-price" style="' + (acc.type === 'ev_charger' && price === 0 ? 'color:#9ca3af;font-style:italic;' : '') + '">' + priceStr + '</span><button style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:16px;margin-left:8px;padding:0 4px;" title="Remove">&times;</button>';
+        div.innerHTML = '<label style="flex:1;cursor:default;font-size:13px;color:#d1d5db;">' + esc(acc.label) + '</label><button style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:16px;margin-left:8px;padding:0 4px;" title="Remove">&times;</button>';
         div.querySelector('button').addEventListener('click', (function(idx) { return function() { selectedAccessories.splice(idx, 1); renderSelectedAccessories(); calculateQuote(); }; })(i));
         wrapper.appendChild(div);
         // EV charger sub-dropdown
@@ -485,7 +484,7 @@ function populatePanels() {
     const sel = document.getElementById('panelSelect'); sel.innerHTML = '';
     CONFIG.panels.forEach((p, idx) => {
         const o = document.createElement('option'); o.value = idx;
-        o.textContent = p.brand + ' ' + p.model + ' ' + p.wattage + 'W ' + p.colour + ' ($' + p.price + ')';
+        o.textContent = p.brand + ' ' + p.model + ' ' + p.wattage + 'W ' + p.colour;
         o.dataset.wattage = p.wattage; o.dataset.price = p.price; o.dataset.brand = p.brand; o.dataset.model = p.model;
         o.dataset.colour = p.colour; o.dataset.widthMm = p.width_mm || 1134; o.dataset.heightMm = p.height_mm || 1800; o.dataset.supplierCode = p.supplier_code || '';
         sel.appendChild(o);
@@ -496,7 +495,7 @@ function populateInverters() {
     const sel = document.getElementById('inverterSelect'); sel.innerHTML = '';
     getInverters().forEach(m => {
         const o = document.createElement('option'); o.value = m.sku;
-        o.textContent = m.sku + ' -  ' + m.kw + 'kW ($' + m.price.toLocaleString() + ') -  Max PV: ' + m.max_pv_kw + 'kW';
+        o.textContent = m.sku + ' -  ' + m.kw + 'kW -  Max PV: ' + m.max_pv_kw + 'kW';
         o.dataset.kw = m.kw; o.dataset.price = m.price; o.dataset.maxPv = m.max_pv_kw; o.dataset.supplierCode = m.supplier_code || '';
         sel.appendChild(o);
     });
@@ -912,7 +911,7 @@ function getDualEcOptions(stackNum) {
     var html = '';
     for (var j = 0; j < validModels.length; j++) {
         var mv = validModels[j];
-        var label = getCecKey(mv.sku) + ' ' + mv.kw + 'kW ($' + mv.price.toLocaleString() + ')';
+        var label = getCecKey(mv.sku) + ' ' + mv.kw + 'kW';
         if (mv.sku === cheapestSku) label += ' *';
         html += '<option value="' + mv.sku + '"' + (mv.sku === selectedSku ? ' selected' : '') + '>' + label + '</option>';
     }
