@@ -314,6 +314,9 @@
     },
 
     "gp_margin": 37.5,
+    "sales_commission": 8.75,
+    "default_panel_count": 28,
+    "default_battery_kwh": 13,
 
     "mounting_kits": {
         "kits": {

@@ -76,12 +76,12 @@ function getBatteryRules() {
 // ====================
 
 const state = {
-    phase: 'single_phase', panelMode: 'panels', panelCount: 28, panelWattage: 450, panelCost: 200,
+    phase: 'single_phase', panelMode: 'panels', panelCount: 0, panelWattage: 450, panelCost: 200,
     panelBrand: '', panelModel: '', panelColour: '', panelWidthMm: 1134, panelHeightMm: 1800, panelSupplierCode: '',
-    sysKw: 0, desiredBatteryKwh: 13, actualBatteryKwh: 0,
+    sysKw: 0, desiredBatteryKwh: 0, actualBatteryKwh: 0,
     invSku: '', invPrice: 0, invKw: 0, invMaxPv: 0, invSupplierCode: '',
-    gpMargin: 37.5, salesCommission: 8.75, stcPrice: 37, deemingPeriod: 5, batteryRebatePerKwh: 311,
-    installPvPerKw: 300, installBatPerStack: 1600,
+    gpMargin: 0, salesCommission: 0, stcPrice: 0, deemingPeriod: 0, batteryRebatePerKwh: 0,
+    installPvPerKw: 0, installBatPerStack: 0,
     roofType: 'metal', orientation: 'portrait', numRows: 1, numArrays: 1, tiltAngle: '10_15', mountingType: 'ground', wallMountAutoSwitched: false
 };
 
@@ -206,14 +206,21 @@ async function loadConfig() {
         CONFIG = DEFAULT_CONFIG;
     }
     } else { console.log('[OK] Config already loaded (preview mode)'); }
+    if (!CONFIG || !CONFIG.manufacturers) {
+        document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#0a0a0a;color:#ef4444;font-family:Inter,sans-serif;font-size:18px;text-align:center;padding:20px;">Configuration failed to load. Please refresh the page.<br>If the problem persists, check that config.json is accessible.</div>';
+        return;
+    }
     currentManufacturer = 'sigenergy'; currentBatteryTypeIdx = 0;
     batteryQtys = {};
-    document.getElementById('installPerKwPv').value = CONFIG.installation?.install_pv_per_kw ?? 300;
-    document.getElementById('installPerStack').value = CONFIG.installation?.install_battery_per_stack ?? 1600;
-    document.getElementById('stcPrice').value = CONFIG.rebates?.stc_price ?? 37;
-    document.getElementById('stcDeemingPeriod').value = CONFIG.rebates?.stc_deeming_period ?? 5;
-    document.getElementById('batteryRebatePerKwh').value = CONFIG.rebates?.battery_rebate_per_kwh ?? 311;
-    document.getElementById('gpMargin').value = CONFIG.gp_margin ?? 37.5;
+    document.getElementById('panelCount').value = CONFIG.default_panel_count;
+    document.getElementById('desiredBatteryKwh').value = CONFIG.default_battery_kwh;
+    document.getElementById('installPerKwPv').value = CONFIG.installation.install_pv_per_kw;
+    document.getElementById('installPerStack').value = CONFIG.installation.install_battery_per_stack;
+    document.getElementById('stcPrice').value = CONFIG.rebates.stc_price;
+    document.getElementById('stcDeemingPeriod').value = CONFIG.rebates.stc_deeming_period;
+    document.getElementById('batteryRebatePerKwh').value = CONFIG.rebates.battery_rebate_per_kwh;
+    document.getElementById('gpMargin').value = CONFIG.gp_margin;
+    document.getElementById('salesCommission').value = CONFIG.sales_commission;
     populateManufacturers(); populatePanels(); populateBatteryTypes(); buildBatteryUI(); populateInverters(); populateGateways(); buildAccessoriesUI(); updateBatteryMountVisibility(); bindEvents(); updateRoofInfo(); updateMountingKitInfo(); updateZoneDisplay(); updateHeaderSubtitle(); updateInverterSectionLabel(); updatePowerSensorModel(); calculateQuote();
 }
 
@@ -1639,7 +1646,7 @@ async function loadQuote(quoteId) {
         populateInverters(); populateGateways();
 
         if (s.panelSelectIdx != null) document.getElementById('panelSelect').selectedIndex = s.panelSelectIdx;
-        document.getElementById('panelCount').value = s.panelCount || 28;
+        document.getElementById('panelCount').value = s.panelCount || CONFIG.default_panel_count;
 
         document.getElementById('desiredBatteryKwh').value = s.desiredBatteryKwh || 0;
         buildBatteryUI();
@@ -1675,13 +1682,13 @@ async function loadQuote(quoteId) {
 
         // Restore pricing
         const p = data.pricing || {};
-        document.getElementById('installPerKwPv').value = p.installPvPerKw ?? 300;
-        document.getElementById('installPerStack').value = p.installBatPerStack ?? 1600;
-        document.getElementById('stcPrice').value = p.stcPrice ?? 37;
-        document.getElementById('stcDeemingPeriod').value = p.deemingPeriod ?? 5;
-        document.getElementById('batteryRebatePerKwh').value = p.batteryRebatePerKwh ?? 311;
-        document.getElementById('gpMargin').value = p.gpMargin ?? 37.5;
-        document.getElementById('salesCommission').value = p.salesCommission ?? 8.75;
+        document.getElementById('installPerKwPv').value = p.installPvPerKw ?? CONFIG.installation.install_pv_per_kw;
+        document.getElementById('installPerStack').value = p.installBatPerStack ?? CONFIG.installation.install_battery_per_stack;
+        document.getElementById('stcPrice').value = p.stcPrice ?? CONFIG.rebates.stc_price;
+        document.getElementById('stcDeemingPeriod').value = p.deemingPeriod ?? CONFIG.rebates.stc_deeming_period;
+        document.getElementById('batteryRebatePerKwh').value = p.batteryRebatePerKwh ?? CONFIG.rebates.battery_rebate_per_kwh;
+        document.getElementById('gpMargin').value = p.gpMargin ?? CONFIG.gp_margin;
+        document.getElementById('salesCommission').value = p.salesCommission ?? CONFIG.sales_commission;
 
         // Restore custom add-ons
         const ca = data.customAddons || [];
@@ -1712,13 +1719,20 @@ function clearQuote() {
     document.getElementById('installSuburb').value = '';
     document.getElementById('installState').value = '';
     document.getElementById('installPostcode').value = '';
-    document.getElementById('desiredBatteryKwh').value = 13;
-    document.getElementById('panelCount').value = 28;
+    document.getElementById('desiredBatteryKwh').value = CONFIG.default_battery_kwh;
+    document.getElementById('panelCount').value = CONFIG.default_panel_count;
     document.getElementById('gatewaySelect').selectedIndex = 0;
     selectedAccessories = []; renderSelectedAccessories();
     customAddonCount = 0; document.getElementById('customAddons').innerHTML = '';
     userChangedInverter = false; dualStackResult = null; dualStackEcOverride = { stack1: null, stack2: null };
     batteryQtys = {};
+    document.getElementById('installPerKwPv').value = CONFIG.installation.install_pv_per_kw;
+    document.getElementById('installPerStack').value = CONFIG.installation.install_battery_per_stack;
+    document.getElementById('stcPrice').value = CONFIG.rebates.stc_price;
+    document.getElementById('stcDeemingPeriod').value = CONFIG.rebates.stc_deeming_period;
+    document.getElementById('batteryRebatePerKwh').value = CONFIG.rebates.battery_rebate_per_kwh;
+    document.getElementById('gpMargin').value = CONFIG.gp_margin;
+    document.getElementById('salesCommission').value = CONFIG.sales_commission;
     document.getElementById('quoteSearchResults').style.display = 'none';
     document.getElementById('quoteSearchInput').value = '';
     document.getElementById('activeQuoteBar').style.display = 'none';
@@ -2055,8 +2069,11 @@ const DEFAULT_CONFIG = {
         }
     },
     "installation": { "install_pv_per_kw": 300, "install_battery_per_stack": 1600, "roof_types": { "metal": {"label":"Metal","surcharge":0}, "tile": {"label":"Tile","surcharge":100}, "concrete": {"label":"Concrete/Terracotta","surcharge":200}, "flat": {"label":"Flat","surcharge":300} } },
-    "rebates": { "stc_price": 40, "stc_deeming_period": 5, "battery_rebate_per_kwh": 311, "stc_zones": [[0,9999,3,1.382]] },
+    "rebates": { "stc_price": 37, "stc_deeming_period": 5, "battery_rebate_per_kwh": 311, "stc_zones": [[0,9999,3,1.382]] },
     "addons": { "hot_water_timer": 350, "hot_water_timer_code": "BDS:HWT-001", "meter_board_partial": 800, "meter_board_partial_code": "BDS:MB-PART", "meter_board_full": 1200, "meter_board_full_code": "BDS:MB-FULL", "meter_board_relocation": 1800, "meter_board_relocation_code": "BDS:MB-RELOC" },
-    "gp_margin": 30,
+    "gp_margin": 37.5,
+    "sales_commission": 8.75,
+    "default_panel_count": 28,
+    "default_battery_kwh": 13,
     "mounting_kits": { "kits": { "tin_2kw": {"label":"Tin Roof 2kW Pack","panels_covered":4,"price":46.50,"supplier_code":"RAY:KIT-TIN-2KW"}, "tin_1_5kw": {"label":"Tin Roof 1.5kW Pack","panels_covered":3,"price":34.90,"supplier_code":"RAY:KIT-TIN-1.5KW"}, "tile_2kw": {"label":"Tile Roof 2kW Pack","panels_covered":4,"price":93.00,"supplier_code":"RAY:KIT-TILE-2KW"}, "tile_1_5kw": {"label":"Tile Roof 1.5kW Pack","panels_covered":3,"price":69.50,"supplier_code":"RAY:KIT-TILE-1.5KW"} }, "tilt_angles": { "10_15": {"label":"10-15 deg","price":11.99,"supplier_code":"RAY:TILT-10/15"} }, "split_array_surcharge": { "parts": [{"desc":"End Clamp","qty":4,"price":1.10,"supplier_code":"RAY:END"}], "labour_surcharge": 100 }, "rails": { "portrait_per_row": 2, "landscape_per_row": 3, "price": 25.50, "length_mm": 4800, "clamp_gap_mm": 25, "splicer_price": 1.60, "supplier_code": "RAY:R-4800-BLK", "splicer_code": "RAY:R-SP" }, "landscape_extras": { "tin_attachment_price": 1.60, "tin_attachment_code": "RAY:TH-L", "tile_attachment_price": 4.90, "tile_attachment_code": "RAY:RH-1#", "attachments_per_row": 4 } }
 };
