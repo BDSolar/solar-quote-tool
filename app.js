@@ -1248,9 +1248,9 @@ function calculateQuote() {
         document.getElementById('commLabel').textContent = 'Commission (' + state.salesCommission + '%)'; document.getElementById('commAmount').textContent = fmtIncGst(commAmt);
         document.getElementById('priceBeforeRebates').textContent = fmtIncGst(priceBeforeRebates);
         document.getElementById('pvRebateLabel').textContent = pvStcCount > 0 ? 'PV STC Rebate (' + pvStcCount + ' STCs)' : 'PV STC Rebate';
-        document.getElementById('stcPvRebate').textContent = '-' + fmtIncGst(pvReb);
-        document.getElementById('stcBatteryRebate').textContent = '-' + fmtIncGst(batReb);
-        document.getElementById('finalPrice').textContent = fmtIncGst(finalPrice);
+        document.getElementById('stcPvRebate').textContent = '-' + fmtExGst(pvReb);
+        document.getElementById('stcBatteryRebate').textContent = '-' + fmtExGst(batReb);
+        document.getElementById('finalPrice').textContent = '$' + Math.round(priceBeforeRebates * GST - pvReb - batReb).toLocaleString('en-AU');
 
         // Update inverter label in summary
         const invLabel = getInverterLabel();
@@ -1410,7 +1410,7 @@ function showBOM() {
     if (pvReb > 0) totHtml += totRow('PV STC Rebate (' + pvStcCount + ' STCs)', '-' + fmtExGst(pvReb), 'color:#34d399;');
     if (batReb > 0) totHtml += totRow('Battery STC Rebate', '-' + fmtExGst(batReb), 'color:#34d399;');
     totHtml += '<tr style="border-top:2px solid #e000f0;"><td style="padding:12px 0; color:#e000f0; font-weight:700; font-size:16px;">Customer Price (inc GST)</td>';
-    totHtml += '<td style="padding:12px 0; text-align:right; color:#e000f0; font-weight:700; font-size:18px;">' + fmtIncGst(finalPrice) + '</td></tr></table>';
+    totHtml += '<td style="padding:12px 0; text-align:right; color:#e000f0; font-weight:700; font-size:18px;">$' + Math.round(beforeRebates * GST - pvReb - batReb).toLocaleString('en-AU') + '</td></tr></table>';
     document.getElementById('bomTotals').innerHTML = totHtml;
     document.getElementById('bomOverlay').style.display = 'block'; document.body.style.overflow = 'hidden';
 }
@@ -1947,11 +1947,12 @@ function generateQuote() {
     };
 
     drawTotalRow('Price Before Rebates', fmtPdfInc(priceBeforeRebates), { divider: true });
-    if (pvReb > 0) drawTotalRow('PV STC Rebate (' + pvStcCount + ' STCs)', '-' + fmtPdfInc(pvReb), { valueColor: [52, 211, 153] });
-    if (batReb > 0) drawTotalRow('Battery STC Rebate', '-' + fmtPdfInc(batReb), { valueColor: [52, 211, 153] });
+    if (pvReb > 0) drawTotalRow('PV STC Rebate (' + pvStcCount + ' STCs)', '-' + fmtPdf(pvReb), { valueColor: [52, 211, 153] });
+    if (batReb > 0) drawTotalRow('Battery STC Rebate', '-' + fmtPdf(batReb), { valueColor: [52, 211, 153] });
 
     y += 2;
-    drawTotalRow('Customer Price (inc GST)', fmtPdfInc(finalPrice), {
+    var customerPrice = '$' + Math.round(priceBeforeRebates * GST - pvReb - batReb).toLocaleString('en-AU');
+    drawTotalRow('Customer Price (inc GST)', customerPrice, {
         divider: true, dividerColor: magenta, dividerWidth: 0.8,
         fontSize: 12, fontStyle: 'bold', labelColor: magenta, valueColor: magenta, spacing: 8
     });
