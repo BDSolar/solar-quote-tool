@@ -80,7 +80,7 @@ const state = {
     panelBrand: '', panelModel: '', panelColour: '', panelWidthMm: 1134, panelHeightMm: 1800, panelSupplierCode: '',
     sysKw: 0, desiredBatteryKwh: 13, actualBatteryKwh: 0,
     invSku: '', invPrice: 0, invKw: 0, invMaxPv: 0, invSupplierCode: '',
-    gpMargin: 30, salesCommission: 7, stcPrice: 40, deemingPeriod: 5, batteryRebatePerKwh: 311,
+    gpMargin: 30, salesCommission: 8, stcPrice: 40, deemingPeriod: 5, batteryRebatePerKwh: 311,
     installPvPerKw: 300, installBatPerStack: 1600,
     roofType: 'metal', orientation: 'portrait', numRows: 1, numArrays: 1, tiltAngle: '10_15', mountingType: 'ground', wallMountAutoSwitched: false
 };
@@ -1252,22 +1252,25 @@ function calculateQuote() {
         const batReb = (isDualStack && dualStackResult) ? dualStackResult.totalUsableKwh * state.batteryRebatePerKwh : bat.usableKwh * state.batteryRebatePerKwh;
         const gpAmt = totalCog * (state.gpMargin / 100);
         const priceBeforeCommission = totalCog + gpAmt;
-        const commAmt = priceBeforeCommission * GST * (state.salesCommission / 100) / GST; // 7% of inc GST value, stored ex GST
+        const commRate = state.salesCommission / 100;
+        const baseIncGst = priceBeforeCommission * GST;
+        const commAmt = (baseIncGst - pvReb - batReb) * commRate / (1 - commRate * GST) / GST; // commission as % of customer price inc GST, stored ex GST
         const priceBeforeRebates = priceBeforeCommission + commAmt;
         const finalPrice = priceBeforeRebates - pvReb - batReb;
 
-        document.getElementById('costPanels').textContent = fmtIncGst(costPanels); document.getElementById('costInverter').textContent = fmtIncGst(costInverter);
-        document.getElementById('costRoofKit').textContent = fmtIncGst(costRoofKit); document.getElementById('totalPv').textContent = fmtIncGst(totalPv);
-        document.getElementById('costBattery').textContent = fmtIncGst(costBattery); document.getElementById('costGateway').textContent = fmtIncGst(costGateway);
-        document.getElementById('costMounting').textContent = fmtIncGst(costMount); document.getElementById('totalBattery').textContent = fmtIncGst(totalBattery);
-        const extraMountEl = document.getElementById('extraMountCostInfo'); if (extraMountEl) extraMountEl.textContent = costMount > 0 ? fmtIncGst(costMount) : '$0';
-        document.getElementById('costInstallPv').textContent = fmtIncGst(installPv); document.getElementById('costInstallBattery').textContent = fmtIncGst(installBat);
-        document.getElementById('costRoofSurcharge').textContent = fmtIncGst(costRoofSurcharge);
-        document.getElementById('costAccessories').textContent = fmtIncGst(costAcc);
-        document.getElementById('totalInstall').textContent = fmtIncGst(totalInstall);
-        document.getElementById('totalCog').textContent = fmtIncGst(totalCog); document.getElementById('gpLabel').textContent = 'GP (' + state.gpMargin + '%)'; document.getElementById('gpAmount').textContent = fmtIncGst(gpAmt);
-        document.getElementById('commLabel').textContent = 'Commission (' + state.salesCommission + '%)'; document.getElementById('commAmount').textContent = fmtIncGst(commAmt);
+        document.getElementById('costPanels').textContent = fmtExGst(costPanels); document.getElementById('costInverter').textContent = fmtExGst(costInverter);
+        document.getElementById('costRoofKit').textContent = fmtExGst(costRoofKit); document.getElementById('totalPv').textContent = fmtExGst(totalPv);
+        document.getElementById('costBattery').textContent = fmtExGst(costBattery); document.getElementById('costGateway').textContent = fmtExGst(costGateway);
+        document.getElementById('costMounting').textContent = fmtExGst(costMount); document.getElementById('totalBattery').textContent = fmtExGst(totalBattery);
+        const extraMountEl = document.getElementById('extraMountCostInfo'); if (extraMountEl) extraMountEl.textContent = costMount > 0 ? fmtExGst(costMount) : '$0';
+        document.getElementById('costInstallPv').textContent = fmtExGst(installPv); document.getElementById('costInstallBattery').textContent = fmtExGst(installBat);
+        document.getElementById('costRoofSurcharge').textContent = fmtExGst(costRoofSurcharge);
+        document.getElementById('costAccessories').textContent = fmtExGst(costAcc);
+        document.getElementById('totalInstall').textContent = fmtExGst(totalInstall);
+        document.getElementById('totalCog').textContent = fmtExGst(totalCog); document.getElementById('gpLabel').textContent = 'GP (' + state.gpMargin + '%)'; document.getElementById('gpAmount').textContent = fmtExGst(gpAmt);
+        document.getElementById('commLabel').textContent = 'Commission (' + state.salesCommission + '%)'; document.getElementById('commAmount').textContent = fmtExGst(commAmt);
         document.getElementById('priceBeforeRebates').textContent = fmtIncGst(priceBeforeRebates);
+        document.getElementById('gstAmount').textContent = '$' + Math.round(priceBeforeRebates * GST / 11).toLocaleString('en-AU');
         document.getElementById('pvRebateLabel').textContent = pvStcCount > 0 ? 'PV STC Rebate (' + pvStcCount + ' STCs)' : 'PV STC Rebate';
         document.getElementById('stcPvRebate').textContent = '-' + fmtExGst(pvReb);
         document.getElementById('stcBatteryRebate').textContent = '-' + fmtExGst(batReb);
@@ -1415,12 +1418,14 @@ function showBOM() {
 
     const gp = state.gpMargin, gpAmt = grandTotal * (gp / 100);
     const comm = state.salesCommission, priceBeforeComm = grandTotal + gpAmt;
-    const commAmt = priceBeforeComm * GST * (comm / 100) / GST;
-    const beforeRebates = priceBeforeComm + commAmt;
     const zoneResult = lookupZone(document.getElementById('installPostcode').value);
     const zoneRating = zoneResult ? zoneResult.rating : 0;
     const pvStcCount = zoneRating > 0 ? Math.floor(state.sysKw * zoneRating * state.deemingPeriod) : 0;
     const pvReb = pvStcCount * state.stcPrice, batSummary = getBatterySummary(), batReb = batSummary.usableKwh * state.batteryRebatePerKwh;
+    const commRate = comm / 100;
+    const baseIncGst = priceBeforeComm * GST;
+    const commAmt = (baseIncGst - pvReb - batReb) * commRate / (1 - commRate * GST) / GST;
+    const beforeRebates = priceBeforeComm + commAmt;
     const finalPrice = beforeRebates - pvReb - batReb;
     let totHtml = '<table style="width:100%; font-size:14px; border-collapse:collapse;">';
     const totRow = (l, v, s) => '<tr style="' + (s || '') + '"><td style="padding:8px 0; color:#9ca3af;">' + l + '</td><td style="padding:8px 0; text-align:right; color:#f0f0f0; font-weight:500;">' + v + '</td></tr>';
@@ -1676,7 +1681,7 @@ async function loadQuote(quoteId) {
         document.getElementById('stcDeemingPeriod').value = p.deemingPeriod ?? 5;
         document.getElementById('batteryRebatePerKwh').value = p.batteryRebatePerKwh ?? 311;
         document.getElementById('gpMargin').value = p.gpMargin ?? 30;
-        document.getElementById('salesCommission').value = p.salesCommission ?? 7;
+        document.getElementById('salesCommission').value = p.salesCommission ?? 8;
 
         // Restore custom add-ons
         const ca = data.customAddons || [];
@@ -1764,14 +1769,16 @@ function generateQuote() {
     const grandTotal = bom.reduce((s, g) => s + g.items.reduce((s2, i) => s2 + i.total, 0), 0);
     const gp = state.gpMargin, gpAmt = grandTotal * (gp / 100);
     const priceBeforeComm = grandTotal + gpAmt;
-    const commAmt = priceBeforeComm * GST * (state.salesCommission / 100) / GST;
-    const priceBeforeRebates = priceBeforeComm + commAmt;
     const zoneResult = lookupZone(pc);
     const zoneRating = zoneResult ? zoneResult.rating : 0;
     const pvStcCount = zoneRating > 0 ? Math.floor(state.sysKw * zoneRating * state.deemingPeriod) : 0;
     const pvReb = pvStcCount * state.stcPrice;
     const isDualStack = dualStackResult && currentManufacturer === 'sigenergy' && state.desiredBatteryKwh > 48;
     const batReb = isDualStack ? dualStackResult.totalUsableKwh * state.batteryRebatePerKwh : bat.usableKwh * state.batteryRebatePerKwh;
+    const commRate = state.salesCommission / 100;
+    const baseIncGst = priceBeforeComm * GST;
+    const commAmt = (baseIncGst - pvReb - batReb) * commRate / (1 - commRate * GST) / GST;
+    const priceBeforeRebates = priceBeforeComm + commAmt;
     const finalPrice = priceBeforeRebates - pvReb - batReb;
 
     // Markup multiplier (to convert COG line items to sell price)

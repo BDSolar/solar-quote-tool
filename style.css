@@ -473,18 +473,18 @@ select.ev-charger-sub {
 }
 
 .summary-title {
-    font-size: 11px;
+    font-size: 16px;
     font-weight: 600;
-    color: var(--text-tertiary);
+    color: var(--text-primary);
     margin-bottom: 10px;
     text-transform: uppercase;
-    letter-spacing: 0.06em;
+    letter-spacing: -0.005em;
 }
 
 .summary-row {
     display: flex;
     justify-content: space-between;
-    padding: 4px 0;
+    padding: 4px 0 4px 12px;
     font-size: 13px;
     color: var(--text-secondary);
     font-weight: 400;
@@ -496,12 +496,13 @@ select.ev-charger-sub {
     border-top: 1px solid var(--separator);
     margin-top: 8px;
     padding-top: 10px;
+    padding-left: 0;
     font-weight: 600;
     font-size: 14px;
     color: var(--text-primary);
 }
 
-.summary-row.rebate { color: var(--green); }
+.summary-row.rebate { color: var(--green); padding-left: 0; }
 
 .summary-row.final {
     background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%);
