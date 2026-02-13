@@ -307,17 +307,16 @@ function buildAccessoriesUI() {
     // Dropdown row
     var row = document.createElement('div'); row.style.cssText = 'display:flex;gap:8px;margin-bottom:10px;';
     var sel = document.createElement('select'); sel.id = 'accessoryDropdown'; sel.style.flex = '1';
-    sel.innerHTML = '<option value="">-- Select item --</option>';
+    sel.innerHTML = '<option value="">-- Select item to add --</option>';
     items.forEach(function(item, idx) {
         var o = document.createElement('option'); o.value = idx;
         o.textContent = item.label;
         sel.appendChild(o);
     });
-    var btn = document.createElement('button'); btn.className = 'add-custom-btn'; btn.style.marginTop = '0'; btn.textContent = '+ Add';
-    btn.addEventListener('click', function() {
+    sel.addEventListener('change', function() {
         var idx = parseInt(sel.value); if (isNaN(idx)) return;
         var item = items[idx];
-        if (selectedAccessories.find(function(a) { return a.id === item.id; })) return;
+        if (selectedAccessories.find(function(a) { return a.id === item.id; })) { sel.value = ''; return; }
         // Meter board tiers are mutually exclusive
         if (item.id.startsWith('meter_board_')) {
             selectedAccessories = selectedAccessories.filter(function(a) { return !a.id.startsWith('meter_board_'); });
@@ -330,7 +329,7 @@ function buildAccessoriesUI() {
         sel.value = '';
         calculateQuote();
     });
-    row.appendChild(sel); row.appendChild(btn); container.appendChild(row);
+    row.appendChild(sel); container.appendChild(row);
     // List container
     var list = document.createElement('div'); list.id = 'accessoryList'; container.appendChild(list);
     // Auto-add defaults on first build
@@ -397,7 +396,7 @@ function renderSelectedAccessories() {
         }
         var wrapper = document.createElement('div'); wrapper.style.cssText = 'margin-bottom:6px;';
         var div = document.createElement('div'); div.className = 'addon-item';
-        div.innerHTML = '<label style="flex:1;cursor:default;font-size:13px;color:#d1d5db;">' + esc(acc.label) + '</label><button style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:16px;margin-left:8px;padding:0 4px;" title="Remove">&times;</button>';
+        div.innerHTML = '<label style="flex:1;cursor:default;font-size:13px;color:#d1d5db;">' + esc(acc.label) + '</label><button class="btn-remove-icon" title="Remove"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>';
         div.querySelector('button').addEventListener('click', (function(idx) { return function() { selectedAccessories.splice(idx, 1); renderSelectedAccessories(); calculateQuote(); }; })(i));
         wrapper.appendChild(div);
         // EV charger sub-dropdown
@@ -442,12 +441,6 @@ function getAccessoryBomItems() {
             items.push({ desc: acc.label, sku: '', qty: 1, unit: acc.price, total: acc.price, supplier_code: acc.supplier_code || '' });
         }
     });
-    var psAcc = (getMfg().accessories || []).find(function(a) { return a.id === 'power_sensor'; });
-    if (psAcc) {
-        var psPrice = state.phase === 'single_phase' ? psAcc.price_single : psAcc.price_three;
-        var psCode = state.phase === 'single_phase' ? (psAcc.supplier_code_single || '') : (psAcc.supplier_code_three || '');
-        items.push({ desc: psAcc.label, sku: '', qty: 1, unit: psPrice, total: psPrice, supplier_code: psCode });
-    }
     return items;
 }
 
@@ -1013,7 +1006,7 @@ function updateMountingKitInfo() { /* Detail only in BOM */ }
 function addCustomAddon() {
     customAddonCount++; const c = document.getElementById('customAddons'), d = document.createElement('div');
     d.className = 'custom-addon'; d.id = 'custom-' + customAddonCount;
-    d.innerHTML = '<input type="text" placeholder="Item name" id="customName-' + customAddonCount + '"><input type="number" placeholder="Cost" id="customCost-' + customAddonCount + '" value="0" step="1"><button onclick="removeCustomAddon(' + customAddonCount + ')">x</button>';
+    d.innerHTML = '<input type="text" placeholder="Item name" id="customName-' + customAddonCount + '"><input type="number" placeholder="Cost" id="customCost-' + customAddonCount + '" value="0" step="1"><button class="btn-remove-icon" onclick="removeCustomAddon(' + customAddonCount + ')" title="Remove"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>';
     c.appendChild(d);
     document.getElementById('customName-' + customAddonCount).addEventListener('input', calculateQuote);
     document.getElementById('customCost-' + customAddonCount).addEventListener('input', calculateQuote);
@@ -1337,6 +1330,10 @@ function buildBOM() {
         const mc = mfgMount2[mt === 'wall' ? 'mount_wall_code' : 'mount_ground_code'] || '';
         if (mp > 0) batItems.push({ desc: (mt === 'wall' ? 'Wall' : 'Ground') + ' Mount Kit', sku: '', qty: 2, unit: mp, total: 2 * mp, supplier_code: mc });
 
+        // Power Sensor
+        var psAcc = (getMfg().accessories || []).find(function(a) { return a.id === 'power_sensor'; });
+        if (psAcc) { var psPrice = state.phase === 'single_phase' ? psAcc.price_single : psAcc.price_three; var psCode = state.phase === 'single_phase' ? (psAcc.supplier_code_single || '') : (psAcc.supplier_code_three || ''); batItems.push({ desc: psAcc.label, sku: '', qty: 1, unit: psPrice, total: psPrice, supplier_code: psCode }); }
+
     } else {
         // Single-stack BOM (existing logic)
         batItems.push({ desc: state.invSku + ' (' + state.invKw + 'kW ' + (state.phase === 'single_phase' ? 'Single' : 'Three') + ' Phase)', sku: state.invSku, qty: 1, unit: state.invPrice, total: state.invPrice, supplier_code: state.invSupplierCode });
@@ -1368,8 +1365,12 @@ function buildBOM() {
             const mc = mfgMount[mt === 'wall' ? 'mount_wall_code' : 'mount_ground_code'] || '';
             if (mp > 0) batItems.push({ desc: (mt === 'wall' ? 'Wall' : 'Ground') + ' Mount Kit', sku: '', qty: 1, unit: mp, total: mp, supplier_code: mc });
         }
+
+        // Power Sensor
+        var psAcc2 = (getMfg().accessories || []).find(function(a) { return a.id === 'power_sensor'; });
+        if (psAcc2) { var psPrice2 = state.phase === 'single_phase' ? psAcc2.price_single : psAcc2.price_three; var psCode2 = state.phase === 'single_phase' ? (psAcc2.supplier_code_single || '') : (psAcc2.supplier_code_three || ''); batItems.push({ desc: psAcc2.label, sku: '', qty: 1, unit: psPrice2, total: psPrice2, supplier_code: psCode2 }); }
     }
-    bom.push({ category: 'Battery & ' + invLabel, items: batItems });
+    bom.push({ category: 'Battery Components', items: batItems });
 
     // === ACCESSORIES & ADD-ONS ===
     let accItems = getAccessoryBomItems();
@@ -1396,11 +1397,16 @@ function showBOM() {
     const phone = document.getElementById('customerPhone')?.value || '', email = document.getElementById('customerEmail')?.value || '';
     const date = new Date().toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' });
     let addrLine = [addr, suburb, st, pc].filter(Boolean).join(', ');
-    let custHtml = '<div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px;"><div><strong style="color:#f0f0f0;">' + esc(name) + '</strong>';
-    if (addrLine) custHtml += '<br>' + esc(addrLine);
-    custHtml += '</div><div style="text-align:right;"><span style="color:#f0f0f0;">' + esc(date) + '</span>';
-    if (phone) custHtml += '<br>' + esc(phone); if (email) custHtml += '<br>' + esc(email);
-    custHtml += '</div></div>';
+    let custHtml = '<div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px;">';
+    custHtml += '<div><strong style="color:#f0f0f0; font-size:15px;">' + esc(name) + '</strong>';
+    if (addrLine) custHtml += '<br><span style="color:#9ca3af;">' + esc(addrLine) + '</span>';
+    let contactParts = [];
+    if (phone) contactParts.push(esc(phone));
+    if (email) contactParts.push(esc(email));
+    if (contactParts.length > 0) custHtml += '<br><span style="color:#9ca3af;">' + contactParts.join(' &nbsp;|&nbsp; ') + '</span>';
+    custHtml += '</div>';
+    custHtml += '<div style="text-align:right; white-space:nowrap;"><span style="color:#f0f0f0;">' + esc(date) + '</span></div>';
+    custHtml += '</div>';
     document.getElementById('bomCustomerHeader').innerHTML = custHtml;
 
     let html = '', grandTotal = 0;
@@ -1408,11 +1414,11 @@ function showBOM() {
         const groupTotal = group.items.reduce((s, item) => s + item.total, 0); grandTotal += groupTotal;
         html += '<div style="background:#141414; border:1px solid #2a2a2a; border-radius:8px; margin-bottom:12px; overflow:hidden;">';
         html += '<div onclick="toggleBomGroup(' + gi + ')" style="display:flex; justify-content:space-between; align-items:center; padding:14px 20px; cursor:pointer; user-select:none;">';
-        html += '<div style="display:flex; align-items:center; gap:10px;"><span id="bomChevron' + gi + '" style="color:#e000f0; font-size:12px; transition:transform 0.2s;">&#9654;</span>';
+        html += '<div style="display:flex; align-items:center; gap:10px;"><span id="bomChevron' + gi + '" style="color:#e000f0; font-size:12px; transition:transform 0.2s; transform:rotate(90deg);">&#9654;</span>';
         html += '<span style="color:#e000f0; font-size:13px; font-weight:600; text-transform:uppercase; letter-spacing:1px;">' + esc(group.category) + '</span>';
         html += '<span style="color:#6b7280; font-size:12px;">(' + group.items.length + ' item' + (group.items.length !== 1 ? 's' : '') + ')</span></div>';
         html += '<span style="color:#f0f0f0; font-weight:600;">' + fmtExGst(groupTotal) + '</span></div>';
-        html += '<div id="bomGroup' + gi + '" style="display:none; border-top:1px solid #2a2a2a;"><table style="width:100%; border-collapse:collapse; font-size:13px;">';
+        html += '<div id="bomGroup' + gi + '" style="display:block; border-top:1px solid #2a2a2a;"><table style="width:100%; border-collapse:collapse; font-size:13px;">';
         html += '<thead><tr style="color:#6b7280; text-transform:uppercase; font-size:11px; letter-spacing:0.5px;"><th style="text-align:left; padding:10px 20px; border-bottom:1px solid #222;">Description</th><th style="text-align:center; padding:10px 12px; border-bottom:1px solid #222; width:60px;">Qty</th><th style="text-align:right; padding:10px 12px; border-bottom:1px solid #222; width:100px;">Unit (ex GST)</th><th style="text-align:right; padding:10px 20px; border-bottom:1px solid #222; width:110px;">Total (ex GST)</th></tr></thead><tbody>';
         group.items.forEach((item, ii) => {
             const bg = ii % 2 === 0 ? '#1a1a1a' : '#141414';
@@ -1423,27 +1429,20 @@ function showBOM() {
     });
     document.getElementById('bomContent').innerHTML = html;
 
-    const gp = state.gpMargin, gpAmt = grandTotal * (gp / 100);
-    const comm = state.salesCommission, priceBeforeComm = grandTotal + gpAmt;
+    const partsTotal = bom.filter(g => g.category !== 'Installation (Labour)').reduce((s, g) => s + g.items.reduce((s2, i) => s2 + i.total, 0), 0);
+    const installTotal = bom.filter(g => g.category === 'Installation (Labour)').reduce((s, g) => s + g.items.reduce((s2, i) => s2 + i.total, 0), 0);
     const zoneResult = lookupZone(document.getElementById('installPostcode').value);
     const zoneRating = zoneResult ? zoneResult.rating : 0;
     const pvStcCount = zoneRating > 0 ? Math.floor(state.sysKw * zoneRating * state.deemingPeriod) : 0;
     const pvReb = pvStcCount * state.stcPrice, batSummary = getBatterySummary(), batReb = batSummary.usableKwh * state.batteryRebatePerKwh;
-    const commRate = comm / 100;
-    const baseIncGst = priceBeforeComm * GST;
-    const commAmt = (baseIncGst - pvReb - batReb) * commRate / (1 - commRate * GST) / GST;
-    const beforeRebates = priceBeforeComm + commAmt;
-    const finalPrice = beforeRebates - pvReb - batReb;
     let totHtml = '<table style="width:100%; font-size:14px; border-collapse:collapse;">';
     const totRow = (l, v, s) => '<tr style="' + (s || '') + '"><td style="padding:8px 0; color:#9ca3af;">' + l + '</td><td style="padding:8px 0; text-align:right; color:#f0f0f0; font-weight:500;">' + v + '</td></tr>';
-    totHtml += totRow('Total COG (ex GST)', fmtExGst(grandTotal));
-    totHtml += totRow('GP (' + gp + '%)', fmtExGst(gpAmt));
-    totHtml += totRow('Commission (' + comm + '%)', fmtExGst(commAmt));
-    totHtml += totRow('Price Before Rebates (ex GST)', fmtExGst(beforeRebates), 'border-top:1px solid #333;');
+    totHtml += totRow('Parts & Accessories', fmtExGst(partsTotal));
+    totHtml += totRow('Installation (Labour)', fmtExGst(installTotal));
+    totHtml += totRow('Total COG (ex GST)', fmtExGst(grandTotal), 'border-top:1px solid #333; font-weight:700;');
     if (pvReb > 0) totHtml += totRow('PV STC Rebate (' + pvStcCount + ' STCs)', '-' + fmtExGst(pvReb), 'color:#34d399;');
     if (batReb > 0) totHtml += totRow('Battery STC Rebate', '-' + fmtExGst(batReb), 'color:#34d399;');
-    totHtml += '<tr style="border-top:2px solid #e000f0;"><td style="padding:12px 0; color:#e000f0; font-weight:700; font-size:16px;">Customer Price (inc GST)</td>';
-    totHtml += '<td style="padding:12px 0; text-align:right; color:#e000f0; font-weight:700; font-size:18px;">$' + Math.round(beforeRebates * GST - pvReb - batReb).toLocaleString('en-AU') + '</td></tr></table>';
+    totHtml += '</table>';
     document.getElementById('bomTotals').innerHTML = totHtml;
     document.getElementById('bomOverlay').style.display = 'block'; document.body.style.overflow = 'hidden';
 }

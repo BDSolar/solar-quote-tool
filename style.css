@@ -717,6 +717,10 @@ select.ev-charger-sub {
 
 .quote-summary::-webkit-scrollbar { width: 0; }
 
+.btn-remove-icon { background: none; border: none; color: #6b7280; cursor: pointer; padding: 4px; border-radius: 6px; transition: all 0.15s; display: flex; align-items: center; margin-left: 8px; }
+.btn-remove-icon:hover { background: rgba(239, 68, 68, 0.12); color: #ef4444; }
+.btn-remove-icon svg { width: 16px; height: 16px; }
+
 @media (max-width: 968px) {
     .content { grid-template-columns: 1fr; }
     .form-section { border-right: none; }
@@ -724,4 +728,27 @@ select.ev-charger-sub {
     .form-section { padding: 20px; }
     .toolbar { padding: 10px 12px; gap: 8px; }
     .toolbar-price-amount { font-size: 16px; }
+}
+
+@media print {
+    body { background: #fff !important; color: #000 !important; overflow: visible !important; }
+    #bomOverlay { position: static !important; background: #fff !important; overflow: visible !important; }
+    .bom-buttons { display: none !important; }
+    #bomOverlay h2 { color: #000 !important; }
+    #bomCustomerHeader { background: #f9f9f9 !important; border-color: #ddd !important; color: #333 !important; }
+    #bomCustomerHeader strong { color: #000 !important; }
+    #bomCustomerHeader span { color: #555 !important; }
+    #bomContent div[style*="background:#141414"] { background: #fff !important; border-color: #ddd !important; }
+    #bomContent span[style*="color:#e000f0"] { color: #333 !important; }
+    #bomContent span[style*="color:#f0f0f0"] { color: #000 !important; }
+    #bomContent span[style*="color:#6b7280"] { color: #666 !important; }
+    #bomContent tr { color: #000 !important; }
+    #bomContent tr td { color: #333 !important; }
+    #bomContent tr td[style*="color:#f0f0f0"] { color: #000 !important; }
+    #bomContent th { color: #666 !important; border-color: #ccc !important; }
+    #bomContent tr[style*="background:#1a1a1a"], #bomContent tr[style*="background:#141414"] { background: #fff !important; }
+    #bomContent div[style*="border-top:1px solid #2a2a2a"] { border-color: #ddd !important; }
+    #bomTotals { background: #f9f9f9 !important; border-color: #ddd !important; }
+    #bomTotals td { color: #000 !important; }
+    .toolbar, .content, .search-results-bar { display: none !important; }
 }
