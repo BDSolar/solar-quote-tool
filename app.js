@@ -80,7 +80,7 @@ const state = {
     panelBrand: '', panelModel: '', panelColour: '', panelWidthMm: 1134, panelHeightMm: 1800, panelSupplierCode: '',
     sysKw: 0, desiredBatteryKwh: 13, actualBatteryKwh: 0,
     invSku: '', invPrice: 0, invKw: 0, invMaxPv: 0, invSupplierCode: '',
-    gpMargin: 30, salesCommission: 8, stcPrice: 40, deemingPeriod: 5, batteryRebatePerKwh: 311,
+    gpMargin: 37.5, salesCommission: 8.75, stcPrice: 37, deemingPeriod: 5, batteryRebatePerKwh: 311,
     installPvPerKw: 300, installBatPerStack: 1600,
     roofType: 'metal', orientation: 'portrait', numRows: 1, numArrays: 1, tiltAngle: '10_15', mountingType: 'ground', wallMountAutoSwitched: false
 };
@@ -210,10 +210,10 @@ async function loadConfig() {
     batteryQtys = {};
     document.getElementById('installPerKwPv').value = CONFIG.installation?.install_pv_per_kw ?? 300;
     document.getElementById('installPerStack').value = CONFIG.installation?.install_battery_per_stack ?? 1600;
-    document.getElementById('stcPrice').value = CONFIG.rebates?.stc_price ?? 40;
+    document.getElementById('stcPrice').value = CONFIG.rebates?.stc_price ?? 37;
     document.getElementById('stcDeemingPeriod').value = CONFIG.rebates?.stc_deeming_period ?? 5;
     document.getElementById('batteryRebatePerKwh').value = CONFIG.rebates?.battery_rebate_per_kwh ?? 311;
-    document.getElementById('gpMargin').value = CONFIG.gp_margin ?? 30;
+    document.getElementById('gpMargin').value = CONFIG.gp_margin ?? 37.5;
     populateManufacturers(); populatePanels(); populateBatteryTypes(); buildBatteryUI(); populateInverters(); populateGateways(); buildAccessoriesUI(); updateBatteryMountVisibility(); bindEvents(); updateRoofInfo(); updateMountingKitInfo(); updateZoneDisplay(); updateHeaderSubtitle(); updateInverterSectionLabel(); updatePowerSensorModel(); calculateQuote();
 }
 
@@ -1677,11 +1677,11 @@ async function loadQuote(quoteId) {
         const p = data.pricing || {};
         document.getElementById('installPerKwPv').value = p.installPvPerKw ?? 300;
         document.getElementById('installPerStack').value = p.installBatPerStack ?? 1600;
-        document.getElementById('stcPrice').value = p.stcPrice ?? 40;
+        document.getElementById('stcPrice').value = p.stcPrice ?? 37;
         document.getElementById('stcDeemingPeriod').value = p.deemingPeriod ?? 5;
         document.getElementById('batteryRebatePerKwh').value = p.batteryRebatePerKwh ?? 311;
-        document.getElementById('gpMargin').value = p.gpMargin ?? 30;
-        document.getElementById('salesCommission').value = p.salesCommission ?? 8;
+        document.getElementById('gpMargin').value = p.gpMargin ?? 37.5;
+        document.getElementById('salesCommission').value = p.salesCommission ?? 8.75;
 
         // Restore custom add-ons
         const ca = data.customAddons || [];
