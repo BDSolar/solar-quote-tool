@@ -3,7 +3,7 @@
 // Multi-Manufacturer Edition
 // ====================
 
-let CONFIG = {};
+if (typeof CONFIG === 'undefined') var CONFIG = {};
 let customAddonCount = 0, userChangedInverter = false;
 let batteryQtys = {};
 let currentManufacturer = 'sigenergy';
@@ -82,7 +82,7 @@ const state = {
     invSku: '', invPrice: 0, invKw: 0, invMaxPv: 0, invSupplierCode: '',
     gpMargin: 30, salesCommission: 7, stcPrice: 40, deemingPeriod: 5, batteryRebatePerKwh: 311,
     installPvPerKw: 300, installBatPerStack: 1600,
-    roofType: 'metal', orientation: 'portrait', numRows: 1, numArrays: 1, tiltAngle: '10_15', mountingType: 'ground'
+    roofType: 'metal', orientation: 'portrait', numRows: 1, numArrays: 1, tiltAngle: '10_15', mountingType: 'ground', wallMountAutoSwitched: false
 };
 
 function syncStateFromDOM() {
@@ -94,6 +94,7 @@ function syncStateFromDOM() {
     state.numArrays = parseInt(document.getElementById('numArrays').value) || 1;
     state.tiltAngle = document.getElementById('tiltAngle').value;
     state.mountingType = document.getElementById('mountingType').value;
+    if (state.mountingType === 'wall') state.wallMountAutoSwitched = false;
     state.gpMargin = parseFloat(document.getElementById('gpMargin').value) || 0;
     state.salesCommission = parseFloat(document.getElementById('salesCommission').value) || 0;
     state.stcPrice = parseFloat(document.getElementById('stcPrice').value) || 0;
@@ -193,6 +194,7 @@ function validateConfig(cfg) {
 }
 
 async function loadConfig() {
+    if (!CONFIG || !CONFIG.manufacturers) {
     try {
         const r = await fetch('config.json?v=' + Date.now());
         if (!r.ok) throw new Error('HTTP ' + r.status);
@@ -203,6 +205,7 @@ async function loadConfig() {
         console.warn('[!] Could not load config.json (' + err.message + '), using embedded fallback');
         CONFIG = DEFAULT_CONFIG;
     }
+    } else { console.log('[OK] Config already loaded (preview mode)'); }
     currentManufacturer = 'sigenergy'; currentBatteryTypeIdx = 0;
     batteryQtys = {};
     document.getElementById('installPerKwPv').value = CONFIG.installation?.install_pv_per_kw ?? 300;
@@ -1107,6 +1110,25 @@ function calculateQuote() {
                     phaseCapWarn.innerHTML = warnShieldHtml('Phase Capacity', desired + ' kWh requires three phase with ' + bt.label + ' (single phase max: ' + spMaxKwh + ' kWh).');
                 } else { phaseCapWarn.style.display = 'none'; }
             } else { phaseCapWarn.style.display = 'none'; }
+        }
+
+        // Wall mount limit check (Sigenergy: max 2 battery modules for wall mount)
+        var wmWarnGroup = document.getElementById('wallMountWarningGroup');
+        var wmWarn = document.getElementById('wallMountWarning');
+        if (wmWarn && wmWarnGroup) {
+            if (currentManufacturer === 'sigenergy' && bat.totalModules > 2 && state.mountingType === 'wall') {
+                document.getElementById('mountingType').value = 'ground';
+                state.mountingType = 'ground';
+                state.wallMountAutoSwitched = true;
+                wmWarnGroup.style.display = '';
+                wmWarn.innerHTML = warnShieldHtml('Wall Mount Max 2 batteries.', 'Switched to Ground Mount.');
+            } else if (state.wallMountAutoSwitched && bat.totalModules > 2) {
+                wmWarnGroup.style.display = '';
+                wmWarn.innerHTML = warnShieldHtml('Wall Mount Max 2 batteries.', 'Switched to Ground Mount.');
+            } else {
+                state.wallMountAutoSwitched = false;
+                wmWarnGroup.style.display = 'none';
+            }
         }
 
         if (!userChangedInverter) {
