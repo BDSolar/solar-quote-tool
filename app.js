@@ -1281,7 +1281,7 @@ function calculateQuote() {
         document.getElementById('pvRebateLabel').textContent = pvStcCount > 0 ? 'PV STC Rebate (' + pvStcCount + ' STCs)' : 'PV STC Rebate';
         document.getElementById('stcPvRebate').textContent = '-' + fmtExGst(pvReb);
         document.getElementById('stcBatteryRebate').textContent = '-' + fmtExGst(batReb);
-        document.getElementById('finalPrice').textContent = '$' + Math.round(priceBeforeRebates * GST - pvReb - batReb).toLocaleString('en-AU');
+        document.getElementById('actionBarPrice').textContent = '$' + Math.round(priceBeforeRebates * GST - pvReb - batReb).toLocaleString('en-AU');
 
         // Update inverter label in summary
         const invLabel = getInverterLabel();
@@ -1511,7 +1511,7 @@ function collectQuoteData() {
         },
         customAddons: getCustomAddons(),
         totals: {
-            finalPrice: document.getElementById('finalPrice').textContent,
+            finalPrice: document.getElementById('actionBarPrice').textContent,
             totalCog: document.getElementById('totalCog').textContent,
             sysKw: state.sysKw,
             actualBatteryKwh: bat.totalKwh
@@ -1553,6 +1553,41 @@ async function saveQuote() {
         alert('Failed to save quote: ' + err.message);
     }
 }
+
+function toggleSearch() {
+    var overlay = document.getElementById('searchOverlay');
+    var btns = document.getElementById('toolbarActions');
+    var isOpen = overlay.classList.contains('open');
+    overlay.classList.toggle('open');
+    btns.classList.toggle('hidden');
+    if (!isOpen) {
+        document.getElementById('quoteSearchInput').focus();
+    }
+}
+
+function closeSearch() {
+    var overlay = document.getElementById('searchOverlay');
+    var btns = document.getElementById('toolbarActions');
+    if (overlay && overlay.classList.contains('open')) {
+        overlay.classList.remove('open');
+        btns.classList.remove('hidden');
+    }
+}
+
+// Close search on Escape, trigger search on Enter, close on click outside
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') { closeSearch(); }
+    if (e.key === 'Enter' && document.activeElement && document.activeElement.id === 'quoteSearchInput') {
+        searchQuotes();
+    }
+});
+
+document.addEventListener('click', function(e) {
+    var overlay = document.getElementById('searchOverlay');
+    if (!overlay || !overlay.classList.contains('open')) return;
+    var toolbar = document.getElementById('mainToolbar');
+    if (!toolbar.contains(e.target)) { closeSearch(); }
+});
 
 async function searchQuotes() {
     if (!db) { alert('Firebase not connected.'); return; }
@@ -1735,15 +1770,11 @@ function clearQuote() {
     document.getElementById('salesCommission').value = CONFIG.sales_commission;
     document.getElementById('quoteSearchResults').style.display = 'none';
     document.getElementById('quoteSearchInput').value = '';
-    document.getElementById('activeQuoteBar').style.display = 'none';
     updateZoneDisplay(); calculateQuote();
 }
 
 function showActiveQuote(name, id) {
-    const bar = document.getElementById('activeQuoteBar');
-    bar.style.display = 'flex';
-    document.getElementById('activeQuoteInfo').textContent = 'Editing: ' + name;
-    document.getElementById('activeQuoteId').textContent = 'ID: ' + id;
+    // placeholder -- active quote bar removed
 }
 
 // Enter key triggers search

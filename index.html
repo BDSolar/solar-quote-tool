@@ -11,23 +11,25 @@
 </head>
 <body>
 <div class="container">
-    <div class="header">
-        <div class="header-logo">&#x1F48E;</div>
-        <div class="header-text">
-            <h1>Black <span>Diamond</span> Solar</h1>
-            <p id="headerSubtitle">Sigenergy Residential Quote Builder</p>
+    <div class="toolbar" id="mainToolbar">
+        <div class="toolbar-logo">&#x1F48E;</div>
+        <div class="toolbar-divider"></div>
+        <div class="toolbar-actions" id="toolbarActions">
+            <button class="toolbar-btn" onclick="clearQuote()">New</button>
+            <button class="toolbar-btn primary" onclick="saveQuote()">Save</button>
+            <button class="toolbar-btn" onclick="generateQuote()">Print</button>
+            <button class="toolbar-btn" onclick="showBOM()">BOM</button>
+            <button class="toolbar-btn" onclick="toggleSearch()"><svg class="mag-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg></button>
+        </div>
+        <div class="search-overlay" id="searchOverlay">
+            <input type="text" id="quoteSearchInput" placeholder="Search by name, address, or phone...">
+        </div>
+        <div class="toolbar-price">
+            <span class="toolbar-price-amount" id="actionBarPrice">$0</span>
+            <span class="toolbar-price-label">inc GST</span>
         </div>
     </div>
-    <div id="quoteSearchBar" style="display:flex;gap:8px;padding:12px 32px;align-items:center;border-bottom:1px solid rgba(255,255,255,0.08);">
-        <input type="text" id="quoteSearchInput" placeholder="Search quotes by name, address, or phone..." style="flex:1;">
-        <button class="add-custom-btn" style="margin:0;white-space:nowrap;" onclick="searchQuotes()">Search</button>
-        <button class="add-custom-btn" style="margin:0;white-space:nowrap;" onclick="clearQuote()">New Quote</button>
-    </div>
     <div id="quoteSearchResults" style="display:none;margin-bottom:16px;"></div>
-    <div id="activeQuoteBar" style="display:none;margin:0 32px 0;padding:10px 16px;background:var(--bg-input, #1c1c1e);border:1px solid rgba(224,0,240,0.15);border-radius:8px;font-size:13px;color:var(--text-secondary, #a1a1a6);align-items:center;gap:8px;">
-        <span id="activeQuoteInfo"></span>
-        <span id="activeQuoteId" style="color:#6b7280;font-size:11px;margin-left:8px;"></span>
-    </div>
     <div class="content">
         <div class="form-section">
             <div class="section">
@@ -59,7 +61,6 @@
                 </div>
             </div>
             <div class="section">
-                <div class="section-title">Battery Configuration</div>
                 <div id="batteryTypeGroup" style="display:none;">
                     <div class="form-group"><label>Battery Type</label><select id="batteryTypeSelect"></select></div>
                 </div>
@@ -82,11 +83,16 @@
                 <div id="cecApproved" class="cec-shield approved" style="display:none;"></div>
             </div>
             <div class="section">
-                <div class="section-title">Installation &amp; Mounting</div>
-                <div class="grid-2">
-                    <div class="form-group"><label>PV Install ($/kW)</label><input type="number" id="installPerKwPv" min="0" step="1"></div>
-                    <div class="form-group"><label>Battery Install (per stack)</label><input type="number" id="installPerStack" min="0" step="1"></div>
+                <div class="section-title collapsible" onclick="this.classList.toggle('open');this.nextElementSibling.style.display=this.classList.contains('open')?'block':'none'">Accessories &amp; Add-Ons<span class="collapse-arrow"></span></div>
+                <div class="collapsible-content" style="display:none;">
+                <div id="accessoriesContainer"></div>
+                <div id="customAddons"></div>
+                <button class="add-custom-btn" onclick="addCustomAddon()">+ Add Custom Item</button>
                 </div>
+            </div>
+            <div class="section">
+                <div class="section-title collapsible" onclick="this.classList.toggle('open');this.nextElementSibling.style.display=this.classList.contains('open')?'block':'none'">Installation Details<span class="collapse-arrow"></span></div>
+                <div class="collapsible-content" style="display:none;">
                 <div class="grid-2">
                     <div class="form-group"><label>Roof Type</label><select id="roofType"><option value="metal">Metal</option><option value="tile">Tile</option><option value="concrete">Concrete/Terracotta</option><option value="flat">Flat</option></select></div>
                     <div class="form-group"><label>Panel Orientation</label><select id="panelOrientation"><option value="portrait">Portrait</option><option value="landscape">Landscape</option></select></div>
@@ -102,15 +108,15 @@
                     <div class="form-group"><label>Battery Mounting Type</label><select id="mountingType"><option value="wall">Wall Mount</option><option value="ground" selected>Ground Mount</option></select></div>
                     <div id="wallMountWarningGroup" style="display:none;padding-bottom:1px;"><div id="wallMountWarning" class="cec-shield warning" style="margin-top:0;font-size:12px;"></div></div>
                 </div>
+                </div>
             </div>
             <div class="section">
-                <div class="section-title">Accessories &amp; Add-Ons</div>
-                <div id="accessoriesContainer"></div>
-                <div id="customAddons"></div>
-                <button class="add-custom-btn" onclick="addCustomAddon()">+ Add Custom Item</button>
-            </div>
-            <div class="section">
-                <div class="section-title">STC Rebates &amp; Margin</div>
+                <div class="section-title collapsible" onclick="this.classList.toggle('open');this.nextElementSibling.style.display=this.classList.contains('open')?'block':'none'">Rates &amp; Margins<span class="collapse-arrow"></span></div>
+                <div class="collapsible-content" style="display:none;">
+                <div class="grid-2">
+                    <div class="form-group"><label>PV Install ($/kW)</label><input type="number" id="installPerKwPv" min="0" step="1"></div>
+                    <div class="form-group"><label>Battery Install (per stack)</label><input type="number" id="installPerStack" min="0" step="1"></div>
+                </div>
                 <div class="grid-2">
                     <div class="form-group"><label>STC Price ($/cert)</label><input type="number" id="stcPrice" step="0.5" min="0"></div>
                     <div class="form-group"><label>Deeming Period (yrs)</label><input type="number" id="stcDeemingPeriod" step="1" min="1" max="10" class="readonly-field" readonly></div>
@@ -122,6 +128,7 @@
                 <div class="grid-2">
                     <div class="form-group"><label>Sales Commission (%)</label><input type="number" id="salesCommission" min="0" max="100" step="0.1"></div>
                     <div class="form-group"></div>
+                </div>
                 </div>
             </div>
         </div>
@@ -158,11 +165,7 @@
                 <div class="summary-row"><span>GST</span><span id="gstAmount">$0</span></div>
                 <div class="summary-row rebate"><span id="pvRebateLabel">PV STC Rebate</span><span id="stcPvRebate">-$0</span></div>
                 <div class="summary-row rebate"><span>Battery STC Rebate</span><span id="stcBatteryRebate">-$0</span></div>
-                <div class="summary-row final"><span>Customer Price (inc GST)</span><span id="finalPrice">$0</span></div>
             </div>
-            <button class="generate-btn" onclick="saveQuote()">Save Quote</button>
-            <button class="generate-btn" onclick="generateQuote()" style="background:var(--bg-input, #1c1c1e);border:1px solid rgba(255,255,255,0.15);color:var(--text-primary, #f5f5f7);">Generate Quote PDF</button>
-            <button class="generate-btn" style="background:transparent;color:var(--accent, #e000f0);border:none;" onclick="showBOM()">View Bill of Materials</button>
         </div>
     </div>
 </div>
