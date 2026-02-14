@@ -213,7 +213,6 @@ async function loadConfig() {
     currentManufacturer = 'sigenergy'; currentBatteryTypeIdx = 0;
     batteryQtys = {};
     document.getElementById('panelCount').value = CONFIG.default_panel_count;
-    document.getElementById('desiredBatteryKwh').value = CONFIG.default_battery_kwh;
     document.getElementById('installPerKwPv').value = CONFIG.installation.install_pv_per_kw;
     document.getElementById('installPerStack').value = CONFIG.installation.install_battery_per_stack;
     document.getElementById('stcPrice').value = CONFIG.rebates.stc_price;
@@ -221,7 +220,7 @@ async function loadConfig() {
     document.getElementById('batteryRebatePerKwh').value = CONFIG.rebates.battery_rebate_per_kwh;
     document.getElementById('gpMargin').value = CONFIG.gp_margin;
     document.getElementById('salesCommission').value = CONFIG.sales_commission;
-    populateManufacturers(); populatePanels(); populateBatteryTypes(); buildBatteryUI(); populateInverters(); populateGateways(); buildAccessoriesUI(); updateBatteryMountVisibility(); bindEvents(); updateRoofInfo(); updateMountingKitInfo(); updateZoneDisplay(); updateHeaderSubtitle(); updateInverterSectionLabel(); updateGatewaySectionLabel(); updatePowerSensorModel(); calculateQuote();
+    populateManufacturers(); populatePanels(); populateBatteryTypes(); buildBatteryUI(); populateInverters(); populateGateways(); buildAccessoriesUI(); updateBatteryMountVisibility(); bindEvents(); updateRoofInfo(); updateMountingKitInfo(); updateZoneDisplay(); updateHeaderSubtitle(); updateInverterSectionLabel(); updateGatewaySectionLabel(); updatePowerSensorModel(); applyManufacturerDefaults(); calculateQuote();
 }
 
 // ====================
@@ -239,9 +238,35 @@ function switchManufacturer() {
     currentBatteryTypeIdx = 0; userChangedInverter = false; dualStackResult = null; dualStackEcOverride = { stack1: null, stack2: null };
     selectedAccessories = selectedAccessories.filter(function(a) { return a.type === 'addon'; });
     batteryQtys = {}; populateBatteryTypes(); buildBatteryUI(); populateInverters(); populateGateways(); buildAccessoriesUI(); updateBatteryMountVisibility(); updateHeaderSubtitle(); updateInverterSectionLabel(); updateGatewaySectionLabel(); updatePowerSensorModel();
-    document.getElementById('desiredBatteryKwh').value = 0;
-    document.getElementById('desiredBatteryKwh').max = 96;
+    applyManufacturerDefaults();
     calculateQuote();
+}
+
+function applyManufacturerDefaults() {
+    var mfg = getMfg();
+    // Battery capacity default
+    document.getElementById('desiredBatteryKwh').value = CONFIG.default_battery_kwh;
+    document.getElementById('desiredBatteryKwh').max = 96;
+    // Battery type default
+    var btIdx = mfg.default_battery_type_idx || 0;
+    var types = mfg.battery_types || [];
+    if (btIdx < types.length) {
+        currentBatteryTypeIdx = btIdx;
+        var btSel = document.getElementById('batteryTypeSelect');
+        if (btSel) btSel.value = btIdx;
+    }
+    // Inverter default by kW
+    var targetKw = mfg.default_inverter_kw || 0;
+    if (targetKw > 0) {
+        var invSel = document.getElementById('inverterSelect');
+        for (var i = 0; i < invSel.options.length; i++) {
+            if (parseFloat(invSel.options[i].dataset.kw) === targetKw) {
+                invSel.selectedIndex = i;
+                userChangedInverter = true;
+                break;
+            }
+        }
+    }
 }
 
 function updateHeaderSubtitle() { const el = document.getElementById('headerSubtitle'); if (el) el.textContent = (getMfg().label || 'Solar') + ' Residential Quote Builder'; }
@@ -260,7 +285,7 @@ function populateBatteryTypes() {
 
 function switchBatteryType() {
     currentBatteryTypeIdx = parseInt(document.getElementById('batteryTypeSelect').value) || 0;
-    userChangedInverter = false; batteryQtys = {}; dualStackResult = null; dualStackEcOverride = { stack1: null, stack2: null };    document.getElementById('desiredBatteryKwh').value = 0;
+    userChangedInverter = false; batteryQtys = {}; dualStackResult = null; dualStackEcOverride = { stack1: null, stack2: null };    document.getElementById('desiredBatteryKwh').value = CONFIG.default_battery_kwh;
     document.getElementById('desiredBatteryKwh').max = 96;
     updatePowerSensorModel(); calculateQuote();
 }
@@ -668,7 +693,7 @@ function optimizeDualStack(desired) {
         for (const m of models) {
             const k = getCecKey(m.sku);
             if (!combos[k] || !combos[k].includes(stackKwh)) continue;
-            if (m.max_pv_kw < pvKw) continue;
+            if (m.kw > 0 && pvKw / m.kw >= 1.4) continue;
             if (!cheapest || m.price < cheapest.price) cheapest = m;
         }
         return cheapest;
@@ -697,7 +722,7 @@ function optimizeDualStack(desired) {
             const totalModules2 = Object.values(bat2.qtys).reduce((s, v) => s + v, 0);
 
             // Try PV splits: allocate panels to each EC
-            // Each EC must handle its panels within max_pv_kw
+            // Each EC must handle its panels within 1.4x ratio
             for (let p1 = 0; p1 <= state.panelCount; p1++) {
                 const p2 = state.panelCount - p1;
                 const pv1kw = (p1 * state.panelWattage) / 1000;
@@ -790,7 +815,7 @@ function buildDualStackFromTargets(s1kwhTarget, s2kwhTarget, ec1SkuOverride, ec2
         for (const m of models) {
             const k = getCecKey(m.sku);
             if (!combos[k] || !combos[k].includes(stackKwh)) continue;
-            if (m.max_pv_kw < pvKw) continue;
+            if (m.kw > 0 && pvKw / m.kw >= 1.4) continue;
             if (!cheapest || m.price < cheapest.price) cheapest = m;
         }
         return cheapest;
@@ -825,7 +850,7 @@ function buildDualStackFromTargets(s1kwhTarget, s2kwhTarget, ec1SkuOverride, ec2
             if (ec1) {
                 const k = getCecKey(ec1.sku);
                 if (!combos[k] || !combos[k].includes(s1kwh)) ec1 = null;
-                else if (ec1.max_pv_kw < pv1kw) ec1 = null;
+                else if (ec1.kw > 0 && pv1kw / ec1.kw >= 1.4) ec1 = null;
             }
         } else {
             ec1 = bestEC(s1kwh, pv1kw);
@@ -835,7 +860,7 @@ function buildDualStackFromTargets(s1kwhTarget, s2kwhTarget, ec1SkuOverride, ec2
             if (ec2) {
                 const k = getCecKey(ec2.sku);
                 if (!combos[k] || !combos[k].includes(s2kwh)) ec2 = null;
-                else if (ec2.max_pv_kw < pv2kw) ec2 = null;
+                else if (ec2.kw > 0 && pv2kw / ec2.kw >= 1.4) ec2 = null;
             }
         } else {
             ec2 = bestEC(s2kwh, pv2kw);
@@ -928,7 +953,7 @@ function getDualEcOptions(stackNum) {
         var m = models[i];
         var k = getCecKey(m.sku);
         if (!combos[k] || !combos[k].includes(stackKwh)) continue;
-        if (m.max_pv_kw < pvKw) continue;
+        if (m.kw > 0 && pvKw / m.kw >= 1.4) continue;
         validModels.push(m);
         if (m.price < cheapestPrice) { cheapestPrice = m.price; cheapestSku = m.sku; }
     }
@@ -1005,13 +1030,53 @@ function autoSelectInverter(sysKw, battKwh, battModules, phase) {
     const mfg = getMfg(), models = mfg.inverters?.[phase] || [], cec = mfg.cec_approved;
     if (cec?.type === 'inverter_battery_combo') {
         const combos = cec[phase];
-        for (const m of models) { const k = getCecKey(m.sku); if (m.max_pv_kw >= sysKw && combos[k] && combos[k].includes(battKwh)) return m.sku; }
+        for (const m of models) { const k = getCecKey(m.sku); if (sysKw / m.kw < 1.4 && combos[k] && combos[k].includes(battKwh)) return m.sku; }
         for (const m of models) { const k = getCecKey(m.sku); if (combos[k] && combos[k].includes(battKwh)) return m.sku; }
         return models[models.length - 1]?.sku || '';
     }
     // SolaX: just find smallest inverter where PV fits
-    for (const m of models) { if (m.max_pv_kw >= sysKw) return m.sku; }
+    for (const m of models) { if (sysKw / m.kw < 1.4) return m.sku; }
     return models[models.length - 1]?.sku || '';
+}
+
+function updateInverterOptions(sysKw, battKwh, phase) {
+    var sel = document.getElementById('inverterSelect');
+    var mfg = getMfg(), cec = mfg.cec_approved;
+    var combos = (cec && cec.type === 'inverter_battery_combo') ? (cec[phase] || {}) : null;
+    var allModels = mfg.inverters?.[phase] || [];
+    var currentSku = sel.value;
+    var validModels = [];
+    for (var i = 0; i < allModels.length; i++) {
+        var m = allModels[i];
+        var valid = true;
+        if (sysKw / m.kw >= 1.4) valid = false;
+        if (valid && combos && battKwh > 0) {
+            var key = getCecKey(m.sku);
+            if (!combos[key] || !combos[key].includes(battKwh)) valid = false;
+        }
+        if (valid) validModels.push(m);
+    }
+    // If no valid models, show all (avoid empty dropdown)
+    if (validModels.length === 0) validModels = allModels;
+    // Rebuild dropdown
+    sel.innerHTML = '';
+    var currentStillValid = false;
+    for (var j = 0; j < validModels.length; j++) {
+        var mv = validModels[j];
+        var o = document.createElement('option');
+        o.value = mv.sku;
+        o.textContent = mv.sku + ' -  ' + mv.kw + 'kW -  Max PV: ' + mv.max_pv_kw + 'kW';
+        o.dataset.kw = mv.kw; o.dataset.price = mv.price; o.dataset.maxPv = mv.max_pv_kw; o.dataset.supplierCode = mv.supplier_code || '';
+        sel.appendChild(o);
+        if (mv.sku === currentSku) currentStillValid = true;
+    }
+    // Restore selection or pick first valid
+    if (currentStillValid) {
+        sel.value = currentSku;
+    } else {
+        sel.selectedIndex = 0;
+    }
+    syncStateFromDOM();
 }
 
 // ====================
@@ -1178,11 +1243,16 @@ function calculateQuote() {
             sel3.disabled = false;
         }
 
+        // Grey out invalid inverter options
+        if (!isDualStack) {
+            updateInverterOptions(state.sysKw, actualKwh, state.phase);
+        }
+
         const osRatio = getPvOversizing();
         document.getElementById('inverterInfo').style.display = 'none';
-        if (!isDualStack && state.sysKw > state.invMaxPv) {
+        if (!isDualStack && state.invKw > 0 && state.sysKw / state.invKw >= 1.4) {
             document.getElementById('inverterWarning').style.display = 'flex';
-            document.getElementById('inverterWarning').innerHTML = warnShieldHtml('PV Oversizing', 'PV (' + state.sysKw.toFixed(1) + 'kW) exceeds max (' + state.invMaxPv + 'kW). Select larger ' + getInverterLabel().toLowerCase() + '.');
+            document.getElementById('inverterWarning').innerHTML = warnShieldHtml('PV Oversizing', 'PV (' + state.sysKw.toFixed(1) + 'kW) / ' + getInverterLabel() + ' (' + state.invKw + 'kW) ratio exceeds 1.4. Select larger ' + getInverterLabel().toLowerCase() + '.');
         } else {
             document.getElementById('inverterWarning').style.display = 'none';
         }
@@ -2146,6 +2216,6 @@ const DEFAULT_CONFIG = {
     "gp_margin": 37.5,
     "sales_commission": 8.75,
     "default_panel_count": 28,
-    "default_battery_kwh": 13,
+    "default_battery_kwh": 20,
     "mounting_kits": { "kits": { "tin_2kw": {"label":"Tin Roof 2kW Pack","panels_covered":4,"price":46.50,"supplier_code":"RAY:KIT-TIN-2KW"}, "tin_1_5kw": {"label":"Tin Roof 1.5kW Pack","panels_covered":3,"price":34.90,"supplier_code":"RAY:KIT-TIN-1.5KW"}, "tile_2kw": {"label":"Tile Roof 2kW Pack","panels_covered":4,"price":93.00,"supplier_code":"RAY:KIT-TILE-2KW"}, "tile_1_5kw": {"label":"Tile Roof 1.5kW Pack","panels_covered":3,"price":69.50,"supplier_code":"RAY:KIT-TILE-1.5KW"} }, "tilt_angles": { "10_15": {"label":"10-15 deg","price":11.99,"supplier_code":"RAY:TILT-10/15"} }, "split_array_surcharge": { "parts": [{"desc":"End Clamp","qty":4,"price":1.10,"supplier_code":"RAY:END"}], "labour_surcharge": 100 }, "rails": { "portrait_per_row": 2, "landscape_per_row": 3, "price": 25.50, "length_mm": 4800, "clamp_gap_mm": 25, "splicer_price": 1.60, "supplier_code": "RAY:R-4800-BLK", "splicer_code": "RAY:R-SP" }, "landscape_extras": { "tin_attachment_price": 1.60, "tin_attachment_code": "RAY:TH-L", "tile_attachment_price": 4.90, "tile_attachment_code": "RAY:RH-1#", "attachments_per_row": 4 } }
 };

@@ -10,6 +10,8 @@
     "manufacturers": {
         "sigenergy": {
             "label": "Sigenergy",
+            "default_battery_type_idx": 0,
+            "default_inverter_kw": 10,
             "inverter_label": "Energy Controller",
             "pv_oversizing": { "single_phase": 2.0, "three_phase": 1.6 },
             "inverters": {
@@ -112,6 +114,8 @@
         },
         "solax": {
             "label": "SolaX",
+            "default_battery_type_idx": 1,
+            "default_inverter_kw": 10,
             "inverter_label": "Hybrid Inverter",
             "pv_oversizing": { "single_phase": 2.0, "three_phase": 2.0 },
             "inverters": {
@@ -338,7 +342,7 @@
     "gp_margin": 37.5,
     "sales_commission": 8.75,
     "default_panel_count": 28,
-    "default_battery_kwh": 13,
+    "default_battery_kwh": 20,
 
     "mounting_kits": {
         "kits": {
