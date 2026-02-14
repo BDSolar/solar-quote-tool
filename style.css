@@ -721,6 +721,9 @@ select.ev-charger-sub {
 .btn-remove-icon:hover { background: rgba(239, 68, 68, 0.12); color: #ef4444; }
 .btn-remove-icon svg { width: 16px; height: 16px; }
 
+.toolbar-btn-demo { background: #e000f0 !important; color: #fff !important; font-weight: 600; border-color: #e000f0 !important; }
+.toolbar-btn-demo:hover { background: #c800d8 !important; border-color: #c800d8 !important; }
+
 @media (max-width: 968px) {
     .content { grid-template-columns: 1fr; }
     .form-section { border-right: none; }

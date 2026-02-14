@@ -1776,6 +1776,26 @@ function showActiveQuote(name, id) {
     // placeholder -- active quote bar removed
 }
 
+var demoDataIndex = 0;
+var DEMO_CUSTOMERS = [
+    { name: 'James Mitchell', phone: '0412 345 678', email: 'james.mitchell@example.com', address: '42 Sunrise Boulevard', suburb: 'Bondi Beach', state: 'NSW', postcode: '2026' },
+    { name: 'Sarah Chen', phone: '0423 987 654', email: 'sarah.chen@example.com', address: '18 Harbour View Drive', suburb: 'Mosman', state: 'NSW', postcode: '2088' },
+    { name: 'Michael Torres', phone: '0434 111 222', email: 'm.torres@example.com', address: '7 Banksia Court', suburb: 'Cronulla', state: 'NSW', postcode: '2230' },
+    { name: 'Emma Williams', phone: '0445 333 444', email: 'emma.w@example.com', address: '155 Pacific Highway', suburb: 'Chatswood', state: 'NSW', postcode: '2067' }
+];
+function loadDemoData() {
+    var d = DEMO_CUSTOMERS[demoDataIndex % DEMO_CUSTOMERS.length];
+    demoDataIndex++;
+    document.getElementById('customerName').value = d.name;
+    document.getElementById('customerPhone').value = d.phone;
+    document.getElementById('customerEmail').value = d.email;
+    document.getElementById('installAddress').value = d.address;
+    document.getElementById('installSuburb').value = d.suburb;
+    document.getElementById('installState').value = d.state;
+    document.getElementById('installPostcode').value = d.postcode;
+    updateZoneDisplay(); calculateQuote();
+}
+
 // Enter key triggers search
 document.addEventListener('DOMContentLoaded', () => {
     const searchInput = document.getElementById('quoteSearchInput');
