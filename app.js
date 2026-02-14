@@ -1646,9 +1646,43 @@ function getCustomAddons() {
 
 async function saveQuote() {
     if (!db) { alert('Firebase not connected. Check your internet connection.'); return; }
-    const name = document.getElementById('customerName').value.trim();
-    if (!name) { alert('Please enter a customer name before saving.'); document.getElementById('customerName').focus(); return; }
 
+    // -- Mandatory field validation --
+    var missing = [];
+    var firstEl = null;
+    var checks = [
+        { id: 'customerName', label: 'Customer Name' },
+        { id: 'customerPhone', label: 'Phone' },
+        { id: 'customerEmail', label: 'Email' },
+        { id: 'installAddress', label: 'Street Address' },
+        { id: 'installSuburb', label: 'Suburb' },
+        { id: 'installState', label: 'State' },
+        { id: 'installPostcode', label: 'Postcode' }
+    ];
+    for (var i = 0; i < checks.length; i++) {
+        var el = document.getElementById(checks[i].id);
+        if (!el || !el.value.trim()) {
+            missing.push(checks[i].label);
+            if (!firstEl && el) firstEl = el;
+        }
+    }
+    if (!state.sysKw || state.sysKw <= 0) {
+        missing.push('Panel system (kW must be > 0)');
+    }
+    if (!state.desiredBatteryKwh || state.desiredBatteryKwh <= 0) {
+        missing.push('Battery capacity (kWh must be > 0)');
+    }
+    var invSel = document.getElementById('inverterSelect');
+    if (!invSel || invSel.options.length === 0) {
+        missing.push('Inverter selection');
+    }
+    if (missing.length > 0) {
+        alert('Please complete the following before saving:\n\n- ' + missing.join('\n- '));
+        if (firstEl) firstEl.focus();
+        return;
+    }
+
+    const name = document.getElementById('customerName').value.trim();
     const data = collectQuoteData();
     data.updated_at = firebase.firestore.FieldValue.serverTimestamp();
 
