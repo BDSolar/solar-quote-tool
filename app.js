@@ -238,7 +238,7 @@ function switchManufacturer() {
     currentManufacturer = document.getElementById('manufacturerSelect').value;
     currentBatteryTypeIdx = 0; userChangedInverter = false; dualStackResult = null; dualStackEcOverride = { stack1: null, stack2: null };
     selectedAccessories = selectedAccessories.filter(function(a) { return a.type === 'addon'; });
-    batteryQtys = {}; populateBatteryTypes(); buildBatteryUI(); populateInverters(); populateGateways(); buildAccessoriesUI(); updateBatteryMountVisibility(); updateHeaderSubtitle(); updateInverterSectionLabel();
+    batteryQtys = {}; populateBatteryTypes(); buildBatteryUI(); populateInverters(); populateGateways(); buildAccessoriesUI(); updateBatteryMountVisibility(); updateHeaderSubtitle(); updateInverterSectionLabel(); updatePowerSensorModel();
     document.getElementById('desiredBatteryKwh').value = 0;
     document.getElementById('desiredBatteryKwh').max = 96;
     calculateQuote();
@@ -261,7 +261,7 @@ function switchBatteryType() {
     currentBatteryTypeIdx = parseInt(document.getElementById('batteryTypeSelect').value) || 0;
     userChangedInverter = false; batteryQtys = {}; dualStackResult = null; dualStackEcOverride = { stack1: null, stack2: null };    document.getElementById('desiredBatteryKwh').value = 0;
     document.getElementById('desiredBatteryKwh').max = 96;
-    calculateQuote();
+    updatePowerSensorModel(); calculateQuote();
 }
 
 // ====================
@@ -351,6 +351,7 @@ function buildEvChargerSubDropdown(entry, wrapper, priceSpan) {
     var groups = { dc: [], ac_cable: [], ac_socket: [] };
     Object.entries(evChargers).forEach(function(pair) {
         var key = pair[0], val = pair[1];
+        if (val.phase && val.phase !== state.phase) return;
         if (key.startsWith('dc_')) groups.dc.push({ key: key, desc: val.desc, price: val.price, supplier_code: val.supplier_code || '' });
         else if (key.includes('_cable')) groups.ac_cable.push({ key: key, desc: val.desc, price: val.price, supplier_code: val.supplier_code || '' });
         else if (key.includes('_socket')) groups.ac_socket.push({ key: key, desc: val.desc, price: val.price, supplier_code: val.supplier_code || '' });
@@ -409,8 +410,30 @@ function updateAccessoryPrices() { renderSelectedAccessories(); buildAccessories
 
 function updatePowerSensorModel() {
     var el = document.getElementById('powerSensorModel');
+    var labelEl = document.getElementById('powerSensorLabel');
+    var statusEl = document.getElementById('powerSensorStatus');
     if (!el) return;
-    el.textContent = state.phase === 'single_phase' ? 'Sigen Sensor SP-CT100' : 'Sigen Sensor TP-CT100';
+    if (currentManufacturer === 'solax') {
+        if (labelEl) labelEl.textContent = 'BMS';
+        var bt = getBatteryType();
+        if (!bt || !bt.bms_code) {
+            el.textContent = 'Select battery type';
+            if (statusEl) { statusEl.textContent = ''; statusEl.style.color = ''; }
+        } else if (bt.id === 'tp_hs36') {
+            el.textContent = 'TBMS-MCS0800';
+            if (statusEl) { statusEl.textContent = 'Included'; statusEl.style.color = 'var(--green)'; }
+        } else if (bt.id === 'tb_hs51') {
+            el.textContent = 'TBMS-S51-80';
+            if (statusEl) { statusEl.textContent = '$' + (bt.bms_cost || 1100).toLocaleString(); statusEl.style.color = 'var(--green)'; }
+        } else {
+            el.textContent = bt.bms_code || 'BMS';
+            if (statusEl) { statusEl.textContent = bt.bms_cost > 0 ? '$' + bt.bms_cost.toLocaleString() : 'Included'; statusEl.style.color = 'var(--green)'; }
+        }
+    } else {
+        if (labelEl) labelEl.textContent = 'Power Sensor';
+        el.textContent = state.phase === 'single_phase' ? 'Sigen Sensor SP-CT100' : 'Sigen Sensor TP-CT100';
+        if (statusEl) { statusEl.textContent = 'Included'; statusEl.style.color = 'var(--green)'; }
+    }
 }
 
 function getAccessoryCost() {
@@ -524,8 +547,6 @@ function updateBatteryUI() {
     const sorted = [...modules].sort((a, b) => b.kwh - a.kwh);
     let parts = []; sorted.forEach(b => { const q = batteryQtys[b.kwh] || 0; if (q > 0) parts.push(q + 'x ' + b.kwh + 'kWh'); });
     let txt = parts.length ? parts.join(' + ') + ' = ' + (Math.round(bat.totalKwh * 10) / 10) + ' kWh' : 'No batteries selected';
-    if (bt.use_package_pricing && bat.totalModules > 0) { const pkg = bt.packages?.find(p => p.modules === bat.totalModules); if (pkg) txt += ' <span style="color:#34d399;">(Pkg: ' + pkg.sku + ' $' + pkg.price.toLocaleString() + ')</span>'; }
-    if (bat.totalModules > 0 && bt.bms_cost > 0) { txt += ' <span style="color:#d8b4fe;">+ BMS</span>'; if (bat.totalModules >= (bt.series_box_threshold || 999)) txt += ' <span style="color:#d8b4fe;">+ Series Box</span>'; }
     document.getElementById('batteryBreakdown').innerHTML = txt;
 }
 
