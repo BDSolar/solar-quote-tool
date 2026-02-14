@@ -221,7 +221,7 @@ async function loadConfig() {
     document.getElementById('batteryRebatePerKwh').value = CONFIG.rebates.battery_rebate_per_kwh;
     document.getElementById('gpMargin').value = CONFIG.gp_margin;
     document.getElementById('salesCommission').value = CONFIG.sales_commission;
-    populateManufacturers(); populatePanels(); populateBatteryTypes(); buildBatteryUI(); populateInverters(); populateGateways(); buildAccessoriesUI(); updateBatteryMountVisibility(); bindEvents(); updateRoofInfo(); updateMountingKitInfo(); updateZoneDisplay(); updateHeaderSubtitle(); updateInverterSectionLabel(); updatePowerSensorModel(); calculateQuote();
+    populateManufacturers(); populatePanels(); populateBatteryTypes(); buildBatteryUI(); populateInverters(); populateGateways(); buildAccessoriesUI(); updateBatteryMountVisibility(); bindEvents(); updateRoofInfo(); updateMountingKitInfo(); updateZoneDisplay(); updateHeaderSubtitle(); updateInverterSectionLabel(); updateGatewaySectionLabel(); updatePowerSensorModel(); calculateQuote();
 }
 
 // ====================
@@ -238,7 +238,7 @@ function switchManufacturer() {
     currentManufacturer = document.getElementById('manufacturerSelect').value;
     currentBatteryTypeIdx = 0; userChangedInverter = false; dualStackResult = null; dualStackEcOverride = { stack1: null, stack2: null };
     selectedAccessories = selectedAccessories.filter(function(a) { return a.type === 'addon'; });
-    batteryQtys = {}; populateBatteryTypes(); buildBatteryUI(); populateInverters(); populateGateways(); buildAccessoriesUI(); updateBatteryMountVisibility(); updateHeaderSubtitle(); updateInverterSectionLabel(); updatePowerSensorModel();
+    batteryQtys = {}; populateBatteryTypes(); buildBatteryUI(); populateInverters(); populateGateways(); buildAccessoriesUI(); updateBatteryMountVisibility(); updateHeaderSubtitle(); updateInverterSectionLabel(); updateGatewaySectionLabel(); updatePowerSensorModel();
     document.getElementById('desiredBatteryKwh').value = 0;
     document.getElementById('desiredBatteryKwh').max = 96;
     calculateQuote();
@@ -246,6 +246,7 @@ function switchManufacturer() {
 
 function updateHeaderSubtitle() { const el = document.getElementById('headerSubtitle'); if (el) el.textContent = (getMfg().label || 'Solar') + ' Residential Quote Builder'; }
 function updateInverterSectionLabel() { const lbl = document.getElementById('inverterDropdownLabel'); if (lbl) lbl.textContent = getInverterLabel(); }
+function updateGatewaySectionLabel() { const lbl = document.getElementById('gatewayDropdownLabel'); if (lbl) lbl.textContent = currentManufacturer === 'solax' ? 'Backup Protection' : 'Gateway'; }
 
 // ====================
 // BATTERY TYPE SWITCHING
@@ -424,7 +425,7 @@ function updatePowerSensorModel() {
             if (statusEl) { statusEl.textContent = 'Included'; statusEl.style.color = 'var(--green)'; }
         } else if (bt.id === 'tb_hs51') {
             el.textContent = 'TBMS-S51-80';
-            if (statusEl) { statusEl.textContent = '$' + (bt.bms_cost || 1100).toLocaleString(); statusEl.style.color = 'var(--green)'; }
+            if (statusEl) { statusEl.textContent = 'Included'; statusEl.style.color = 'var(--green)'; }
         } else {
             el.textContent = bt.bms_code || 'BMS';
             if (statusEl) { statusEl.textContent = bt.bms_cost > 0 ? '$' + bt.bms_cost.toLocaleString() : 'Included'; statusEl.style.color = 'var(--green)'; }

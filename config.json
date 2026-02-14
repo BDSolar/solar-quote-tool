@@ -55,16 +55,16 @@
             ],
             "gateways": {
                 "single_phase": [
-                    { "sku": "Sigen Gateway Home SP AU (Pro)", "price": 695, "desc": "Pro back entry ($695)", "supplier_code": "SIG:GW-HOME-SP-PRO" },
-                    { "sku": "Sigen Gateway Home SP", "price": 645, "desc": "Standard Single Phase ($645)", "supplier_code": "SIG:GW-HOME-SP" },
-                    { "sku": "Sigen CUST Gateway SP-63", "price": 2200, "desc": "Custom 63A up to 24kW ($2,200)", "supplier_code": "SIG:GW-CUST-SP-63" },
-                    { "sku": "Sigen CUST Gateway SP-63-Hybrid", "price": 3000, "desc": "Custom 63A Hybrid ($3,000)", "supplier_code": "SIG:GW-CUST-SP-63-HYB" },
-                    { "sku": "Sigen CUST Gateway SP-125", "price": 3200, "desc": "Custom 125A up to 24kW ($3,200)", "supplier_code": "SIG:GW-CUST-SP-125" }
+                    { "sku": "Sigen Gateway Home SP AU (Pro)", "price": 695, "desc": "Home Pro - Back Entry", "supplier_code": "SIG:GW-HOME-SP-PRO" },
+                    { "sku": "Sigen Gateway Home SP", "price": 645, "desc": "Home Standard", "supplier_code": "SIG:GW-HOME-SP" },
+                    { "sku": "Sigen CUST Gateway SP-63", "price": 2200, "desc": "Custom 63A - Up to 24kW", "supplier_code": "SIG:GW-CUST-SP-63" },
+                    { "sku": "Sigen CUST Gateway SP-63-Hybrid", "price": 3000, "desc": "Custom 63A Hybrid", "supplier_code": "SIG:GW-CUST-SP-63-HYB" },
+                    { "sku": "Sigen CUST Gateway SP-125", "price": 3200, "desc": "Custom 125A - Up to 24kW", "supplier_code": "SIG:GW-CUST-SP-125" }
                 ],
                 "three_phase": [
-                    { "sku": "Sigen Gateway Home TP AU (Pro)", "price": 859, "desc": "Simple 2-inverter ($859)", "supplier_code": "SIG:GW-HOME-TP-PRO" },
-                    { "sku": "Sigen Gateway Home TP", "price": 1575, "desc": "Standard Three Phase ($1,575)", "supplier_code": "SIG:GW-HOME-TP" },
-                    { "sku": "Sigen Gateway C60 AU", "price": 1769, "desc": "C&I 60kW ($1,769)", "supplier_code": "SIG:GW-C60" }
+                    { "sku": "Sigen Gateway Home TP AU (Pro)", "price": 859, "desc": "Home Pro - 2 Inverter", "supplier_code": "SIG:GW-HOME-TP-PRO" },
+                    { "sku": "Sigen Gateway Home TP", "price": 1575, "desc": "Home Standard", "supplier_code": "SIG:GW-HOME-TP" },
+                    { "sku": "Sigen Gateway C60 AU", "price": 1769, "desc": "Commercial 60kW", "supplier_code": "SIG:GW-C60" }
                 ]
             },
             "ev_chargers": {
@@ -193,10 +193,10 @@
             ],
             "gateways": {
                 "single_phase": [
-                    { "sku": "SolaX EPS Box SP", "price": 250, "desc": "EPS Box Single Phase ($250)", "supplier_code": "SOLAX-EPS-1P" }
+                    { "sku": "SolaX EPS Box SP", "price": 250, "desc": "EPS Box - Single Phase Backup", "supplier_code": "SOLAX-EPS-1P" }
                 ],
                 "three_phase": [
-                    { "sku": "SolaX EPS Box TP", "price": 358, "desc": "EPS Box Three Phase ($358)", "supplier_code": "SOLAX-EPS-3P" }
+                    { "sku": "SolaX EPS Box TP", "price": 358, "desc": "EPS Box - Three Phase Backup", "supplier_code": "SOLAX-EPS-3P" }
                 ]
             },
             "ev_chargers": {
