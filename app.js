@@ -50,6 +50,26 @@ function esc(s) {
     return d.innerHTML;
 }
 
+function showAccTip(btn) {
+    var tip = btn.querySelector('.acc-tooltip');
+    if (!tip) return;
+    tip.textContent = btn.getAttribute('data-desc') || '';
+    tip.style.visibility = 'hidden';
+    tip.style.display = 'block';
+    var rect = btn.getBoundingClientRect();
+    var tipH = tip.offsetHeight;
+    tip.style.top = (rect.top - tipH - 8) + 'px';
+    tip.style.left = Math.max(8, rect.right - 260) + 'px';
+    tip.style.transform = 'none';
+    tip.style.visibility = 'visible';
+    tip.classList.add('visible');
+}
+
+function hideAccTip(btn) {
+    var tip = btn.querySelector('.acc-tooltip');
+    if (tip) { tip.classList.remove('visible'); tip.style.display = 'none'; }
+}
+
 // ====================
 // MANUFACTURER HELPERS
 // ====================
@@ -308,22 +328,22 @@ function getAllDropdownItems() {
     var accs = (getMfg().accessories || []).filter(function(a) { return a.id !== 'power_sensor'; });
     accs.forEach(function(acc) {
         var price = acc.phase_dependent ? (state.phase === 'single_phase' ? acc.price_single : acc.price_three) : acc.price;
-        items.push({ id: acc.id, label: acc.label, price: price, type: 'accessory', source: acc });
+        items.push({ id: acc.id, label: acc.label, price: price, type: 'accessory', source: acc, desc: acc.desc || '' });
     });
     // EV Charger (if manufacturer has chargers)
     var evChargers = getMfg().ev_chargers || {};
     if (Object.keys(evChargers).length > 0) {
-        items.push({ id: 'ev_charger', label: 'EV Charger', price: 0, type: 'ev_charger' });
+        items.push({ id: 'ev_charger', label: 'EV Charger', price: 0, type: 'ev_charger', desc: CONFIG.addons?.ev_charger_desc || '' });
     }
     // Universal add-ons
     var hwt = CONFIG.addons?.hot_water_timer ?? 350;
-    items.push({ id: 'hot_water_timer', label: 'Hot Water Timer', price: hwt, type: 'addon', supplier_code: CONFIG.addons?.hot_water_timer_code || 'BDS:HWT-001' });
+    items.push({ id: 'hot_water_timer', label: 'Hot Water Timer', price: hwt, type: 'addon', supplier_code: CONFIG.addons?.hot_water_timer_code || 'BDS:HWT-001', desc: CONFIG.addons?.hot_water_timer_desc || '' });
     var mbp = CONFIG.addons?.meter_board_partial ?? 800;
     var mbf = CONFIG.addons?.meter_board_full ?? 1200;
     var mbr = CONFIG.addons?.meter_board_relocation ?? 1800;
-    items.push({ id: 'meter_board_partial', label: 'Meter Board - Partial', price: mbp, type: 'addon', supplier_code: CONFIG.addons?.meter_board_partial_code || 'BDS:MB-PART' });
-    items.push({ id: 'meter_board_full', label: 'Meter Board - Full', price: mbf, type: 'addon', supplier_code: CONFIG.addons?.meter_board_full_code || 'BDS:MB-FULL' });
-    items.push({ id: 'meter_board_relocation', label: 'Meter Board - Full + Relocation', price: mbr, type: 'addon', supplier_code: CONFIG.addons?.meter_board_relocation_code || 'BDS:MB-RELOC' });
+    items.push({ id: 'meter_board_partial', label: 'Meter Board - Partial', price: mbp, type: 'addon', supplier_code: CONFIG.addons?.meter_board_partial_code || 'BDS:MB-PART', desc: CONFIG.addons?.meter_board_partial_desc || '' });
+    items.push({ id: 'meter_board_full', label: 'Meter Board - Full', price: mbf, type: 'addon', supplier_code: CONFIG.addons?.meter_board_full_code || 'BDS:MB-FULL', desc: CONFIG.addons?.meter_board_full_desc || '' });
+    items.push({ id: 'meter_board_relocation', label: 'Meter Board - Full + Relocation', price: mbr, type: 'addon', supplier_code: CONFIG.addons?.meter_board_relocation_code || 'BDS:MB-RELOC', desc: CONFIG.addons?.meter_board_relocation_desc || '' });
     return items;
 }
 
@@ -347,7 +367,7 @@ function buildAccessoriesUI() {
         if (item.id.startsWith('meter_board_')) {
             selectedAccessories = selectedAccessories.filter(function(a) { return !a.id.startsWith('meter_board_'); });
         }
-        var entry = { id: item.id, label: item.label, price: item.price, type: item.type, supplier_code: item.supplier_code || '' };
+        var entry = { id: item.id, label: item.label, price: item.price, type: item.type, supplier_code: item.supplier_code || '', desc: item.desc || '' };
         if (item.source) entry.source = item.source;
         if (item.type === 'ev_charger') entry.evModel = null;
         selectedAccessories.push(entry);
@@ -363,7 +383,7 @@ function buildAccessoriesUI() {
         var accs = (getMfg().accessories || []).filter(function(a) { return a.id !== 'power_sensor'; });
         accs.filter(function(a) { return a.default_checked; }).forEach(function(a) {
             var price = a.phase_dependent ? (state.phase === 'single_phase' ? a.price_single : a.price_three) : a.price;
-            selectedAccessories.push({ id: a.id, label: a.label, price: price, type: 'accessory', source: a, supplier_code: a.supplier_code || '' });
+            selectedAccessories.push({ id: a.id, label: a.label, price: price, type: 'accessory', source: a, supplier_code: a.supplier_code || '', desc: a.desc || '' });
         });
     }
     renderSelectedAccessories();
@@ -423,8 +443,13 @@ function renderSelectedAccessories() {
         }
         var wrapper = document.createElement('div'); wrapper.style.cssText = 'margin-bottom:6px;';
         var div = document.createElement('div'); div.className = 'addon-item';
-        div.innerHTML = '<label style="flex:1;cursor:default;font-size:13px;color:#d1d5db;">' + esc(acc.label) + '</label><button class="btn-remove-icon" title="Remove"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>';
-        div.querySelector('button').addEventListener('click', (function(idx) { return function() { selectedAccessories.splice(idx, 1); renderSelectedAccessories(); calculateQuote(); }; })(i));
+        var descText = acc.desc || (acc.source && acc.source.desc) || '';
+        var infoBtn = '';
+        if (descText) {
+            infoBtn = '<button class="btn-info-icon" title="Info" onmouseenter="showAccTip(this)" onmouseleave="hideAccTip(this)" data-desc="' + esc(descText).replace(/"/g, '&quot;') + '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg><div class="acc-tooltip"></div></button>';
+        }
+        div.innerHTML = '<label style="flex:1;cursor:default;font-size:13px;color:#d1d5db;">' + esc(acc.label) + '</label>' + infoBtn + '<button class="btn-remove-icon" title="Remove"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>';
+        div.querySelector('.btn-remove-icon').addEventListener('click', (function(idx) { return function() { selectedAccessories.splice(idx, 1); renderSelectedAccessories(); calculateQuote(); }; })(i));
         wrapper.appendChild(div);
         // EV charger sub-dropdown
         if (acc.type === 'ev_charger') buildEvChargerSubDropdown(acc, wrapper, div.querySelector('.addon-price'));

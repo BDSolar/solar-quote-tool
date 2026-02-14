@@ -84,9 +84,9 @@
                 "ac_22_socket": { "price": 932, "desc": "AC 22kW socket", "supplier_code": "SIG:EVAC-22-T2SH-WH" }
             },
             "accessories": [
-                { "id": "power_sensor", "label": "Power Sensor", "price_single": 101, "price_three": 202, "phase_dependent": true, "default_checked": true, "supplier_code_single": "SIG:SENSOR-SP-CT100", "supplier_code_three": "SIG:SENSOR-TP-CT100" },
-                { "id": "comm_4g", "label": "4G Comms Module (poor Wi-Fi)", "price": 177, "phase_dependent": false, "default_checked": false, "supplier_code": "SIG:4G-COMMMOD" },
-                { "id": "sub1g", "label": "Sub1G Sensor Kit", "price": 127, "phase_dependent": false, "default_checked": false, "supplier_code": "SIG:SUB1G-KIT-AU" }
+                { "id": "power_sensor", "label": "Power Sensor", "price_single": 101, "price_three": 202, "phase_dependent": true, "default_checked": true, "supplier_code_single": "SIG:SENSOR-SP-CT100", "supplier_code_three": "SIG:SENSOR-TP-CT100", "desc": "Monitors real-time energy flow between grid, solar, battery and loads. Auto-selected based on phase. Required for system operation." },
+                { "id": "comm_4g", "label": "4G Comms Module (poor Wi-Fi)", "price": 177, "phase_dependent": false, "default_checked": false, "supplier_code": "SIG:4G-COMMMOD", "desc": "Cellular backup for monitoring when site Wi-Fi is weak or unreliable. Plugs directly into the Energy Controller." },
+                { "id": "sub1g", "label": "Sub1G Sensor Kit", "price": 127, "phase_dependent": false, "default_checked": false, "supplier_code": "SIG:SUB1G-KIT-AU", "desc": "Wireless sensor for CT-less energy monitoring. Uses sub-1GHz radio for long range, low power." }
             ],
             "battery_mounting": {
                 "mount_wall": 202, "mount_wall_code": "SIG:MOUNT-WALL",
@@ -210,28 +210,28 @@
                 "hac_22p_cable": { "price": 680, "desc": "Hyper EV 22kW 3P (X3-HAC-22P)", "supplier_code": "SOLAX:X3-HAC-22P", "phase": "three_phase" }
             },
             "accessories": [
-                { "id": "ct_x3hyb", "label": "CT (X3-Hybrid G4)", "price": 88, "phase_dependent": false, "default_checked": false, "supplier_code": "SOLAX-CT-X3HYB", "note": "Required for X3-Hybrid G4" },
-                { "id": "ct_smart", "label": "CT (Smart)", "price": 18, "phase_dependent": false, "default_checked": false, "supplier_code": "SOLAX-CT-SMART" },
-                { "id": "ct_all", "label": "CT (All Models)", "price": 35, "phase_dependent": false, "default_checked": false, "supplier_code": "SOLAX-CT-ALL" },
-                { "id": "pocket_wifi_lan", "label": "Pocket WiFi+LAN (G4)", "price": 58, "phase_dependent": false, "default_checked": false, "supplier_code": "SOLAX-POCKET-WIFI+LAN", "note": "Included with X1-VAST" },
-                { "id": "pocket_wifi_4g", "label": "Pocket WiFi+4GM", "price": 86, "phase_dependent": false, "default_checked": false, "supplier_code": "SOLAX-POCKET-WIFI+4GM" },
-                { "id": "wifi_v3", "label": "WiFi V3.0", "price": 40, "phase_dependent": false, "default_checked": false, "supplier_code": "SOLAX-WIFI-V3.0" },
-                { "id": "ac_plug", "label": "AC Plug", "price": 30, "phase_dependent": false, "default_checked": false, "supplier_code": "SOLAX-AC-PLUG" },
-                { "id": "meter_m1_40", "label": "Meter M1-40 (1P)", "price": 120, "phase_dependent": false, "default_checked": false, "supplier_code": "SOLAX-METER-M1-40" },
-                { "id": "meter_m3_40", "label": "Meter M3-40 (3P)", "price": 240, "phase_dependent": false, "default_checked": false, "supplier_code": "SOLAX-METER-M3-40" },
-                { "id": "meter_m3_40_dual", "label": "Meter M3-40-Dual (3P)", "price": 308, "phase_dependent": false, "default_checked": false, "supplier_code": "SOLAX-METER-M3-40-DUAL" },
-                { "id": "meter_ddsu666", "label": "Meter DDSU666 (1P)", "price": 88, "phase_dependent": false, "default_checked": false, "supplier_code": "SOLAX-METER-1P-DDSU666" },
-                { "id": "meter_ddsu666_ct", "label": "Meter DDSU666-CT (1P)", "price": 112, "phase_dependent": false, "default_checked": false, "supplier_code": "SOLAX-METER-1P-DDSU666-CT" },
-                { "id": "meter_sdm230", "label": "Meter SDM230 (1P)", "price": 77, "phase_dependent": false, "default_checked": false, "supplier_code": "SOLAX-METER-1P-SDM230" },
-                { "id": "meter_sdm630m", "label": "Meter SDM630M (3P)", "price": 165, "phase_dependent": false, "default_checked": false, "supplier_code": "SOLAX-METER-3P-SDM630M" },
-                { "id": "meter_sdm630m_ct", "label": "Meter SDM630M-CT (3P)", "price": 250, "phase_dependent": false, "default_checked": false, "supplier_code": "SOLAX-METER-3P-SDM630M-CT" },
-                { "id": "meter_dtsu666_ct", "label": "Meter DTSU666-CT (3P)", "price": 280, "phase_dependent": false, "default_checked": false, "supplier_code": "SOLAX-METER-3P-DTSU666-CT" },
-                { "id": "bms_parallel_box", "label": "BMS Parallel Box II G1", "price": 860, "phase_dependent": false, "default_checked": false, "supplier_code": "SOLAX-BMS-PARALLEL-BOX-II-G1" },
-                { "id": "wireless_bridge", "label": "Wireless Bridge (Wi-BR)", "price": 380, "phase_dependent": false, "default_checked": false, "supplier_code": "SOLAX-WI-BR" },
-                { "id": "cable_positive_5m", "label": "Cable Positive 5M", "price": 20, "phase_dependent": false, "default_checked": false, "supplier_code": "SOLAX-CABLE-POSITIVE-5M" },
-                { "id": "cable_communication", "label": "Cable Communication", "price": 20, "phase_dependent": false, "default_checked": false, "supplier_code": "SOLAX-CABLE-COMMUNICATION" },
-                { "id": "cooling_fan_1", "label": "Upgrade Cooling Fan 1", "price": 60, "phase_dependent": false, "default_checked": false, "supplier_code": "SOLAX-UPGRADE-COOLING-FAN-1" },
-                { "id": "cooling_fan_2", "label": "Upgrade Cooling Fan 2", "price": 60, "phase_dependent": false, "default_checked": false, "supplier_code": "SOLAX-UPGRADE-COOLING-FAN-2" }
+                { "id": "ct_x3hyb", "label": "CT (X3-Hybrid G4)", "price": 88, "phase_dependent": false, "default_checked": false, "supplier_code": "SOLAX-CT-X3HYB", "note": "Required for X3-Hybrid G4", "desc": "Current transformer for the X3-Hybrid G4 inverter. Required for energy monitoring." },
+                { "id": "ct_smart", "label": "CT (Smart)", "price": 18, "phase_dependent": false, "default_checked": false, "supplier_code": "SOLAX-CT-SMART", "desc": "Current transformer for Smart inverter models." },
+                { "id": "ct_all", "label": "CT (All Models)", "price": 35, "phase_dependent": false, "default_checked": false, "supplier_code": "SOLAX-CT-ALL", "desc": "Universal current transformer compatible with all SolaX inverters." },
+                { "id": "pocket_wifi_lan", "label": "Pocket WiFi+LAN (G4)", "price": 58, "phase_dependent": false, "default_checked": false, "supplier_code": "SOLAX-POCKET-WIFI+LAN", "note": "Included with X1-VAST", "desc": "WiFi and LAN connectivity module for G4 series inverters." },
+                { "id": "pocket_wifi_4g", "label": "Pocket WiFi+4GM", "price": 86, "phase_dependent": false, "default_checked": false, "supplier_code": "SOLAX-POCKET-WIFI+4GM", "desc": "WiFi and 4G cellular connectivity module for remote monitoring." },
+                { "id": "wifi_v3", "label": "WiFi V3.0", "price": 40, "phase_dependent": false, "default_checked": false, "supplier_code": "SOLAX-WIFI-V3.0", "desc": "WiFi dongle for inverter monitoring and cloud connectivity." },
+                { "id": "ac_plug", "label": "AC Plug", "price": 30, "phase_dependent": false, "default_checked": false, "supplier_code": "SOLAX-AC-PLUG", "desc": "AC connection plug for SolaX inverter installation." },
+                { "id": "meter_m1_40", "label": "Meter M1-40 (1P)", "price": 120, "phase_dependent": false, "default_checked": false, "supplier_code": "SOLAX-METER-M1-40", "desc": "Single-phase energy meter for monitoring grid import/export. Direct connection up to 40A." },
+                { "id": "meter_m3_40", "label": "Meter M3-40 (3P)", "price": 240, "phase_dependent": false, "default_checked": false, "supplier_code": "SOLAX-METER-M3-40", "desc": "Three-phase energy meter for monitoring grid import/export. Direct connection up to 40A." },
+                { "id": "meter_m3_40_dual", "label": "Meter M3-40-Dual (3P)", "price": 308, "phase_dependent": false, "default_checked": false, "supplier_code": "SOLAX-METER-M3-40-DUAL", "desc": "Dual three-phase energy meter for monitoring two separate grid connections." },
+                { "id": "meter_ddsu666", "label": "Meter DDSU666 (1P)", "price": 88, "phase_dependent": false, "default_checked": false, "supplier_code": "SOLAX-METER-1P-DDSU666", "desc": "Single-phase energy meter. Chint DDSU666 direct connect model." },
+                { "id": "meter_ddsu666_ct", "label": "Meter DDSU666-CT (1P)", "price": 112, "phase_dependent": false, "default_checked": false, "supplier_code": "SOLAX-METER-1P-DDSU666-CT", "desc": "Single-phase energy meter with CT connection. For higher current installations." },
+                { "id": "meter_sdm230", "label": "Meter SDM230 (1P)", "price": 77, "phase_dependent": false, "default_checked": false, "supplier_code": "SOLAX-METER-1P-SDM230", "desc": "Single-phase energy meter. Eastron SDM230 direct connect model." },
+                { "id": "meter_sdm630m", "label": "Meter SDM630M (3P)", "price": 165, "phase_dependent": false, "default_checked": false, "supplier_code": "SOLAX-METER-3P-SDM630M", "desc": "Three-phase energy meter. Eastron SDM630M direct connect model." },
+                { "id": "meter_sdm630m_ct", "label": "Meter SDM630M-CT (3P)", "price": 250, "phase_dependent": false, "default_checked": false, "supplier_code": "SOLAX-METER-3P-SDM630M-CT", "desc": "Three-phase energy meter with CT connection. For higher current installations." },
+                { "id": "meter_dtsu666_ct", "label": "Meter DTSU666-CT (3P)", "price": 280, "phase_dependent": false, "default_checked": false, "supplier_code": "SOLAX-METER-3P-DTSU666-CT", "desc": "Three-phase energy meter with CT connection. Chint DTSU666 model." },
+                { "id": "bms_parallel_box", "label": "BMS Parallel Box II G1", "price": 860, "phase_dependent": false, "default_checked": false, "supplier_code": "SOLAX-BMS-PARALLEL-BOX-II-G1", "desc": "Required when running multiple battery stacks in parallel. Manages communication between stacks." },
+                { "id": "wireless_bridge", "label": "Wireless Bridge (Wi-BR)", "price": 380, "phase_dependent": false, "default_checked": false, "supplier_code": "SOLAX-WI-BR", "desc": "Wireless communication bridge between inverter and battery when cabling is not practical." },
+                { "id": "cable_positive_5m", "label": "Cable Positive 5M", "price": 20, "phase_dependent": false, "default_checked": false, "supplier_code": "SOLAX-CABLE-POSITIVE-5M", "desc": "5-metre positive DC cable extension for battery to inverter connection." },
+                { "id": "cable_communication", "label": "Cable Communication", "price": 20, "phase_dependent": false, "default_checked": false, "supplier_code": "SOLAX-CABLE-COMMUNICATION", "desc": "Communication cable for battery-to-inverter data link." },
+                { "id": "cooling_fan_1", "label": "Upgrade Cooling Fan 1", "price": 60, "phase_dependent": false, "default_checked": false, "supplier_code": "SOLAX-UPGRADE-COOLING-FAN-1", "desc": "Upgrade cooling fan for improved thermal management in high-temp environments." },
+                { "id": "cooling_fan_2", "label": "Upgrade Cooling Fan 2", "price": 60, "phase_dependent": false, "default_checked": false, "supplier_code": "SOLAX-UPGRADE-COOLING-FAN-2", "desc": "Upgrade cooling fan for improved thermal management in high-temp environments." }
             ],
             "battery_mounting": {
                 "show": false
@@ -333,10 +333,11 @@
     },
 
     "addons": {
-        "hot_water_timer": 350, "hot_water_timer_code": "BDS:HWT-001",
-        "meter_board_partial": 800, "meter_board_partial_code": "BDS:MB-PART",
-        "meter_board_full": 1200, "meter_board_full_code": "BDS:MB-FULL",
-        "meter_board_relocation": 1800, "meter_board_relocation_code": "BDS:MB-RELOC"
+        "hot_water_timer": 350, "hot_water_timer_code": "BDS:HWT-001", "hot_water_timer_desc": "Shifts hot water heating to off-peak or solar hours. Includes timer and full installation.",
+        "meter_board_partial": 800, "meter_board_partial_code": "BDS:MB-PART", "meter_board_partial_desc": "Switchboard tidy-up. Needed when board is non-compliant or too crowded for new breakers.",
+        "meter_board_full": 1200, "meter_board_full_code": "BDS:MB-FULL", "meter_board_full_desc": "Complete switchboard replacement. Required when board is too old or unsafe.",
+        "meter_board_relocation": 1800, "meter_board_relocation_code": "BDS:MB-RELOC", "meter_board_relocation_desc": "Full switchboard replacement plus physical relocation to a new position.",
+        "ev_charger_desc": "Electric vehicle charger. Choose AC or DC model after adding. DC connects to inverter for solar-direct charging."
     },
 
     "gp_margin": 37.5,
