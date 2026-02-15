@@ -1361,6 +1361,7 @@ function calculateQuote() {
         const totalBattery = costInverter + costBattery + costGateway + costMount;
         const totalInstall = installPv + installBat + costAcc;
         const totalCog = totalPv + totalBattery + totalInstall;
+        state.totalCog = totalCog;
 
         const zoneResult = lookupZone(document.getElementById('installPostcode').value);
         const zoneRating = zoneResult ? zoneResult.rating : 0;
@@ -1374,18 +1375,16 @@ function calculateQuote() {
         const commAmt = (baseIncGst - pvReb - batReb) * commRate / (1 - commRate * GST) / GST; // commission as % of customer price inc GST, stored ex GST
         const priceBeforeRebates = priceBeforeCommission + commAmt;
         const finalPrice = priceBeforeRebates - pvReb - batReb;
+        var customerPriceVal = '$' + Math.round(priceBeforeRebates * GST - pvReb - batReb).toLocaleString('en-AU');
 
-        document.getElementById('totalCog').textContent = fmtExGst(totalCog);
-        document.getElementById('gpLabel').textContent = 'GP (' + state.gpMargin + '%)';
-        document.getElementById('gpAmount').textContent = fmtExGst(gpAmt);
-        document.getElementById('commLabel').textContent = 'Commission (' + state.salesCommission + '%)';
-        document.getElementById('commAmount').textContent = fmtExGst(commAmt);
         document.getElementById('priceBeforeRebates').textContent = fmtIncGst(priceBeforeRebates);
         document.getElementById('gstAmount').textContent = '$' + Math.round(priceBeforeRebates * GST / 11).toLocaleString('en-AU');
+        document.getElementById('totalStcRebate').textContent = '-' + fmtExGst(pvReb + batReb);
         document.getElementById('pvRebateLabel').textContent = pvStcCount > 0 ? 'PV STC Rebate (' + pvStcCount + ' STCs)' : 'PV STC Rebate';
         document.getElementById('stcPvRebate').textContent = '-' + fmtExGst(pvReb);
         document.getElementById('stcBatteryRebate').textContent = '-' + fmtExGst(batReb);
-        document.getElementById('actionBarPrice').textContent = '$' + Math.round(priceBeforeRebates * GST - pvReb - batReb).toLocaleString('en-AU');
+        document.getElementById('customerPriceDisplay').textContent = customerPriceVal;
+        document.getElementById('actionBarPrice').textContent = customerPriceVal;
 
         // Update right panel component summary
         updateSummaryComponents(isDualStack, bat, costRoofKit, costRoofSurcharge, installPv, installBat, costAcc);
@@ -1780,7 +1779,7 @@ function collectQuoteData() {
         customAddons: getCustomAddons(),
         totals: {
             finalPrice: document.getElementById('actionBarPrice').textContent,
-            totalCog: document.getElementById('totalCog').textContent,
+            totalCog: fmtExGst(state.totalCog || 0),
             sysKw: state.sysKw,
             actualBatteryKwh: bat.totalKwh
         }

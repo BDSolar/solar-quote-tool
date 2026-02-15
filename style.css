@@ -671,6 +671,13 @@ select.ev-charger-sub {
 
 .summary-row.rebate { color: var(--green); padding-left: 0; }
 
+.summary-row.summary-sub.rebate {
+    padding-left: 24px;
+    font-size: 12px;
+    color: var(--green);
+    opacity: 0.75;
+}
+
 .summary-row.summary-sub {
     padding-left: 24px;
     font-size: 12px;
