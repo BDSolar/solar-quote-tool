@@ -1603,9 +1603,18 @@ function calculateQuote() {
 
         document.getElementById('priceBeforeRebates').textContent = fmtIncGst(priceBeforeRebates);
         document.getElementById('gstAmount').textContent = '$' + Math.round(priceBeforeRebates * GST / 11).toLocaleString('en-AU');
-        document.getElementById('pvRebateLabel').textContent = pvStcCount > 0 ? 'PV STC Rebate (' + pvStcCount + ' STCs)' : 'PV STC Rebate';
-        document.getElementById('stcPvRebate').textContent = '-' + fmtExGst(pvReb);
-        document.getElementById('stcBatteryRebate').textContent = '-' + fmtExGst(batReb);
+        var totalReb = pvReb + batReb;
+        document.getElementById('totalStcRebate').textContent = totalReb > 0 ? '-' + fmtExGst(totalReb) : '-$0';
+        var rebateHtml = '';
+        if (pvReb > 0) {
+            var pvLabel = pvStcCount > 0 ? 'Solar STC Rebate (' + pvStcCount + ' STCs)' : 'Solar STC Rebate';
+            rebateHtml += '<div class="summary-row summary-sub"><span>' + pvLabel + '</span><span>-' + fmtExGst(pvReb) + '</span></div>';
+        }
+        if (batReb > 0) {
+            rebateHtml += '<div class="summary-row summary-sub"><span>Battery STC Rebate</span><span>-' + fmtExGst(batReb) + '</span></div>';
+        }
+        if (!rebateHtml) rebateHtml = '<div class="summary-row summary-sub" style="color:var(--text-quaternary);">No rebates</div>';
+        document.getElementById('summaryRebateRows').innerHTML = rebateHtml;
         document.getElementById('customerPriceDisplay').textContent = customerPriceVal;
         document.getElementById('actionBarPrice').textContent = customerPriceVal;
 
