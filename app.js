@@ -340,7 +340,6 @@ function populateBatteryTypes() {
 function switchBatteryType() {
     currentBatteryTypeIdx = parseInt(document.getElementById('batteryTypeSelect').value) || 0;
     userChangedInverter = false; batteryQtys = {}; dualStackResult = null; dualStackEcOverride = { stack1: null, stack2: null }; parallelResult = null;
-    document.getElementById('desiredBatteryKwh').value = CONFIG.default_battery_kwh;
     updateBatteryMaxCap();
     updatePowerSensorModel(); calculateQuote();
 }
