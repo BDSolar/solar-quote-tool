@@ -24,10 +24,6 @@
         <div class="search-overlay" id="searchOverlay">
             <input type="text" id="quoteSearchInput" placeholder="Search by name, address, or phone...">
         </div>
-        <div class="toolbar-price" style="display:none;">
-            <span class="toolbar-price-amount" id="actionBarPrice">$0</span>
-            <span class="toolbar-price-label">inc GST</span>
-        </div>
     </div>
     <div id="quoteSearchResults" style="display:none;margin-bottom:16px;"></div>
     <div class="content">
@@ -70,7 +66,7 @@
                 </div>
                 <div class="grid-2">
                     <div class="form-group"><label id="gatewayDropdownLabel">Gateway</label><select id="gatewaySelect"></select></div>
-                    <div class="form-group"><label id="powerSensorLabel">Power Sensor</label><div style="width:100%;padding:7px 12px;border:1px solid var(--separator-hover);border-radius:var(--radius-sm);font-size:14px;font-weight:400;background:var(--bg-input);color:var(--text-primary);height:36px;display:flex;align-items:center;justify-content:space-between;letter-spacing:-0.01em;"><span id="powerSensorModel">Sigen Sensor TP-CT100</span><span id="powerSensorStatus" style="color:var(--green);font-size:12px;font-weight:500;">Included</span></div></div>
+                    <div class="form-group"><label id="powerSensorLabel">Power Sensor</label><div class="power-sensor-display"><span id="powerSensorModel">Sigen Sensor TP-CT100</span><span id="powerSensorStatus" class="power-sensor-status">Included</span></div></div>
                 </div>
                 <div id="batteryConfigPanel" class="info-box" style="display:none;">
                     <strong>Recommended Config:</strong> <span id="batteryBreakdown"></span>

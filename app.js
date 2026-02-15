@@ -612,6 +612,8 @@ function bindEvents() {
         el.addEventListener('click', function(e) { const rect = this.getBoundingClientRect(); if (e.clientX > rect.right - 30) { const mid = rect.top + rect.height / 2; if (e.clientY < mid) this.stepUp(); else this.stepDown(); this.dispatchEvent(new Event('input', { bubbles: true })); } });
         el.addEventListener('mousemove', function(e) { const rect = this.getBoundingClientRect(); this.style.cursor = (e.clientX > rect.right - 30) ? 'pointer' : 'text'; });
     });
+    const searchInput = document.getElementById('quoteSearchInput');
+    if (searchInput) searchInput.addEventListener('keydown', e => { if (e.key === 'Enter') searchQuotes(); });
 }
 
 // ====================
@@ -1524,20 +1526,6 @@ function calculateQuote() {
             } else { document.getElementById('cecWarning').style.display = 'none'; document.getElementById('cecApproved').style.display = 'none'; }
         }
 
-        // Grey out invalid inverters
-        const invSel = document.getElementById('inverterSelect');
-        const cecData = getMfg().cec_approved;
-        for (let i = 0; i < invSel.options.length; i++) {
-            const opt = invSel.options[i], sku = opt.value;
-            let valid = true;
-            if (cecData?.type === 'inverter_battery_combo' && actualKwh > 0) {
-                const k = getCecKey(sku), combos = cecData[state.phase];
-                valid = combos && combos[k] && combos[k].includes(actualKwh);
-            }
-            opt.disabled = !valid;
-            opt.style.color = valid ? '' : '#555';
-        }
-
         const costPanels = state.panelCount * state.panelCost;
         let costInverter, costBattery, costGateway, costMount, installBat;
 
@@ -1616,7 +1604,6 @@ function calculateQuote() {
         if (!rebateHtml) rebateHtml = '<div class="summary-row summary-sub" style="color:var(--text-quaternary);">No rebates</div>';
         document.getElementById('summaryRebateRows').innerHTML = rebateHtml;
         document.getElementById('customerPriceDisplay').textContent = customerPriceVal;
-        document.getElementById('actionBarPrice').textContent = customerPriceVal;
 
         // May 2026 urgency comparison
         var urgBanner = document.getElementById('urgencyBanner');
@@ -2123,7 +2110,7 @@ function collectQuoteData() {
         },
         customAddons: getCustomAddons(),
         totals: {
-            finalPrice: document.getElementById('actionBarPrice').textContent,
+            finalPrice: document.getElementById('customerPriceDisplay').textContent,
             totalCog: fmtExGst(state.totalCog || 0),
             sysKw: state.sysKw,
             actualBatteryKwh: bat.totalKwh
@@ -2444,11 +2431,6 @@ function loadDemoData() {
 }
 
 // Enter key triggers search
-document.addEventListener('DOMContentLoaded', () => {
-    const searchInput = document.getElementById('quoteSearchInput');
-    if (searchInput) searchInput.addEventListener('keydown', e => { if (e.key === 'Enter') searchQuotes(); });
-});
-
 function generateQuote() {
     const pc = document.getElementById('installPostcode').value;
     if (!pc || !lookupZone(pc)) { alert('Please enter a valid postcode before generating a quote.'); document.getElementById('installPostcode').focus(); return; }
