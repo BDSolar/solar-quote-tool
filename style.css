@@ -657,7 +657,7 @@ select.ev-charger-sub {
     font-weight: 400;
 }
 
-.summary-row span:last-child { font-variant-numeric: tabular-nums; }
+.summary-row span:last-child { font-variant-numeric: tabular-nums; white-space: nowrap; }
 
 .summary-row.total {
     border-top: 1px solid var(--separator);
@@ -670,6 +670,12 @@ select.ev-charger-sub {
 }
 
 .summary-row.rebate { color: var(--green); padding-left: 0; }
+
+.summary-row.summary-sub {
+    padding-left: 24px;
+    font-size: 12px;
+    color: var(--text-tertiary, #8e8e93);
+}
 
 .summary-row.final {
     background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%);

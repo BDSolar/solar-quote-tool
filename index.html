@@ -135,27 +135,17 @@
         </div>
         <div class="quote-summary">
             <div style="text-align:right;font-size:11px;color:var(--text-quaternary, #48484a);margin-bottom:4px;">All prices ex GST unless stated</div>
-            <div class="summary-card">
+            <div class="summary-card" id="summaryPvCard">
                 <div class="summary-title">PV Equipment</div>
-                <div class="summary-row"><span>Panels</span><span id="costPanels">$0</span></div>
-                <div class="summary-row"><span>Roof Mounting Kit</span><span id="costRoofKit">$0</span></div>
-                <div class="summary-row"><span>Roof Surcharge</span><span id="costRoofSurcharge">$0</span></div>
-                <div class="summary-row total"><span>Total PV</span><span id="totalPv">$0</span></div>
+                <div id="summaryPvRows"></div>
             </div>
-            <div class="summary-card">
-                <div class="summary-title">Battery</div>
-                <div class="summary-row"><span id="inverterCostLabel">Energy Controller</span><span id="costInverter">$0</span></div>
-                <div class="summary-row"><span>Batteries</span><span id="costBattery">$0</span></div>
-                <div class="summary-row"><span>Gateway</span><span id="costGateway">$0</span></div>
-                <div class="summary-row"><span>Battery Mounting (Wall/Ground)</span><span id="costMounting">$0</span></div>
-                <div class="summary-row total"><span>Total Battery</span><span id="totalBattery">$0</span></div>
+            <div class="summary-card" id="summaryBatteryCard">
+                <div class="summary-title">Battery &amp; Inverter</div>
+                <div id="summaryBatteryRows"></div>
             </div>
-            <div class="summary-card">
-                <div class="summary-title">Installation &amp; Add-ons</div>
-                <div class="summary-row"><span>PV Installation</span><span id="costInstallPv">$0</span></div>
-                <div class="summary-row"><span>Battery Install (per stack)</span><span id="costInstallBattery">$0</span></div>
-                <div class="summary-row"><span>Accessories &amp; Add-Ons</span><span id="costAccessories">$0</span></div>
-                <div class="summary-row total"><span>Total Installation</span><span id="totalInstall">$0</span></div>
+            <div class="summary-card" id="summaryAddonsCard">
+                <div class="summary-title">Add-ons</div>
+                <div id="summaryAddonRows"></div>
             </div>
             <div class="summary-card">
                 <div class="summary-title">Quote Total</div>
