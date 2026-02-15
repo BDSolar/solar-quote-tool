@@ -46,6 +46,28 @@ const fmtExGst = v => '$' + Math.round(v).toLocaleString('en-AU');
 const fmtExGstDecimal = v => '$' + v.toFixed(2);
 const fmtKwh = v => (Math.floor(v * 10) / 10);
 
+// Cap usable kWh at 50 for battery STC rebate (federal scheme limit)
+function calcBatteryRebate(usableKwh, ratePerKwh) {
+    var capped = Math.min(usableKwh, 50);
+    return capped * ratePerKwh;
+}
+
+// May 2026 tiered battery STC rebate structure
+// Tiers: 0-14 kWh @ 100%, 14-28 kWh @ 60%, 28-50 kWh @ 15%
+// STC factor 6.8, PV deeming drops to 4 years
+function calcBatteryRebateMay2026(usableKwh, stcPrice) {
+    var capped = Math.min(usableKwh, 50);
+    var stcs = 0;
+    if (capped <= 14) {
+        stcs = capped * 6.8;
+    } else if (capped <= 28) {
+        stcs = 14 * 6.8 + (capped - 14) * 6.8 * 0.6;
+    } else {
+        stcs = 14 * 6.8 + 14 * 6.8 * 0.6 + (capped - 28) * 6.8 * 0.15;
+    }
+    return Math.floor(stcs) * stcPrice;
+}
+
 function esc(s) {
     const d = document.createElement('div');
     d.textContent = s;
@@ -1290,24 +1312,6 @@ function removeCustomAddon(id) { document.getElementById('custom-' + id).remove(
 // MAIN CALCULATION ENGINE
 // ====================
 
-// Battery rebate with 50 kWh usable cap (current rules)
-function calcBatteryRebate(usableKwh, ratePerKwh) {
-    var capped = Math.min(usableKwh, 50);
-    return capped * ratePerKwh;
-}
-
-// May 2026 tiered battery rebate: 100% up to 14kWh, 60% 14-28kWh, 15% 28-50kWh
-// STC factor 6.8, applied per kWh then multiplied by STC price
-function calcBatteryRebateMay2026(usableKwh, stcPrice) {
-    var capped = Math.min(usableKwh, 50);
-    var stcFactor = 6.8;
-    var tier1 = Math.min(capped, 14);
-    var tier2 = Math.min(Math.max(capped - 14, 0), 14);
-    var tier3 = Math.min(Math.max(capped - 28, 0), 22);
-    var totalStcs = (tier1 * stcFactor * 1.0) + (tier2 * stcFactor * 0.6) + (tier3 * stcFactor * 0.15);
-    return totalStcs * stcPrice;
-}
-
 function calculateQuote() {
     try {
         if (!CONFIG.manufacturers) return;
@@ -1580,8 +1584,8 @@ function calculateQuote() {
         const zoneRating = zoneResult ? zoneResult.rating : 0;
         const pvStcCount = zoneRating > 0 ? Math.floor(state.sysKw * zoneRating * state.deemingPeriod) : 0;
         const pvReb = pvStcCount * state.stcPrice;
-        const rawUsableKwh = (isDualStack && dualStackResult) ? dualStackResult.totalUsableKwh : (isParallel && parallelResult) ? parallelResult.totalUsableKwh : bat.usableKwh;
-        const batReb = calcBatteryRebate(rawUsableKwh, state.batteryRebatePerKwh);
+        const usableKwh = (isDualStack && dualStackResult) ? dualStackResult.totalUsableKwh : (isParallel && parallelResult) ? parallelResult.totalUsableKwh : bat.usableKwh;
+        const batReb = calcBatteryRebate(usableKwh, state.batteryRebatePerKwh);
         const gpAmt = totalCog * (state.gpMargin / 100);
         const priceBeforeCommission = totalCog + gpAmt;
         const commRate = state.salesCommission / 100;
@@ -1589,31 +1593,41 @@ function calculateQuote() {
         const commAmt = (baseIncGst - pvReb - batReb) * commRate / (1 - commRate * GST) / GST; // commission as % of customer price inc GST, stored ex GST
         const priceBeforeRebates = priceBeforeCommission + commAmt;
         const finalPrice = priceBeforeRebates - pvReb - batReb;
-        var customerPriceVal = '$' + Math.round(priceBeforeRebates * GST - pvReb - batReb).toLocaleString('en-AU');
+        const customerPriceNum = Math.round(priceBeforeRebates * GST - pvReb - batReb);
+        var customerPriceVal = '$' + customerPriceNum.toLocaleString('en-AU');
 
         document.getElementById('priceBeforeRebates').textContent = fmtIncGst(priceBeforeRebates);
         document.getElementById('gstAmount').textContent = '$' + Math.round(priceBeforeRebates * GST / 11).toLocaleString('en-AU');
-        document.getElementById('totalStcRebate').textContent = '-' + fmtExGst(pvReb + batReb);
         document.getElementById('pvRebateLabel').textContent = pvStcCount > 0 ? 'PV STC Rebate (' + pvStcCount + ' STCs)' : 'PV STC Rebate';
         document.getElementById('stcPvRebate').textContent = '-' + fmtExGst(pvReb);
         document.getElementById('stcBatteryRebate').textContent = '-' + fmtExGst(batReb);
         document.getElementById('customerPriceDisplay').textContent = customerPriceVal;
         document.getElementById('actionBarPrice').textContent = customerPriceVal;
 
-        // May 2026 comparison (tiered battery rebate + reduced PV deeming)
-        var may2026Section = document.getElementById('may2026Section');
-        if (rawUsableKwh > 0 || pvStcCount > 0) {
-            var pvStcCountMay = zoneRating > 0 ? Math.floor(state.sysKw * zoneRating * 4) : 0; // deeming drops to 4 in 2026
-            var pvRebMay = pvStcCountMay * state.stcPrice;
-            var batRebMay = calcBatteryRebateMay2026(rawUsableKwh, state.stcPrice);
-            var customerPriceMayIncGst = Math.round(priceBeforeRebates * GST - pvRebMay - batRebMay);
-            var currentPriceIncGst = Math.round(priceBeforeRebates * GST - pvReb - batReb);
-            var priceIncrease = customerPriceMayIncGst - currentPriceIncGst;
-            document.getElementById('may2026Price').textContent = '$' + customerPriceMayIncGst.toLocaleString('en-AU');
-            document.getElementById('may2026Increase').textContent = '+$' + priceIncrease.toLocaleString('en-AU');
-            may2026Section.style.display = '';
-        } else {
-            may2026Section.style.display = 'none';
+        // May 2026 urgency comparison
+        var urgBanner = document.getElementById('urgencyBanner');
+        if (urgBanner) {
+            var hasPvOrBat = (pvReb > 0 || batReb > 0);
+            if (hasPvOrBat) {
+                // May 2026: PV deeming drops to 4 years, battery gets tiered structure
+                var pvStcCountMay = zoneRating > 0 ? Math.floor(state.sysKw * zoneRating * 4) : 0;
+                var pvRebMay = pvStcCountMay * state.stcPrice;
+                var batRebMay = calcBatteryRebateMay2026(usableKwh, state.stcPrice);
+                // Recalc commission with new rebates (same cost base, different rebate deductions)
+                var commAmtMay = (baseIncGst - pvRebMay - batRebMay) * commRate / (1 - commRate * GST) / GST;
+                var priceBeforeRebatesMay = priceBeforeCommission + commAmtMay;
+                var futurePriceNum = Math.round(priceBeforeRebatesMay * GST - pvRebMay - batRebMay);
+                var increaseNum = futurePriceNum - customerPriceNum;
+                if (increaseNum > 0) {
+                    urgBanner.style.display = 'flex';
+                    document.getElementById('urgencyIncrease').textContent = '+$' + increaseNum.toLocaleString('en-AU');
+                    document.getElementById('urgencyFuturePrice').textContent = '$' + futurePriceNum.toLocaleString('en-AU');
+                } else {
+                    urgBanner.style.display = 'none';
+                }
+            } else {
+                urgBanner.style.display = 'none';
+            }
         }
 
         // Update right panel component summary
@@ -2019,7 +2033,7 @@ function showBOM() {
     const zoneResult = lookupZone(document.getElementById('installPostcode').value);
     const zoneRating = zoneResult ? zoneResult.rating : 0;
     const pvStcCount = zoneRating > 0 ? Math.floor(state.sysKw * zoneRating * state.deemingPeriod) : 0;
-    const pvReb = pvStcCount * state.stcPrice, batSummary = getBatterySummary(), batReb = calcBatteryRebate((parallelResult && parallelResult.isParallel) ? parallelResult.totalUsableKwh : (dualStackResult && dualStackResult.isDualStack) ? dualStackResult.totalUsableKwh : batSummary.usableKwh, state.batteryRebatePerKwh);
+    const pvReb = pvStcCount * state.stcPrice, batSummary = getBatterySummary(), batUsable = (parallelResult && parallelResult.isParallel) ? parallelResult.totalUsableKwh : (dualStackResult && dualStackResult.isDualStack) ? dualStackResult.totalUsableKwh : batSummary.usableKwh, batReb = calcBatteryRebate(batUsable, state.batteryRebatePerKwh);
     let totHtml = '<table style="width:100%; font-size:14px; border-collapse:collapse;">';
     const totRow = (l, v, s) => '<tr style="' + (s || '') + '"><td style="padding:8px 0; color:#9ca3af;">' + l + '</td><td style="padding:8px 0; text-align:right; color:#f0f0f0; font-weight:500;">' + v + '</td></tr>';
     totHtml += totRow('Parts & Accessories', fmtExGst(partsTotal));
@@ -2458,7 +2472,8 @@ function generateQuote() {
     const pvReb = pvStcCount * state.stcPrice;
     const isDualStack = dualStackResult && currentManufacturer === 'sigenergy' && state.desiredBatteryKwh > 48;
     const isParallelPdf = parallelResult && parallelResult.isParallel;
-    const batReb = calcBatteryRebate(isDualStack ? dualStackResult.totalUsableKwh : isParallelPdf ? parallelResult.totalUsableKwh : bat.usableKwh, state.batteryRebatePerKwh);
+    const batUsablePdf = isDualStack ? dualStackResult.totalUsableKwh : isParallelPdf ? parallelResult.totalUsableKwh : bat.usableKwh;
+    const batReb = calcBatteryRebate(batUsablePdf, state.batteryRebatePerKwh);
     const commRate = state.salesCommission / 100;
     const baseIncGst = priceBeforeComm * GST;
     const commAmt = (baseIncGst - pvReb - batReb) * commRate / (1 - commRate * GST) / GST;

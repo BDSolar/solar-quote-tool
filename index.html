@@ -134,30 +134,42 @@
             </div>
         </div>
         <div class="quote-summary">
-            <div style="text-align:right;font-size:11px;color:var(--text-quaternary, #48484a);margin-bottom:4px;">All prices ex GST unless stated</div>
-            <div class="summary-card" id="summaryPvCard">
-                <div class="summary-title">PV Equipment</div>
-                <div id="summaryPvRows"></div>
-            </div>
-            <div class="summary-card" id="summaryBatteryCard">
-                <div class="summary-title">Battery &amp; Inverter</div>
-                <div id="summaryBatteryRows"></div>
-            </div>
-            <div class="summary-card" id="summaryAddonsCard">
-                <div class="summary-title">Add-ons</div>
-                <div id="summaryAddonRows"></div>
-            </div>
-            <div class="summary-card">
-                <div class="summary-title">Quote Total</div>
-                <div class="summary-row total"><span>Price Before Rebates</span><span id="priceBeforeRebates">$0</span></div>
-                <div class="summary-row"><span>GST</span><span id="gstAmount">$0</span></div>
-                <div class="summary-row total rebate"><span>Total STC Rebate</span><span id="totalStcRebate">-$0</span></div>
-                <div class="summary-row summary-sub rebate"><span id="pvRebateLabel">PV STC Rebate</span><span id="stcPvRebate">-$0</span></div>
-                <div class="summary-row summary-sub rebate"><span>Battery STC Rebate</span><span id="stcBatteryRebate">-$0</span></div>
-                <div class="summary-row final"><span>Customer Price</span><span id="customerPriceDisplay">$0</span></div>
-                <div id="may2026Section" style="display:none;">
-                    <div class="summary-row may2026-row"><span>After 1 May 2026</span><span id="may2026Price" class="may2026-val">$0</span></div>
-                    <div class="summary-row may2026-row"><span>Price Increase</span><span id="may2026Increase" class="may2026-increase">+$0</span></div>
+            <div class="price-card">
+                <div class="pc-hero">
+                    <div class="pc-hero-label">Customer Price</div>
+                    <div class="pc-hero-price" id="customerPriceDisplay">$0</div>
+                    <div class="pc-hero-sub">inc GST after rebates</div>
+                </div>
+                <div class="pc-urgency" id="urgencyBanner" style="display:none;">
+                    <div class="pc-urg-left">
+                        <div class="pc-urg-label">Price Increase</div>
+                        <div class="pc-urg-date">After 1 May 2026</div>
+                    </div>
+                    <div class="pc-urg-right">
+                        <div class="pc-urg-amount" id="urgencyIncrease">+$0</div>
+                        <div class="pc-urg-future" id="urgencyFuturePrice">$0</div>
+                    </div>
+                </div>
+                <div class="pc-invoice">
+                    <div class="pc-inv-section">
+                        <div class="pc-inv-title">PV Equipment</div>
+                        <div id="summaryPvRows"></div>
+                    </div>
+                    <div class="pc-inv-section">
+                        <div class="pc-inv-title">Battery &amp; Inverter</div>
+                        <div id="summaryBatteryRows"></div>
+                    </div>
+                    <div class="pc-inv-section" id="summaryAddonsCard">
+                        <div class="pc-inv-title">Add-ons</div>
+                        <div id="summaryAddonRows"></div>
+                    </div>
+                    <div class="pc-inv-divider"></div>
+                    <div class="pc-inv-total"><span>Price Before Rebates</span><span id="priceBeforeRebates">$0</span></div>
+                    <div class="pc-inv-row"><span>GST</span><span id="gstAmount">$0</span></div>
+                    <div class="pc-inv-divider"></div>
+                    <div class="pc-inv-total pc-green"><span id="pvRebateLabel">PV STC Rebate</span><span id="stcPvRebate">-$0</span></div>
+                    <div class="pc-inv-total pc-green"><span>Battery STC Rebate</span><span id="stcBatteryRebate">-$0</span></div>
+                    <div class="pc-inv-footer">All line items ex GST unless stated</div>
                 </div>
             </div>
         </div>
