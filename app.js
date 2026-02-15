@@ -328,11 +328,14 @@ function applyManufacturerDefaults() {
         var btSel = document.getElementById('batteryTypeSelect');
         if (btSel) btSel.value = btIdx;
     }
-    // Preserve user battery capacity, just clamp to new max
+    // Set default battery on first load, preserve user value on subsequent switches
+    var batEl = document.getElementById('desiredBatteryKwh');
+    var curBat = parseFloat(batEl.value) || 0;
+    if (curBat <= 0) batEl.value = CONFIG.default_battery_kwh;
     updateBatteryMaxCap();
-    var curBat = parseFloat(document.getElementById('desiredBatteryKwh').value) || 0;
+    curBat = parseFloat(batEl.value) || 0;
     var maxBat = getMaxBatteryKwh();
-    if (curBat > maxBat) document.getElementById('desiredBatteryKwh').value = maxBat;
+    if (curBat > maxBat) batEl.value = maxBat;
     // Inverter default by kW
     var targetKw = mfg.default_inverter_kw || 0;
     if (targetKw > 0) {
