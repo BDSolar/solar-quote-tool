@@ -12,6 +12,7 @@ let selectedAccessories = [];
 let currentQuoteId = null;
 let dualStackResult = null; // holds dual-stack optimizer output when active
 let dualStackEcOverride = { stack1: null, stack2: null }; // user EC upgrade overrides per stack
+let parallelResult = null; // holds SolaX parallel battery optimizer output when active
 
 // ====================
 // FIREBASE INIT
@@ -43,6 +44,7 @@ const GST = 1.1;
 const fmtIncGst = v => '$' + Math.round(v * GST).toLocaleString('en-AU');
 const fmtExGst = v => '$' + Math.round(v).toLocaleString('en-AU');
 const fmtExGstDecimal = v => '$' + v.toFixed(2);
+const fmtKwh = v => (Math.floor(v * 10) / 10);
 
 function esc(s) {
     const d = document.createElement('div');
@@ -80,6 +82,28 @@ function getBatteryModules() { return (getBatteryType().modules || []).filter(m 
 function getInverters() { return getMfg().inverters?.[state.phase] || []; }
 function getInverterLabel() { return getMfg().inverter_label || 'Inverter'; }
 function getPvOversizing() { return (getMfg().pv_oversizing || {})[state.phase] || 2.0; }
+
+function getMaxBatteryKwh() {
+    var mfg = getMfg(), bt = getBatteryType();
+    if (currentManufacturer === 'sigenergy') return 96;
+    // SolaX: max depends on phase + battery type, with parallel
+    var sp = state.phase === 'single_phase';
+    var r = bt.rules || {};
+    var cap = sp ? (r.max_modules_single || r.max_modules || 8) : (r.max_modules_three || r.max_modules || 13);
+    var maxMod = cap * 2; // parallel doubles the cap
+    var modules = getBatteryModules();
+    var largestKwh = modules.reduce(function(mx, m) { return Math.max(mx, m.kwh); }, 0);
+    return maxMod * largestKwh;
+}
+
+function updateBatteryMaxCap() {
+    var max = getMaxBatteryKwh();
+    var el = document.getElementById('desiredBatteryKwh');
+    if (el) {
+        el.max = max;
+        if (parseFloat(el.value) > max) el.value = max;
+    }
+}
 
 function getBatteryRules() {
     const r = getBatteryType().rules || {};
@@ -122,7 +146,7 @@ function syncStateFromDOM() {
     state.batteryRebatePerKwh = parseFloat(document.getElementById('batteryRebatePerKwh').value) || 0;
     state.installPvPerKw = parseFloat(document.getElementById('installPerKwPv').value) || 0;
     state.installBatPerStack = parseFloat(document.getElementById('installPerStack').value) || 0;
-    state.desiredBatteryKwh = Math.min(parseFloat(document.getElementById('desiredBatteryKwh').value) || 0, 96);
+    state.desiredBatteryKwh = parseFloat(document.getElementById('desiredBatteryKwh').value) || 0;
     const panelSel = document.getElementById('panelSelect');
     const panelOpt = panelSel.options[panelSel.selectedIndex];
     if (panelOpt) {
@@ -156,6 +180,16 @@ function getBatterySummary() {
     const bt = getBatteryType();
     const modules = getBatteryModules();
     let totalKwh = 0, totalModules = 0, usableKwh = 0, equipmentCost = 0;
+
+    // If parallel is active, use parallel pricing (not single-system pricing)
+    if (parallelResult && parallelResult.isParallel) {
+        totalModules = parallelResult.totalModules;
+        totalKwh = parallelResult.totalKwh;
+        usableKwh = parallelResult.totalUsableKwh;
+        equipmentCost = parallelResult.totalBatteryCost;
+        return { totalKwh: totalKwh, totalModules: totalModules, usableKwh: usableKwh, equipmentCost: equipmentCost };
+    }
+
     if (bt.use_package_pricing && bt.packages && modules.length === 1) {
         const mod = modules[0];
         const qty = batteryQtys[mod.kwh] || 0;
@@ -171,7 +205,7 @@ function getBatterySummary() {
         if (totalModules > 0 && bt.bms_cost > 0) equipmentCost += bt.bms_cost;
         if (totalModules >= (bt.series_box_threshold || 999)) equipmentCost += (bt.series_box_cost || 0);
     }
-    return { totalKwh, totalModules, usableKwh, equipmentCost };
+    return { totalKwh: totalKwh, totalModules: totalModules, usableKwh: usableKwh, equipmentCost: equipmentCost };
 }
 
 function getMountingKitItems(panelCount, roofType, orientation, numRows, numArrays, tiltAngle, panelWidthMm, panelHeightMm) {
@@ -255,7 +289,7 @@ function populateManufacturers() {
 
 function switchManufacturer() {
     currentManufacturer = document.getElementById('manufacturerSelect').value;
-    currentBatteryTypeIdx = 0; userChangedInverter = false; dualStackResult = null; dualStackEcOverride = { stack1: null, stack2: null };
+    currentBatteryTypeIdx = 0; userChangedInverter = false; dualStackResult = null; dualStackEcOverride = { stack1: null, stack2: null }; parallelResult = null;
     selectedAccessories = selectedAccessories.filter(function(a) { return a.type === 'addon'; });
     batteryQtys = {}; populateBatteryTypes(); buildBatteryUI(); populateInverters(); populateGateways(); buildAccessoriesUI(); updateBatteryMountVisibility(); updateHeaderSubtitle(); updateInverterSectionLabel(); updateGatewaySectionLabel(); updatePowerSensorModel();
     applyManufacturerDefaults();
@@ -264,10 +298,7 @@ function switchManufacturer() {
 
 function applyManufacturerDefaults() {
     var mfg = getMfg();
-    // Battery capacity default
-    document.getElementById('desiredBatteryKwh').value = CONFIG.default_battery_kwh;
-    document.getElementById('desiredBatteryKwh').max = 96;
-    // Battery type default
+    // Battery type default (set before max calc so getBatteryType returns correct type)
     var btIdx = mfg.default_battery_type_idx || 0;
     var types = mfg.battery_types || [];
     if (btIdx < types.length) {
@@ -275,6 +306,9 @@ function applyManufacturerDefaults() {
         var btSel = document.getElementById('batteryTypeSelect');
         if (btSel) btSel.value = btIdx;
     }
+    // Battery capacity default
+    document.getElementById('desiredBatteryKwh').value = CONFIG.default_battery_kwh;
+    updateBatteryMaxCap();
     // Inverter default by kW
     var targetKw = mfg.default_inverter_kw || 0;
     if (targetKw > 0) {
@@ -305,8 +339,9 @@ function populateBatteryTypes() {
 
 function switchBatteryType() {
     currentBatteryTypeIdx = parseInt(document.getElementById('batteryTypeSelect').value) || 0;
-    userChangedInverter = false; batteryQtys = {}; dualStackResult = null; dualStackEcOverride = { stack1: null, stack2: null };    document.getElementById('desiredBatteryKwh').value = CONFIG.default_battery_kwh;
-    document.getElementById('desiredBatteryKwh').max = 96;
+    userChangedInverter = false; batteryQtys = {}; dualStackResult = null; dualStackEcOverride = { stack1: null, stack2: null }; parallelResult = null;
+    document.getElementById('desiredBatteryKwh').value = CONFIG.default_battery_kwh;
+    updateBatteryMaxCap();
     updatePowerSensorModel(); calculateQuote();
 }
 
@@ -537,9 +572,9 @@ function bindEvents() {
     document.getElementById('installPostcode').addEventListener('input', function() { this.value = this.value.replace(/\D/g, '').slice(0, 4); updateZoneDisplay(); calculateQuote(); });
     document.getElementById('manufacturerSelect').addEventListener('change', switchManufacturer);
     document.getElementById('batteryTypeSelect').addEventListener('change', switchBatteryType);
-    document.getElementById('phaseType').addEventListener('change', () => { syncStateFromDOM(); userChangedInverter = false; dualStackResult = null; dualStackEcOverride = { stack1: null, stack2: null }; populateInverters(); populateGateways(); updateAccessoryPrices(); calculateQuote(); });
+    document.getElementById('phaseType').addEventListener('change', () => { syncStateFromDOM(); userChangedInverter = false; dualStackResult = null; dualStackEcOverride = { stack1: null, stack2: null }; parallelResult = null; populateInverters(); populateGateways(); updateAccessoryPrices(); updateBatteryMaxCap(); calculateQuote(); });
     document.getElementById('panelSelect').addEventListener('change', calculateQuote);
-    document.getElementById('desiredBatteryKwh').addEventListener('input', () => { const el = document.getElementById('desiredBatteryKwh'); if (parseFloat(el.value) > 96) el.value = 96; userChangedInverter = false; dualStackResult = null; dualStackEcOverride = { stack1: null, stack2: null }; calculateQuote(); });
+    document.getElementById('desiredBatteryKwh').addEventListener('input', () => { var el = document.getElementById('desiredBatteryKwh'); var max = getMaxBatteryKwh(); if (parseFloat(el.value) > max) el.value = max; userChangedInverter = false; dualStackResult = null; dualStackEcOverride = { stack1: null, stack2: null }; parallelResult = null; calculateQuote(); });
     document.getElementById('inverterSelect').addEventListener('change', () => { userChangedInverter = true; calculateQuote(); });
     document.getElementById('roofType').addEventListener('change', updateRoofInfo);
     document.getElementById('panelOrientation').addEventListener('change', () => { updateMountingKitInfo(); calculateQuote(); });
@@ -597,7 +632,7 @@ function updateBatteryUI() {
     const bat = getBatterySummary(), modules = getBatteryModules(), bt = getBatteryType();
     const sorted = [...modules].sort((a, b) => b.kwh - a.kwh);
     let parts = []; sorted.forEach(b => { const q = batteryQtys[b.kwh] || 0; if (q > 0) parts.push(q + 'x ' + b.kwh + 'kWh'); });
-    let txt = parts.length ? parts.join(' + ') + ' = ' + (Math.round(bat.totalKwh * 10) / 10) + ' kWh' : 'No batteries selected';
+    let txt = parts.length ? parts.join(' + ') + ' = ' + fmtKwh(bat.totalKwh) + ' kWh' : 'No batteries selected';
     document.getElementById('batteryBreakdown').innerHTML = txt;
 }
 
@@ -917,6 +952,133 @@ function buildDualStackFromTargets(s1kwhTarget, s2kwhTarget, ec1SkuOverride, ec2
     return bestResult;
 }
 
+// ====================
+// SOLAX PARALLEL BATTERY OPTIMIZER
+// ====================
+
+function optimizeParallelBattery(desired) {
+    var bt = getBatteryType(), modules = getBatteryModules();
+    if (!modules.length || modules.length !== 1) return null;
+    var mod = modules[0];
+    var sp = state.phase === 'single_phase';
+    var r = bt.rules || {};
+    var singleCap = sp ? (r.max_modules_single || r.max_modules || 8) : (r.max_modules_three || r.max_modules || 13);
+    var minMod = sp ? (r.min_modules_single || 2) : (r.min_modules_three || 3);
+    var totalModulesNeeded = Math.ceil(desired / mod.kwh);
+
+    // Not needed if fits in single system
+    if (totalModulesNeeded <= singleCap) return null;
+
+    // Check max parallel capacity
+    var maxTotal = singleCap * 2;
+    if (totalModulesNeeded > maxTotal) return null; // exceeds parallel max
+
+    // Even split
+    var sysA = Math.ceil(totalModulesNeeded / 2);
+    var sysB = totalModulesNeeded - sysA;
+
+    // Ensure each system meets minimum
+    if (sysB < minMod) {
+        sysB = minMod;
+        sysA = totalModulesNeeded - sysB;
+    }
+    // Ensure each system does not exceed single cap
+    if (sysA > singleCap) sysA = singleCap;
+    if (sysB > singleCap) sysB = singleCap;
+    // Recalc total in case of adjustments
+    var actualTotal = sysA + sysB;
+    if (actualTotal < totalModulesNeeded) return null;
+
+    // Pricing per system
+    var parallelBoxPrice = 860;
+    var parallelBoxCode = 'SOLAX-BMS-PARALLEL-BOX-II-G1';
+
+    function systemCost(numMod) {
+        if (bt.use_package_pricing && bt.packages) {
+            var pkg = bt.packages.find(function(p) { return p.modules === numMod; });
+            if (pkg) return { cost: pkg.price, pkg: pkg, usable: numMod * (mod.usable_kwh || mod.kwh) };
+        }
+        // Component pricing
+        var cost = numMod * mod.price + (bt.bms_cost || 0);
+        if (numMod >= (bt.series_box_threshold || 999)) cost += (bt.series_box_cost || 0);
+        return { cost: cost, pkg: null, usable: numMod * (mod.usable_kwh || mod.kwh) };
+    }
+
+    var costA = systemCost(sysA);
+    var costB = systemCost(sysB);
+
+    var totalKwh = actualTotal * mod.kwh;
+    var totalUsable = costA.usable + costB.usable;
+    var totalBatteryCost = costA.cost + costB.cost + parallelBoxPrice;
+
+    return {
+        isParallel: true,
+        systemA: {
+            modules: sysA,
+            kwh: sysA * mod.kwh,
+            usableKwh: costA.usable,
+            equipCost: costA.cost,
+            pkg: costA.pkg,
+            needsSeriesBox: sysA >= (bt.series_box_threshold || 999)
+        },
+        systemB: {
+            modules: sysB,
+            kwh: sysB * mod.kwh,
+            usableKwh: costB.usable,
+            equipCost: costB.cost,
+            pkg: costB.pkg,
+            needsSeriesBox: sysB >= (bt.series_box_threshold || 999)
+        },
+        totalModules: actualTotal,
+        totalKwh: totalKwh,
+        totalUsableKwh: totalUsable,
+        totalBatteryCost: totalBatteryCost,
+        parallelBoxPrice: parallelBoxPrice,
+        parallelBoxCode: parallelBoxCode
+    };
+}
+
+function renderParallelBreakdown() {
+    if (!parallelResult) return;
+    var bt = getBatteryType();
+    var mod = getBatteryModules()[0];
+    var html = '<span style="color:#e000f0;font-weight:600;">PARALLEL BATTERY</span>';
+    html += ' <span style="color:var(--text-secondary);font-size:12px;">(' + parallelResult.totalModules + ' modules split across 2 systems)</span>';
+
+    html += '<div style="display:flex;gap:8px;margin-top:8px;">';
+
+    // System A
+    html += '<div style="flex:1;">';
+    html += '<label style="display:block;font-size:12px;font-weight:500;color:var(--text-secondary);margin-bottom:5px;">System A</label>';
+    html += '<div style="padding:8px 12px;background:var(--bg-input);border-radius:8px;border:1px solid var(--separator);">';
+    html += '<div style="color:var(--text-secondary);font-size:14px;">' + parallelResult.systemA.modules + 'x ' + mod.kwh + 'kWh = ' + fmtKwh(parallelResult.systemA.kwh) + ' kWh</div>';
+    if (parallelResult.systemA.pkg) {
+        html += '<div style="color:var(--text-quaternary);font-size:11px;margin-top:2px;">' + parallelResult.systemA.pkg.sku + '</div>';
+    }
+    if (parallelResult.systemA.needsSeriesBox) {
+        html += '<div style="color:var(--text-quaternary);font-size:11px;">+ Series Box</div>';
+    }
+    html += '</div></div>';
+
+    // System B
+    html += '<div style="flex:1;">';
+    html += '<label style="display:block;font-size:12px;font-weight:500;color:var(--text-secondary);margin-bottom:5px;">System B</label>';
+    html += '<div style="padding:8px 12px;background:var(--bg-input);border-radius:8px;border:1px solid var(--separator);">';
+    html += '<div style="color:var(--text-secondary);font-size:14px;">' + parallelResult.systemB.modules + 'x ' + mod.kwh + 'kWh = ' + fmtKwh(parallelResult.systemB.kwh) + ' kWh</div>';
+    if (parallelResult.systemB.pkg) {
+        html += '<div style="color:var(--text-quaternary);font-size:11px;margin-top:2px;">' + parallelResult.systemB.pkg.sku + '</div>';
+    }
+    if (parallelResult.systemB.needsSeriesBox) {
+        html += '<div style="color:var(--text-quaternary);font-size:11px;">+ Series Box</div>';
+    }
+    html += '</div></div>';
+
+    html += '</div>';
+    html += '<div style="color:var(--text-quaternary);font-size:11px;margin-top:4px;">+ BMS Parallel Box II G1</div>';
+
+    document.getElementById('batteryBreakdown').innerHTML = html;
+}
+
 // Render dual-stack breakdown (display only, no manual adjustment)
 function renderDualStackBreakdown() {
     if (!dualStackResult) return;
@@ -939,7 +1101,7 @@ function renderDualStackBreakdown() {
     html += '</select>';
     html += '<div style="padding:8px 12px;background:var(--bg-input);border-radius:8px;border:1px solid var(--separator);">';
     html += '<div style="color:var(--text-secondary);font-size:14px;">' + dualStackResult.stack1.panels + ' panels</div>';
-    html += '<div style="color:var(--text-secondary);font-size:14px;">' + s1parts.join(' + ') + ' = ' + dualStackResult.stack1.kwh + ' kWh</div>';
+    html += '<div style="color:var(--text-secondary);font-size:14px;">' + s1parts.join(' + ') + ' = ' + fmtKwh(dualStackResult.stack1.kwh) + ' kWh</div>';
     html += '</div></div>';
 
     // Stack 2
@@ -950,7 +1112,7 @@ function renderDualStackBreakdown() {
     html += '</select>';
     html += '<div style="padding:8px 12px;background:var(--bg-input);border-radius:8px;border:1px solid var(--separator);">';
     html += '<div style="color:var(--text-secondary);font-size:14px;">' + dualStackResult.stack2.panels + ' panels</div>';
-    html += '<div style="color:var(--text-secondary);font-size:14px;">' + s2parts.join(' + ') + ' = ' + dualStackResult.stack2.kwh + ' kWh</div>';
+    html += '<div style="color:var(--text-secondary);font-size:14px;">' + s2parts.join(' + ') + ' = ' + fmtKwh(dualStackResult.stack2.kwh) + ' kWh</div>';
     html += '</div></div>';
 
     html += '</div>';
@@ -1025,15 +1187,15 @@ function checkCec(sku, totalKwh, totalModules, phase) {
     if (cec.type === 'inverter_battery_combo') {
         const key = getCecKey(sku), combos = cec[phase];
         if (!combos || !combos[key]) return { ok: false, msg: 'No CEC data for ' + key };
-        if (combos[key].includes(totalKwh)) return { ok: true, msg: '[OK] CEC approved: ' + key + ' + ' + totalKwh + 'kWh' };
+        if (combos[key].includes(totalKwh)) return { ok: true, msg: '[OK] CEC approved: ' + key + ' + ' + fmtKwh(totalKwh) + 'kWh' };
         const nearest = combos[key].filter(k => k >= totalKwh).sort((a,b) => a-b)[0] || combos[key][combos[key].length - 1];
-        return { ok: false, msg: '[!] ' + totalKwh + 'kWh not CEC approved with ' + key + '. Nearest: ' + nearest + 'kWh' };
+        return { ok: false, msg: '[!] ' + fmtKwh(totalKwh) + 'kWh not CEC approved with ' + key + '. Nearest: ' + fmtKwh(nearest) + 'kWh' };
     }
     if (cec.type === 'battery_system') {
         const bt = getBatteryType(), cecData = cec[bt.id];
         if (!cecData) return { ok: false, msg: 'No CEC data for ' + bt.id };
         const entry = cecData.entries?.find(e => e.modules === totalModules);
-        if (entry) return { ok: true, msg: '[OK] CEC approved: ' + entry.model + ' -> ' + entry.nominal_kwh + ' kWh' };
+        if (entry) return { ok: true, msg: '[OK] CEC approved: ' + entry.model + ' -> ' + fmtKwh(entry.nominal_kwh) + ' kWh' };
         return { ok: false, msg: '[!] ' + totalModules + ' modules not CEC approved. Valid: ' + cecData.min + '-' + cecData.max + ' modules' };
     }
     return { ok: false, msg: 'Unknown CEC type' };
@@ -1150,9 +1312,11 @@ function calculateQuote() {
         const desired = state.desiredBatteryKwh;
         let actualKwh = 0;
         const isDualStack = currentManufacturer === 'sigenergy' && desired > 48;
+        var isParallel = false;
 
         if (isDualStack) {
-            // Dual-stack path - always auto-optimize
+            // Sigenergy dual-stack path - always auto-optimize
+            parallelResult = null;
             dualStackResult = optimizeDualStack(desired);
             if (dualStackResult) {
                 // Apply EC overrides if user upgraded
@@ -1180,24 +1344,47 @@ function calculateQuote() {
                 document.getElementById('batteryBreakdown').innerHTML = '<span style="color:#ef4444;">[!] No valid dual-stack combination found for ' + desired + ' kWh</span>';
             }
         } else {
-            // Single-stack path - always auto-optimize
+            // Single-stack or SolaX parallel path
             dualStackResult = null;
             if (desired > 0) {
-                const opt = optimizeBattery(desired);
-                batteryQtys = opt.qtys; actualKwh = opt.total;
-                updateBatteryUI();
-                if (actualKwh > desired) document.getElementById('batteryBreakdown').innerHTML += ' <span style="color:#34d399;">(+' + (Math.round((actualKwh - desired) * 10) / 10) + 'kWh, cheaper)</span>';
+                // Try SolaX parallel first (returns null if not needed or not SolaX)
+                if (currentManufacturer === 'solax') {
+                    var parOpt = optimizeParallelBattery(desired);
+                    if (parOpt) {
+                        parallelResult = parOpt;
+                        isParallel = true;
+                        actualKwh = parOpt.totalKwh;
+                        // Set batteryQtys to combined total for getBatterySummary
+                        var mod = getBatteryModules()[0];
+                        batteryQtys = {};
+                        batteryQtys[mod.kwh] = parOpt.totalModules;
+                        renderParallelBreakdown();
+                    } else {
+                        parallelResult = null;
+                    }
+                } else {
+                    parallelResult = null;
+                }
+                // Standard single-stack if not parallel
+                if (!isParallel) {
+                    const opt = optimizeBattery(desired);
+                    batteryQtys = opt.qtys; actualKwh = opt.total;
+                    updateBatteryUI();
+                    if (actualKwh > desired) document.getElementById('batteryBreakdown').innerHTML += ' <span style="color:#34d399;">(+' + fmtKwh(actualKwh - desired) + 'kWh, cheaper)</span>';
+                }
+            } else {
+                parallelResult = null;
             }
         }
         state.actualBatteryKwh = actualKwh;
         document.getElementById('batteryConfigPanel').style.display = desired > 0 ? 'block' : 'none';
 
-        // Min modules check
+        // Min modules check (skip for parallel -- each system validated independently)
         const rules = getBatteryRules();
         const bat = getBatterySummary();
         const minWarn = document.getElementById('minModulesWarning');
         if (minWarn) {
-            if (bat.totalModules > 0 && bat.totalModules < rules.min_modules) {
+            if (!isParallel && bat.totalModules > 0 && bat.totalModules < rules.min_modules) {
                 minWarn.style.display = 'flex'; minWarn.innerHTML = warnShieldHtml('Minimum Modules', 'Minimum ' + rules.min_modules + ' modules required for ' + (state.phase === 'single_phase' ? 'single' : 'three') + ' phase.');
             } else { minWarn.style.display = 'none'; }
         }
@@ -1205,22 +1392,10 @@ function calculateQuote() {
         // Phase capacity warning - check if desired kWh exceeds system max
         const phaseCapWarn = document.getElementById('phaseCapWarning');
         if (phaseCapWarn) {
-            const isSigen = currentManufacturer === 'sigenergy';
-            if (isSigen && desired > 96) {
+            var maxKwh = getMaxBatteryKwh();
+            if (desired > maxKwh) {
                 phaseCapWarn.style.display = 'flex';
-                phaseCapWarn.innerHTML = warnShieldHtml('System Maximum', desired + ' kWh exceeds Sigenergy system max (96 kWh = 2 stacks x 48 kWh).');
-            } else if (!isSigen && state.phase === 'single_phase' && desired > 0) {
-                // Non-Sigenergy: check single-phase max (no dual-stack)
-                const bt = getBatteryType();
-                const spRules = bt.rules || {};
-                const spMaxMod = spRules.max_modules_single || spRules.max_modules || 6;
-                const modules = getBatteryModules();
-                const largestMod = modules.reduce((mx, m) => Math.max(mx, m.kwh), 0);
-                const spMaxKwh = spMaxMod * largestMod;
-                if (desired > spMaxKwh) {
-                    phaseCapWarn.style.display = 'flex';
-                    phaseCapWarn.innerHTML = warnShieldHtml('Phase Capacity', desired + ' kWh requires three phase with ' + bt.label + ' (single phase max: ' + spMaxKwh + ' kWh).');
-                } else { phaseCapWarn.style.display = 'none'; }
+                phaseCapWarn.innerHTML = warnShieldHtml('System Maximum', desired + ' kWh exceeds maximum capacity (' + fmtKwh(maxKwh) + ' kWh) for this configuration.');
             } else { phaseCapWarn.style.display = 'none'; }
         }
 
@@ -1290,13 +1465,27 @@ function calculateQuote() {
             const ec1Key = getCecKey(dualStackResult.stack1.ec.sku);
             const ec2Key = getCecKey(dualStackResult.stack2.ec.sku);
             document.getElementById('cecApproved').style.display = bothOk ? 'flex' : 'none';
-            document.getElementById('cecApproved').innerHTML = bothOk ? cecShieldHtml(true, 'Stack 1: ' + ec1Key + ' + ' + dualStackResult.stack1.kwh + ' kWh  /  Stack 2: ' + ec2Key + ' + ' + dualStackResult.stack2.kwh + ' kWh') : '';
+            document.getElementById('cecApproved').innerHTML = bothOk ? cecShieldHtml(true, 'Stack 1: ' + ec1Key + ' + ' + fmtKwh(dualStackResult.stack1.kwh) + ' kWh  /  Stack 2: ' + ec2Key + ' + ' + fmtKwh(dualStackResult.stack2.kwh) + ' kWh') : '';
             document.getElementById('cecWarning').style.display = !bothOk ? 'flex' : 'none';
             if (!bothOk) {
                 var warnDetail = '';
                 if (!cec1.ok) warnDetail += 'Stack 1 - ' + cec1.msg.replace(/^\[!?\]?\s*/, '') + ' ';
                 if (!cec2.ok) warnDetail += 'Stack 2 - ' + cec2.msg.replace(/^\[!?\]?\s*/, '');
                 document.getElementById('cecWarning').innerHTML = cecShieldHtml(false, warnDetail.trim());
+            }
+        } else if (isParallel && parallelResult) {
+            // CEC check each parallel system independently
+            var cecA = checkCec(state.invSku, parallelResult.systemA.kwh, parallelResult.systemA.modules, state.phase);
+            var cecB = checkCec(state.invSku, parallelResult.systemB.kwh, parallelResult.systemB.modules, state.phase);
+            var parBothOk = cecA.ok && cecB.ok;
+            document.getElementById('cecApproved').style.display = parBothOk ? 'flex' : 'none';
+            document.getElementById('cecApproved').innerHTML = parBothOk ? cecShieldHtml(true, 'Sys A: ' + parallelResult.systemA.modules + ' modules (' + fmtKwh(parallelResult.systemA.kwh) + ' kWh)  /  Sys B: ' + parallelResult.systemB.modules + ' modules (' + fmtKwh(parallelResult.systemB.kwh) + ' kWh)') : '';
+            document.getElementById('cecWarning').style.display = !parBothOk ? 'flex' : 'none';
+            if (!parBothOk) {
+                var parWarnDetail = '';
+                if (!cecA.ok) parWarnDetail += 'System A - ' + cecA.msg.replace(/^\[!?\]?\s*/, '') + ' ';
+                if (!cecB.ok) parWarnDetail += 'System B - ' + cecB.msg.replace(/^\[!?\]?\s*/, '');
+                document.getElementById('cecWarning').innerHTML = cecShieldHtml(false, parWarnDetail.trim());
             }
         } else {
             const cec = checkCec(state.invSku, actualKwh, bat.totalModules, state.phase);
@@ -1336,6 +1525,13 @@ function calculateQuote() {
             const gw = document.getElementById('gatewaySelect');
             const userGwPrice = parseFloat(gw.options[gw.selectedIndex]?.dataset.price) || 0;
             if (userGwPrice > costGateway) costGateway = userGwPrice;
+        } else if (isParallel && parallelResult) {
+            costInverter = state.invPrice;
+            costBattery = parallelResult.totalBatteryCost;
+            const gw = document.getElementById('gatewaySelect');
+            costGateway = parseFloat(gw.options[gw.selectedIndex]?.dataset.price) || 0;
+            costMount = 0; // SolaX has no battery mounting
+            installBat = state.installBatPerStack; // 1 inverter, 1 install
         } else {
             costInverter = state.invPrice;
             costBattery = bat.equipmentCost;
@@ -1367,7 +1563,7 @@ function calculateQuote() {
         const zoneRating = zoneResult ? zoneResult.rating : 0;
         const pvStcCount = zoneRating > 0 ? Math.floor(state.sysKw * zoneRating * state.deemingPeriod) : 0;
         const pvReb = pvStcCount * state.stcPrice;
-        const batReb = (isDualStack && dualStackResult) ? dualStackResult.totalUsableKwh * state.batteryRebatePerKwh : bat.usableKwh * state.batteryRebatePerKwh;
+        const batReb = (isDualStack && dualStackResult) ? dualStackResult.totalUsableKwh * state.batteryRebatePerKwh : (isParallel && parallelResult) ? parallelResult.totalUsableKwh * state.batteryRebatePerKwh : bat.usableKwh * state.batteryRebatePerKwh;
         const gpAmt = totalCog * (state.gpMargin / 100);
         const priceBeforeCommission = totalCog + gpAmt;
         const commRate = state.salesCommission / 100;
@@ -1387,7 +1583,7 @@ function calculateQuote() {
         document.getElementById('actionBarPrice').textContent = customerPriceVal;
 
         // Update right panel component summary
-        updateSummaryComponents(isDualStack, bat, costRoofKit, costRoofSurcharge, installPv, installBat, costAcc);
+        updateSummaryComponents(isDualStack, isParallel, bat, costRoofKit, costRoofSurcharge, installPv, installBat, costAcc);
 
     } catch (err) { console.error('[!] Quote calculation error:', err); }
 }
@@ -1404,7 +1600,7 @@ function summarySubRow(label, qty) {
     return '<div class="summary-row summary-sub"><span>' + esc(label) + '</span><span>x ' + qty + '</span></div>';
 }
 
-function updateSummaryComponents(isDualStack, bat, costRoofKit, costRoofSurcharge, installPv, installBat, costAcc) {
+function updateSummaryComponents(isDualStack, isParallel, bat, costRoofKit, costRoofSurcharge, installPv, installBat, costAcc) {
     var pvHtml = '';
     var batHtml = '';
     var addonHtml = '';
@@ -1447,6 +1643,42 @@ function updateSummaryComponents(isDualStack, bat, costRoofKit, costRoofSurcharg
         if (mfgMount.show !== false) {
             batHtml += summaryRow((state.mountingType === 'wall' ? 'Wall' : 'Ground') + ' Mount Kit', 2);
         }
+    } else if (isParallel && parallelResult) {
+        // Inverter (single -- parallel doesn't need 2nd inverter)
+        if (state.invSku) {
+            batHtml += summaryRow(state.invSku + ' (' + state.invKw + 'kW)', 1);
+        }
+        var mod = modules[0];
+        // System A
+        if (parallelResult.systemA.pkg) {
+            batHtml += summaryRow(parallelResult.systemA.pkg.sku + ' (' + fmtKwh(parallelResult.systemA.kwh) + 'kWh)', 1);
+            batHtml += summarySubRow((mod.label || mod.kwh + 'kWh') + ' Module', parallelResult.systemA.modules);
+            var bmsNameA = bt.id === 'tp_hs36' ? 'TBMS-MCS0800' : bt.id === 'tb_hs51' ? 'TBMS-S51-80' : 'BMS';
+            batHtml += summarySubRow(bmsNameA, 1);
+            if (parallelResult.systemA.needsSeriesBox) batHtml += summarySubRow('Series Box', 1);
+        } else {
+            batHtml += summaryRow('System A: ' + parallelResult.systemA.modules + 'x ' + mod.kwh + 'kWh', 1);
+            batHtml += summarySubRow((mod.label || mod.kwh + 'kWh') + ' Module', parallelResult.systemA.modules);
+            var bmsNameA2 = bt.id === 'tp_hs36' ? 'TBMS-MCS0800' : bt.id === 'tb_hs51' ? 'TBMS-S51-80' : 'BMS';
+            batHtml += summarySubRow(bmsNameA2, 1);
+            if (parallelResult.systemA.needsSeriesBox) batHtml += summarySubRow('Series Box', 1);
+        }
+        // System B
+        if (parallelResult.systemB.pkg) {
+            batHtml += summaryRow(parallelResult.systemB.pkg.sku + ' (' + fmtKwh(parallelResult.systemB.kwh) + 'kWh)', 1);
+            batHtml += summarySubRow((mod.label || mod.kwh + 'kWh') + ' Module', parallelResult.systemB.modules);
+            var bmsNameB = bt.id === 'tp_hs36' ? 'TBMS-MCS0800' : bt.id === 'tb_hs51' ? 'TBMS-S51-80' : 'BMS';
+            batHtml += summarySubRow(bmsNameB, 1);
+            if (parallelResult.systemB.needsSeriesBox) batHtml += summarySubRow('Series Box', 1);
+        } else {
+            batHtml += summaryRow('System B: ' + parallelResult.systemB.modules + 'x ' + mod.kwh + 'kWh', 1);
+            batHtml += summarySubRow((mod.label || mod.kwh + 'kWh') + ' Module', parallelResult.systemB.modules);
+            var bmsNameB2 = bt.id === 'tp_hs36' ? 'TBMS-MCS0800' : bt.id === 'tb_hs51' ? 'TBMS-S51-80' : 'BMS';
+            batHtml += summarySubRow(bmsNameB2, 1);
+            if (parallelResult.systemB.needsSeriesBox) batHtml += summarySubRow('Series Box', 1);
+        }
+        // Parallel Box
+        batHtml += summaryRow('BMS Parallel Box II G1', 1);
     } else {
         // Single stack
         if (state.invSku) {
@@ -1456,7 +1688,7 @@ function updateSummaryComponents(isDualStack, bat, costRoofKit, costRoofSurcharg
         if (bt.use_package_pricing && bat.totalModules > 0) {
             var pkg = bt.packages?.find(function(p) { return p.modules === bat.totalModules; });
             if (pkg) {
-                batHtml += summaryRow(pkg.sku + ' (' + pkg.kwh + 'kWh)', 1);
+                batHtml += summaryRow(pkg.sku + ' (' + fmtKwh(pkg.kwh) + 'kWh)', 1);
                 // Break down components
                 modules.forEach(function(b) {
                     var q = batteryQtys[b.kwh] || 0;
@@ -1554,6 +1786,7 @@ function buildBOM() {
     // === BATTERY & INVERTER ===
     let batItems = [];
     const isDualBom = dualStackResult && currentManufacturer === 'sigenergy' && state.desiredBatteryKwh > 48;
+    const isParallelBom = parallelResult && currentManufacturer === 'solax' && parallelResult.isParallel;
 
     if (isDualBom) {
         // Dual-stack BOM: 2x ECs, 2x battery groups, 2x mounts, mandatory gateway
@@ -1584,6 +1817,54 @@ function buildBOM() {
         var psAcc = (getMfg().accessories || []).find(function(a) { return a.id === 'power_sensor'; });
         if (psAcc) { var psPrice = state.phase === 'single_phase' ? psAcc.price_single : psAcc.price_three; var psCode = state.phase === 'single_phase' ? (psAcc.supplier_code_single || '') : (psAcc.supplier_code_three || ''); batItems.push({ desc: psAcc.label, sku: '', qty: 1, unit: psPrice, total: psPrice, supplier_code: psCode }); }
 
+    } else if (isParallelBom) {
+        // SolaX Parallel BOM: 1x inverter, 2x battery systems, parallel box
+        var pr = parallelResult;
+        var modP = modules[0];
+
+        // Inverter
+        batItems.push({ desc: state.invSku + ' (' + state.invKw + 'kW ' + (state.phase === 'single_phase' ? 'Single' : 'Three') + ' Phase)', sku: state.invSku, qty: 1, unit: state.invPrice, total: state.invPrice, supplier_code: state.invSupplierCode });
+
+        // System A
+        if (pr.systemA.pkg) {
+            batItems.push({ desc: 'System A: ' + pr.systemA.pkg.sku + ' (' + fmtKwh(pr.systemA.kwh) + 'kWh)', sku: pr.systemA.pkg.sku, qty: 1, unit: 0, total: 0, supplier_code: '', isGroup: true });
+            batItems.push({ desc: (modP.label || modP.kwh + 'kWh') + ' Battery Module', sku: '', qty: pr.systemA.modules, unit: modP.price, total: pr.systemA.modules * modP.price, supplier_code: modP.supplier_code || '', indent: true });
+            var bmsDescA = bt.id === 'tp_hs36' ? 'BMS (TBMS-MCS0800)' : bt.id === 'tb_hs51' ? 'BMS (TBMS-S51-80)' : 'Battery BMS';
+            batItems.push({ desc: bmsDescA, sku: '', qty: 1, unit: bt.bms_cost, total: bt.bms_cost, supplier_code: bt.bms_code || '', indent: true });
+            if (pr.systemA.needsSeriesBox) batItems.push({ desc: 'Series Box', sku: '', qty: 1, unit: bt.series_box_cost, total: bt.series_box_cost, supplier_code: bt.series_box_code || '', indent: true });
+        } else {
+            batItems.push({ desc: 'System A: ' + pr.systemA.modules + 'x ' + modP.kwh + 'kWh (' + fmtKwh(pr.systemA.kwh) + 'kWh)', sku: '', qty: 1, unit: 0, total: 0, supplier_code: '', isGroup: true });
+            batItems.push({ desc: (modP.label || modP.kwh + 'kWh') + ' Battery Module', sku: '', qty: pr.systemA.modules, unit: modP.price, total: pr.systemA.modules * modP.price, supplier_code: modP.supplier_code || '', indent: true });
+            var bmsDescA2 = bt.id === 'tp_hs36' ? 'BMS (TBMS-MCS0800)' : bt.id === 'tb_hs51' ? 'BMS (TBMS-S51-80)' : 'Battery BMS';
+            batItems.push({ desc: bmsDescA2, sku: '', qty: 1, unit: bt.bms_cost, total: bt.bms_cost, supplier_code: bt.bms_code || '', indent: true });
+            if (pr.systemA.needsSeriesBox) batItems.push({ desc: 'Series Box', sku: '', qty: 1, unit: bt.series_box_cost, total: bt.series_box_cost, supplier_code: bt.series_box_code || '', indent: true });
+        }
+
+        // System B
+        if (pr.systemB.pkg) {
+            batItems.push({ desc: 'System B: ' + pr.systemB.pkg.sku + ' (' + fmtKwh(pr.systemB.kwh) + 'kWh)', sku: pr.systemB.pkg.sku, qty: 1, unit: 0, total: 0, supplier_code: '', isGroup: true });
+            batItems.push({ desc: (modP.label || modP.kwh + 'kWh') + ' Battery Module', sku: '', qty: pr.systemB.modules, unit: modP.price, total: pr.systemB.modules * modP.price, supplier_code: modP.supplier_code || '', indent: true });
+            var bmsDescB = bt.id === 'tp_hs36' ? 'BMS (TBMS-MCS0800)' : bt.id === 'tb_hs51' ? 'BMS (TBMS-S51-80)' : 'Battery BMS';
+            batItems.push({ desc: bmsDescB, sku: '', qty: 1, unit: bt.bms_cost, total: bt.bms_cost, supplier_code: bt.bms_code || '', indent: true });
+            if (pr.systemB.needsSeriesBox) batItems.push({ desc: 'Series Box', sku: '', qty: 1, unit: bt.series_box_cost, total: bt.series_box_cost, supplier_code: bt.series_box_code || '', indent: true });
+        } else {
+            batItems.push({ desc: 'System B: ' + pr.systemB.modules + 'x ' + modP.kwh + 'kWh (' + fmtKwh(pr.systemB.kwh) + 'kWh)', sku: '', qty: 1, unit: 0, total: 0, supplier_code: '', isGroup: true });
+            batItems.push({ desc: (modP.label || modP.kwh + 'kWh') + ' Battery Module', sku: '', qty: pr.systemB.modules, unit: modP.price, total: pr.systemB.modules * modP.price, supplier_code: modP.supplier_code || '', indent: true });
+            var bmsDescB2 = bt.id === 'tp_hs36' ? 'BMS (TBMS-MCS0800)' : bt.id === 'tb_hs51' ? 'BMS (TBMS-S51-80)' : 'Battery BMS';
+            batItems.push({ desc: bmsDescB2, sku: '', qty: 1, unit: bt.bms_cost, total: bt.bms_cost, supplier_code: bt.bms_code || '', indent: true });
+            if (pr.systemB.needsSeriesBox) batItems.push({ desc: 'Series Box', sku: '', qty: 1, unit: bt.series_box_cost, total: bt.series_box_cost, supplier_code: bt.series_box_code || '', indent: true });
+        }
+
+        // BMS Parallel Box
+        batItems.push({ desc: 'BMS Parallel Box II G1', sku: '', qty: 1, unit: pr.parallelBoxPrice, total: pr.parallelBoxPrice, supplier_code: pr.parallelBoxCode });
+
+        // Gateway / EPS Box (optional, from dropdown)
+        if (document.getElementById('gatewaySelect').value !== 'none') {
+            var gwP = document.getElementById('gatewaySelect'), gwOptP = gwP.options[gwP.selectedIndex];
+            var gwPriceP = parseFloat(gwOptP?.dataset.price) || 0;
+            if (gwPriceP > 0) batItems.push({ desc: 'EPS Box: ' + (gwOptP?.textContent || ''), sku: gwOptP?.value || '', qty: 1, unit: gwPriceP, total: gwPriceP, supplier_code: gwOptP?.dataset.supplierCode || '' });
+        }
+
     } else {
         // Single-stack BOM (existing logic)
         batItems.push({ desc: state.invSku + ' (' + state.invKw + 'kW ' + (state.phase === 'single_phase' ? 'Single' : 'Three') + ' Phase)', sku: state.invSku, qty: 1, unit: state.invPrice, total: state.invPrice, supplier_code: state.invSupplierCode });
@@ -1592,7 +1873,7 @@ function buildBOM() {
             const pkg = bt.packages?.find(p => p.modules === bat.totalModules);
             // Package header row (no unit/total -- children carry the costs)
             if (pkg) {
-                batItems.push({ desc: pkg.sku + ' (' + pkg.kwh + 'kWh)', sku: pkg.sku, qty: 1, unit: 0, total: 0, supplier_code: '', isGroup: true });
+                batItems.push({ desc: pkg.sku + ' (' + fmtKwh(pkg.kwh) + 'kWh)', sku: pkg.sku, qty: 1, unit: 0, total: 0, supplier_code: '', isGroup: true });
             }
             // Individual components as indented children
             modules.forEach(b => { const q = batteryQtys[b.kwh] || 0; if (q > 0) batItems.push({ desc: (b.label || b.kwh + 'kWh') + ' Battery Module', sku: '', qty: q, unit: b.price, total: q * b.price, supplier_code: b.supplier_code || '', indent: true }); });
@@ -1643,6 +1924,8 @@ function buildBOM() {
     installItems.push({ desc: 'PV Installation (' + state.sysKw.toFixed(2) + 'kW)', sku: 'Labour', qty: 1, unit: state.sysKw * state.installPvPerKw, total: state.sysKw * state.installPvPerKw, supplier_code: 'BDS:LABOUR-PV' });
     if (isDualBom) {
         installItems.push({ desc: 'Battery Installation (2 stacks)', sku: 'Labour', qty: 2, unit: state.installBatPerStack, total: 2 * state.installBatPerStack, supplier_code: 'BDS:LABOUR-BAT' });
+    } else if (isParallelBom) {
+        installItems.push({ desc: 'Battery Installation (parallel)', sku: 'Labour', qty: 1, unit: state.installBatPerStack, total: state.installBatPerStack, supplier_code: 'BDS:LABOUR-BAT' });
     } else if (bat.totalModules > 0) {
         installItems.push({ desc: 'Battery Installation', sku: 'Labour', qty: 1, unit: state.installBatPerStack, total: state.installBatPerStack, supplier_code: 'BDS:LABOUR-BAT' });
     }
@@ -1702,7 +1985,7 @@ function showBOM() {
     const zoneResult = lookupZone(document.getElementById('installPostcode').value);
     const zoneRating = zoneResult ? zoneResult.rating : 0;
     const pvStcCount = zoneRating > 0 ? Math.floor(state.sysKw * zoneRating * state.deemingPeriod) : 0;
-    const pvReb = pvStcCount * state.stcPrice, batSummary = getBatterySummary(), batReb = batSummary.usableKwh * state.batteryRebatePerKwh;
+    const pvReb = pvStcCount * state.stcPrice, batSummary = getBatterySummary(), batReb = (parallelResult && parallelResult.isParallel) ? parallelResult.totalUsableKwh * state.batteryRebatePerKwh : (dualStackResult && dualStackResult.isDualStack) ? dualStackResult.totalUsableKwh * state.batteryRebatePerKwh : batSummary.usableKwh * state.batteryRebatePerKwh;
     let totHtml = '<table style="width:100%; font-size:14px; border-collapse:collapse;">';
     const totRow = (l, v, s) => '<tr style="' + (s || '') + '"><td style="padding:8px 0; color:#9ca3af;">' + l + '</td><td style="padding:8px 0; text-align:right; color:#f0f0f0; font-weight:500;">' + v + '</td></tr>';
     totHtml += totRow('Parts & Accessories', fmtExGst(partsTotal));
@@ -1931,7 +2214,7 @@ async function searchQuotes() {
         results.forEach(r => {
             const c = r.customer || {};
             const date = r.updated_at ? new Date(r.updated_at.seconds * 1000).toLocaleDateString('en-AU') : '';
-            const sysInfo = (r.totals?.sysKw ? r.totals.sysKw.toFixed(1) + 'kW' : '') + (r.totals?.actualBatteryKwh ? ' / ' + r.totals.actualBatteryKwh + 'kWh' : '');
+            const sysInfo = (r.totals?.sysKw ? r.totals.sysKw.toFixed(1) + 'kW' : '') + (r.totals?.actualBatteryKwh ? ' / ' + fmtKwh(r.totals.actualBatteryKwh) + 'kWh' : '');
             html += '<div onclick="loadQuote(\'' + r.id + '\')" style="padding:10px 16px;background:#141414;border:1px solid #2a2a2a;border-radius:6px;margin-bottom:6px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;" onmouseover="this.style.borderColor=\'#e000f0\'" onmouseout="this.style.borderColor=\'#2a2a2a\'">';
             html += '<div><span style="color:#f0f0f0;font-weight:500;">' + esc(c.name || 'Unknown') + '</span>';
             if (c.suburb) html += '<span style="color:#6b7280;font-size:12px;margin-left:8px;">' + esc(c.suburb) + '</span>';
@@ -2140,7 +2423,8 @@ function generateQuote() {
     const pvStcCount = zoneRating > 0 ? Math.floor(state.sysKw * zoneRating * state.deemingPeriod) : 0;
     const pvReb = pvStcCount * state.stcPrice;
     const isDualStack = dualStackResult && currentManufacturer === 'sigenergy' && state.desiredBatteryKwh > 48;
-    const batReb = isDualStack ? dualStackResult.totalUsableKwh * state.batteryRebatePerKwh : bat.usableKwh * state.batteryRebatePerKwh;
+    const isParallelPdf = parallelResult && parallelResult.isParallel;
+    const batReb = isDualStack ? dualStackResult.totalUsableKwh * state.batteryRebatePerKwh : isParallelPdf ? parallelResult.totalUsableKwh * state.batteryRebatePerKwh : bat.usableKwh * state.batteryRebatePerKwh;
     const commRate = state.salesCommission / 100;
     const baseIncGst = priceBeforeComm * GST;
     const commAmt = (baseIncGst - pvReb - batReb) * commRate / (1 - commRate * GST) / GST;
@@ -2216,14 +2500,14 @@ function generateQuote() {
     doc.setLineWidth(0.3);
     doc.roundedRect(margin, y, contentW, boxH, 2, 2, 'S');
 
-    const totalKwh = isDualStack ? dualStackResult.totalKwh : bat.totalKwh;
-    const totalUsableKwh = isDualStack ? dualStackResult.totalUsableKwh : bat.usableKwh;
+    const totalKwh = isDualStack ? dualStackResult.totalKwh : isParallelPdf ? parallelResult.totalKwh : bat.totalKwh;
+    const totalUsableKwh = isDualStack ? dualStackResult.totalUsableKwh : isParallelPdf ? parallelResult.totalUsableKwh : bat.usableKwh;
     const invSku = isDualStack ? (dualStackResult.stack1.ec.sku + ' + ' + dualStackResult.stack2.ec.sku) : state.invSku;
 
     const summaryItems = [
         { label: 'System Size', value: state.sysKw.toFixed(2) + ' kW' },
         { label: 'Panels', value: state.panelCount + ' x ' + state.panelWattage + 'W' },
-        { label: 'Battery', value: totalKwh > 0 ? totalKwh + ' kWh' : 'None' },
+        { label: 'Battery', value: totalKwh > 0 ? fmtKwh(totalKwh) + ' kWh' : 'None' },
         { label: invLabel, value: invSku }
     ];
     const colW = contentW / summaryItems.length;
