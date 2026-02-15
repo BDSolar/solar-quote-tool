@@ -328,9 +328,11 @@ function applyManufacturerDefaults() {
         var btSel = document.getElementById('batteryTypeSelect');
         if (btSel) btSel.value = btIdx;
     }
-    // Battery capacity default
-    document.getElementById('desiredBatteryKwh').value = CONFIG.default_battery_kwh;
+    // Preserve user battery capacity, just clamp to new max
     updateBatteryMaxCap();
+    var curBat = parseFloat(document.getElementById('desiredBatteryKwh').value) || 0;
+    var maxBat = getMaxBatteryKwh();
+    if (curBat > maxBat) document.getElementById('desiredBatteryKwh').value = maxBat;
     // Inverter default by kW
     var targetKw = mfg.default_inverter_kw || 0;
     if (targetKw > 0) {
