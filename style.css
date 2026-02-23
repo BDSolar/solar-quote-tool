@@ -866,6 +866,43 @@ select.ev-charger-sub {
 .toolbar-btn-demo { border-color: #e000f0 !important; background: #e000f0 !important; color: #fff !important; font-weight: 600; }
 .toolbar-btn-demo:hover { background: #c800d8 !important; border-color: #c800d8 !important; box-shadow: 0 0 18px rgba(224, 0, 240, 0.6) !important; }
 
+/* === DISABLED FIELD STATES (Solar-only / Battery-only modes) === */
+.form-group.disabled label {
+    color: var(--text-quaternary);
+}
+
+.form-group.disabled input,
+.form-group.disabled select,
+.form-group.disabled .power-sensor-display {
+    opacity: 0.4;
+    pointer-events: none;
+    cursor: not-allowed;
+    background: var(--bg-tertiary);
+    border-color: var(--separator);
+}
+
+.form-group.disabled input:hover,
+.form-group.disabled select:hover {
+    border-color: var(--separator);
+    background: var(--bg-tertiary);
+}
+
+.form-group.disabled .input-suffix {
+    opacity: 0.4;
+}
+
+/* Hidden sections */
+.section-hidden {
+    display: none !important;
+}
+
+/* Inverter row hiding for solar-only */
+#inverterRow.hidden,
+#gatewayRow.hidden,
+#powerSensorRow.hidden {
+    display: none !important;
+}
+
 @media (max-width: 968px) {
     .content { grid-template-columns: 1fr; }
     .form-section { border-right: none; }

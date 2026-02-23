@@ -120,6 +120,9 @@
             "pv_oversizing": { "single_phase": 2.0, "three_phase": 2.0 },
             "inverters": {
                 "single_phase": [
+                    { "sku": "X1-HYBRID-5.0D", "kw": 5, "price": 1416, "max_pv_kw": 10, "supplier_code": "SOLAX:X1-HYBRID-5.0D", "solar_only": true },
+                    { "sku": "X1-HYBRID-6.0D", "kw": 6, "price": 1440, "max_pv_kw": 12, "supplier_code": "SOLAX:X1-HYBRID-6.0D", "solar_only": true },
+                    { "sku": "X1-HYBRID-7.5D", "kw": 7.5, "price": 1500, "max_pv_kw": 15, "supplier_code": "SOLAX:X1-HYBRID-7.5D", "solar_only": true },
                     { "sku": "X1-VAST-5K", "kw": 5, "price": 1738, "max_pv_kw": 10, "supplier_code": "SOLAX:X1-VAST-5K" },
                     { "sku": "X1-VAST-8K", "kw": 8, "price": 2258, "max_pv_kw": 16, "supplier_code": "SOLAX:X1-VAST-8K" },
                     { "sku": "X1-VAST-10K", "kw": 10, "price": 2500, "max_pv_kw": 20, "supplier_code": "SOLAX:X1-VAST-10K" }

@@ -46,13 +46,16 @@
                 </div>
             </div>
             <div class="section">
-                <div class="section-title">System Configuration</div>
-                <div class="grid-2">
-                    <div class="form-group"><label>Manufacturer</label><select id="manufacturerSelect"></select></div>
-                    <div class="form-group"><label>Phase Type</label><select id="phaseType"><option value="single_phase">Single Phase</option><option value="three_phase">Three Phase</option></select></div>
+                <div class="section-title" style="display:flex;justify-content:space-between;align-items:center;">
+                    <span>System Configuration</span>
+                    <select id="systemTypeSelect" style="font-size:14px;font-weight:500;padding:6px 12px;width:auto;min-width:160px;"><option value="hybrid">Solar + Battery</option><option value="battery_only">Battery Only</option><option value="pv_only">PV Only</option></select>
                 </div>
                 <div class="grid-2">
-                    <div class="form-group"><label>Solar Panel</label><select id="panelSelect"></select></div>
+                    <div class="form-group" id="manufacturerGroup"><label>Manufacturer</label><select id="manufacturerSelect"></select></div>
+                    <div class="form-group" id="phaseTypeGroup"><label>Phase Type</label><select id="phaseType"><option value="single_phase">Single Phase</option><option value="three_phase">Three Phase</option></select></div>
+                </div>
+                <div class="grid-2" id="panelSelectionRow">
+                    <div class="form-group" id="panelSelectGroup"><label>Solar Panel</label><select id="panelSelect"></select></div>
                     <div class="form-group" id="panelCountGroup"><label>Number of Panels</label><div class="input-with-suffix"><input type="number" id="panelCount" min="0" class="suffix-input"><span id="panelKwDisplay" class="input-suffix">0.00 kW</span></div></div>
                 </div>
             </div>
@@ -60,13 +63,13 @@
                 <div id="batteryTypeGroup" style="display:none;">
                     <div class="form-group"><label>Battery Type</label><select id="batteryTypeSelect"></select></div>
                 </div>
-                <div class="grid-2">
-                    <div class="form-group"><label>Battery Capacity (kWh)</label><input type="number" id="desiredBatteryKwh" min="0" max="96" step="1"></div>
-                    <div class="form-group"><label id="inverterDropdownLabel">Energy Controller</label><select id="inverterSelect"></select></div>
+                <div class="grid-2" id="batteryCapacityRow">
+                    <div class="form-group" id="batteryKwhGroup"><label>Battery Capacity (kWh)</label><input type="number" id="desiredBatteryKwh" min="0" max="96" step="1"></div>
+                    <div class="form-group" id="inverterGroup"><label id="inverterDropdownLabel">Energy Controller</label><select id="inverterSelect"></select></div>
                 </div>
-                <div class="grid-2">
-                    <div class="form-group"><label id="gatewayDropdownLabel">Gateway</label><select id="gatewaySelect"></select></div>
-                    <div class="form-group"><label id="powerSensorLabel">Power Sensor</label><div class="power-sensor-display"><span id="powerSensorModel">Sigen Sensor TP-CT100</span><span id="powerSensorStatus" class="power-sensor-status">Included</span></div></div>
+                <div class="grid-2" id="gatewayPowerSensorRow">
+                    <div class="form-group" id="gatewayGroup"><label id="gatewayDropdownLabel">Gateway</label><select id="gatewaySelect"></select></div>
+                    <div class="form-group" id="powerSensorGroup"><label id="powerSensorLabel">Power Sensor</label><div class="power-sensor-display"><span id="powerSensorModel">Sigen Sensor TP-CT100</span><span id="powerSensorStatus" class="power-sensor-status">Included</span></div></div>
                 </div>
                 <div id="batteryConfigPanel" class="info-box" style="display:none;">
                     <strong>Recommended Config:</strong> <span id="batteryBreakdown"></span>
@@ -89,19 +92,19 @@
             <div class="section">
                 <div class="section-title collapsible" onclick="this.classList.toggle('open');this.nextElementSibling.style.display=this.classList.contains('open')?'block':'none'">Installation Details<span class="collapse-arrow"></span></div>
                 <div class="collapsible-content" style="display:none;">
-                <div class="grid-2">
-                    <div class="form-group"><label>Roof Type</label><select id="roofType"><option value="metal">Metal</option><option value="tile">Tile</option><option value="concrete">Concrete/Terracotta</option><option value="flat">Flat</option></select></div>
-                    <div class="form-group"><label>Panel Orientation</label><select id="panelOrientation"><option value="portrait">Portrait</option><option value="landscape">Landscape</option></select></div>
+                <div class="grid-2" id="roofOrientationRow">
+                    <div class="form-group" id="roofTypeGroup"><label>Roof Type</label><select id="roofType"><option value="metal">Metal</option><option value="tile">Tile</option><option value="concrete">Concrete/Terracotta</option><option value="flat">Flat</option></select></div>
+                    <div class="form-group" id="orientationGroup"><label>Panel Orientation</label><select id="panelOrientation"><option value="portrait">Portrait</option><option value="landscape">Landscape</option></select></div>
                 </div>
-                <div class="grid-2">
-                    <div class="form-group"><label>Number of Rows</label><input type="number" id="numRows" value="1" min="1" max="20" step="1"></div>
-                    <div class="form-group"><label>Split Arrays (roof sections)</label><input type="number" id="numArrays" value="1" min="1" max="10" step="1"></div>
+                <div class="grid-2" id="rowsArraysRow">
+                    <div class="form-group" id="numRowsGroup"><label>Number of Rows</label><input type="number" id="numRows" value="1" min="1" max="20" step="1"></div>
+                    <div class="form-group" id="numArraysGroup"><label>Split Arrays (roof sections)</label><input type="number" id="numArrays" value="1" min="1" max="10" step="1"></div>
                 </div>
                 <div id="tiltAngleGroup" style="display:none;">
                     <div class="form-group"><label>Tilt Angle (Flat Roof)</label><select id="tiltAngle"><option value="10_15">10-15&deg;</option><option value="15_30">15-30&deg;</option><option value="30_60">30-60&deg;</option></select></div>
                 </div>
                 <div class="grid-2" id="batteryMountGroup" style="align-items:end;">
-                    <div class="form-group"><label>Battery Mounting Type</label><select id="mountingType"><option value="wall">Wall Mount</option><option value="ground" selected>Ground Mount</option></select></div>
+                    <div class="form-group" id="mountingTypeGroup"><label>Battery Mounting Type</label><select id="mountingType"><option value="wall">Wall Mount</option><option value="ground" selected>Ground Mount</option></select></div>
                     <div id="wallMountWarningGroup" style="display:none;padding-bottom:1px;"><div id="wallMountWarning" class="cec-shield warning" style="margin-top:0;font-size:12px;"></div></div>
                 </div>
                 </div>
@@ -110,18 +113,18 @@
                 <div class="section-title collapsible" onclick="this.classList.toggle('open');this.nextElementSibling.style.display=this.classList.contains('open')?'block':'none'">Rates &amp; Margins<span class="collapse-arrow"></span></div>
                 <div class="collapsible-content" style="display:none;">
                 <div class="grid-2">
-                    <div class="form-group"><label>PV Install ($/kW)</label><input type="number" id="installPerKwPv" min="0" step="1"></div>
-                    <div class="form-group"><label>Battery Install (per stack)</label><input type="number" id="installPerStack" min="0" step="1"></div>
+                    <div class="form-group" id="installPvGroup"><label>PV Install ($/kW)</label><input type="number" id="installPerKwPv" min="0" step="1"></div>
+                    <div class="form-group" id="installBatGroup"><label>Battery Install (per stack)</label><input type="number" id="installPerStack" min="0" step="1"></div>
                 </div>
-                <div class="grid-2" style="display:none;">
+                <div class="grid-2">
                     <div class="form-group"><label>STC Price ($/cert)</label><input type="number" id="stcPrice" step="0.5" min="0"></div>
                     <div class="form-group"><label>Deeming Period (yrs)</label><input type="number" id="stcDeemingPeriod" step="1" min="1" max="10" class="readonly-field" readonly></div>
                 </div>
-                <div class="grid-2" style="display:none;">
+                <div class="grid-2">
                     <div class="form-group"><label>Battery Rebate ($/kWh)</label><input type="number" id="batteryRebatePerKwh" step="1" class="readonly-field" readonly></div>
                     <div class="form-group"><label>GP Margin (%)</label><input type="number" id="gpMargin" min="0" max="100" step="0.1"></div>
                 </div>
-                <div class="grid-2" style="display:none;">
+                <div class="grid-2">
                     <div class="form-group"><label>Sales Commission (%)</label><input type="number" id="salesCommission" min="0" max="100" step="0.1"></div>
                     <div class="form-group"></div>
                 </div>

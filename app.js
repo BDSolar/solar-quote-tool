@@ -13,6 +13,8 @@ let currentQuoteId = null;
 let dualStackResult = null; // holds dual-stack optimizer output when active
 let dualStackEcOverride = { stack1: null, stack2: null }; // user EC upgrade overrides per stack
 let parallelResult = null; // holds SolaX parallel battery optimizer output when active
+let lastSystemMode = null; // tracks 'solar_only', 'battery_only', or 'hybrid' for inverter repopulation
+let currentSystemType = 'hybrid'; // 'hybrid', 'battery_only', or 'pv_only'
 
 // ====================
 // FIREBASE INIT
@@ -101,7 +103,19 @@ function hideAccTip(btn) {
 function getMfg() { return CONFIG.manufacturers?.[currentManufacturer] || {}; }
 function getBatteryType() { const m = getMfg(); return m.battery_types?.[currentBatteryTypeIdx] || m.battery_types?.[0] || {}; }
 function getBatteryModules() { return (getBatteryType().modules || []).filter(m => m.enabled !== false); }
-function getInverters() { return getMfg().inverters?.[state.phase] || []; }
+function getInverters(filterForSolarOnly) {
+    var all = getMfg().inverters?.[state.phase] || [];
+    if (filterForSolarOnly === true) {
+        // Solar-only mode: show only solar_only inverters (if any exist), otherwise show all
+        var solarOnlyInvs = all.filter(function(m) { return m.solar_only === true; });
+        return solarOnlyInvs.length > 0 ? solarOnlyInvs : all;
+    } else if (filterForSolarOnly === false) {
+        // Battery mode: exclude solar_only inverters
+        return all.filter(function(m) { return m.solar_only !== true; });
+    }
+    // No filter specified: return all
+    return all;
+}
 function getInverterLabel() { return getMfg().inverter_label || 'Inverter'; }
 function getPvOversizing() { return (getMfg().pv_oversizing || {})[state.phase] || 2.0; }
 
@@ -191,6 +205,204 @@ function syncStateFromDOM() {
         state.invKw = parseFloat(invOpt.dataset.kw) || 0;
         state.invMaxPv = parseFloat(invOpt.dataset.maxPv) || 0;
         state.invSupplierCode = invOpt.dataset.supplierCode || '';
+    }
+}
+
+// ====================
+// SYSTEM MODE HELPERS (Solar-only / Battery-only)
+// ====================
+
+function isSolarOnly() {
+    return currentSystemType === 'pv_only';
+}
+
+function isBatteryOnly() {
+    return currentSystemType === 'battery_only';
+}
+
+function isHybridSystem() {
+    return currentSystemType === 'hybrid';
+}
+
+function onSystemTypeChange() {
+    var sel = document.getElementById('systemTypeSelect');
+    currentSystemType = sel ? sel.value : 'hybrid';
+    
+    // Update manufacturer options based on system type
+    updateManufacturerOptions();
+    
+    // Update field visibility/state
+    updateSystemModeUI();
+    
+    // Recalculate
+    calculateQuote();
+}
+
+function updateManufacturerOptions() {
+    var mfgSelect = document.getElementById('manufacturerSelect');
+    if (!mfgSelect) return;
+    
+    var prevValue = mfgSelect.value;
+    mfgSelect.innerHTML = '';
+    
+    if (currentSystemType === 'pv_only') {
+        // PV Only: SolaX only (has solar-only inverters)
+        var opt = document.createElement('option');
+        opt.value = 'solax';
+        opt.textContent = 'SolaX';
+        mfgSelect.appendChild(opt);
+        currentManufacturer = 'solax';
+    } else {
+        // Hybrid or Battery Only: All manufacturers
+        Object.keys(CONFIG.manufacturers || {}).forEach(function(key) {
+            var mfg = CONFIG.manufacturers[key];
+            var opt = document.createElement('option');
+            opt.value = key;
+            opt.textContent = mfg.label || key;
+            mfgSelect.appendChild(opt);
+        });
+        // Restore previous value if still available
+        if (prevValue && mfgSelect.querySelector('option[value="' + prevValue + '"]')) {
+            mfgSelect.value = prevValue;
+            currentManufacturer = prevValue;
+        } else {
+            currentManufacturer = mfgSelect.value;
+        }
+    }
+    
+    // Trigger manufacturer change logic (same as switchManufacturer but without reading from select)
+    currentBatteryTypeIdx = 0;
+    userChangedInverter = false;
+    dualStackResult = null;
+    dualStackEcOverride = { stack1: null, stack2: null };
+    parallelResult = null;
+    selectedAccessories = selectedAccessories.filter(function(a) { return a.type === 'addon'; });
+    batteryQtys = {};
+    populateBatteryTypes();
+    buildBatteryUI();
+    populateInverters();
+    populateGateways();
+    buildAccessoriesUI();
+    updateBatteryMountVisibility();
+    updateHeaderSubtitle();
+    updateInverterSectionLabel();
+    updateGatewaySectionLabel();
+    updatePowerSensorModel();
+    applyManufacturerDefaults();
+}
+
+function setFieldDisabled(groupId, disabled) {
+    var el = document.getElementById(groupId);
+    if (el) {
+        if (disabled) {
+            el.classList.add('disabled');
+        } else {
+            el.classList.remove('disabled');
+        }
+    }
+}
+
+function updateSystemModeUI() {
+    var solarOnly = isSolarOnly();
+    var batteryOnly = isBatteryOnly();
+
+    // --- Panel selection row (hide for battery-only) ---
+    var panelRow = document.getElementById('panelSelectionRow');
+    if (panelRow) {
+        panelRow.style.display = batteryOnly ? 'none' : '';
+    }
+
+    // --- PV-related fields (disable when battery-only) ---
+    setFieldDisabled('panelSelectGroup', batteryOnly);
+    setFieldDisabled('panelCountGroup', batteryOnly);
+    setFieldDisabled('roofTypeGroup', batteryOnly);
+    setFieldDisabled('orientationGroup', batteryOnly);
+    setFieldDisabled('numRowsGroup', batteryOnly);
+    setFieldDisabled('numArraysGroup', batteryOnly);
+    setFieldDisabled('installPvGroup', batteryOnly);
+
+    // Tilt angle group (only if visible AND battery-only)
+    var tiltGroup = document.getElementById('tiltAngleGroup');
+    if (tiltGroup) {
+        var tiltFormGroup = tiltGroup.querySelector('.form-group');
+        if (tiltFormGroup) {
+            if (batteryOnly) {
+                tiltFormGroup.classList.add('disabled');
+            } else {
+                tiltFormGroup.classList.remove('disabled');
+            }
+        }
+    }
+
+    // --- Battery capacity row (hide for pv-only) ---
+    var batCapRow = document.getElementById('batteryCapacityRow');
+    if (batCapRow) {
+        // For PV only, hide the whole row but show inverter separately
+        if (solarOnly) {
+            // Hide battery kWh, but we need inverter visible
+            var batKwhGroup = document.getElementById('batteryKwhGroup');
+            if (batKwhGroup) batKwhGroup.style.display = 'none';
+            var invGroup = document.getElementById('inverterGroup');
+            if (invGroup) invGroup.style.display = '';
+        } else {
+            var batKwhGroup = document.getElementById('batteryKwhGroup');
+            if (batKwhGroup) batKwhGroup.style.display = '';
+        }
+    }
+
+    // --- Battery-related fields (disable/hide when solar-only) ---
+    setFieldDisabled('gatewayGroup', solarOnly);
+    setFieldDisabled('powerSensorGroup', solarOnly);
+    setFieldDisabled('mountingTypeGroup', solarOnly);
+    setFieldDisabled('installBatGroup', solarOnly);
+
+    // Battery type group (if visible)
+    var btGroup = document.getElementById('batteryTypeGroup');
+    if (btGroup) {
+        btGroup.style.display = solarOnly ? 'none' : (currentManufacturer === 'solax' ? 'block' : 'none');
+    }
+
+    // --- Inverter visibility ---
+    var invGroup = document.getElementById('inverterGroup');
+    if (invGroup) {
+        // Show for all modes now (PV-only has X1-HYBRID, battery modes have their inverters)
+        invGroup.style.display = '';
+    }
+
+    // Hide gateway and power sensor rows for solar-only
+    var gwPsRow = document.getElementById('gatewayPowerSensorRow');
+    if (gwPsRow) {
+        gwPsRow.style.display = solarOnly ? 'none' : '';
+    }
+
+    // Hide battery config panel for solar-only
+    var batConfigPanel = document.getElementById('batteryConfigPanel');
+    if (batConfigPanel) {
+        batConfigPanel.style.display = solarOnly ? 'none' : '';
+    }
+
+    // Hide battery mount group for solar-only
+    var batMountGroup = document.getElementById('batteryMountGroup');
+    if (batMountGroup) {
+        batMountGroup.style.display = solarOnly ? 'none' : '';
+    }
+
+    // Hide CEC/inverter warnings for solar-only
+    if (solarOnly) {
+        var warningsToHide = ['cecWarning', 'cecApproved', 'inverterWarning', 'inverterInfo', 'minModulesWarning', 'phaseCapWarning', 'wallMountWarningGroup'];
+        warningsToHide.forEach(function(id) {
+            var el = document.getElementById(id);
+            if (el) el.style.display = 'none';
+        });
+    }
+
+    // Detect mode change and repopulate inverters if needed
+    var currentMode = solarOnly ? 'solar_only' : (batteryOnly ? 'battery_only' : 'hybrid');
+    if (lastSystemMode !== currentMode) {
+        lastSystemMode = currentMode;
+        // Repopulate inverters with appropriate filter
+        populateInverters();
+        userChangedInverter = false; // Reset so auto-select can work
     }
 }
 
@@ -593,9 +805,10 @@ function updateZoneDisplay() { const pc = document.getElementById('installPostco
 // ====================
 
 function bindEvents() {
-    const dedicatedIds = ['inverterSelect','phaseType','desiredBatteryKwh','manufacturerSelect','batteryTypeSelect','roofType','panelOrientation','numRows','numArrays','tiltAngle','gatewaySelect','installPostcode'];
+    const dedicatedIds = ['inverterSelect','phaseType','desiredBatteryKwh','manufacturerSelect','batteryTypeSelect','roofType','panelOrientation','numRows','numArrays','tiltAngle','gatewaySelect','installPostcode','systemTypeSelect'];
     document.querySelectorAll('input, select').forEach(el => { if (!dedicatedIds.includes(el.id)) { el.addEventListener('input', calculateQuote); el.addEventListener('change', calculateQuote); } });
     document.getElementById('installPostcode').addEventListener('input', function() { this.value = this.value.replace(/\D/g, '').slice(0, 4); updateZoneDisplay(); calculateQuote(); });
+    document.getElementById('systemTypeSelect').addEventListener('change', onSystemTypeChange);
     document.getElementById('manufacturerSelect').addEventListener('change', switchManufacturer);
     document.getElementById('batteryTypeSelect').addEventListener('change', switchBatteryType);
     document.getElementById('phaseType').addEventListener('change', () => { syncStateFromDOM(); userChangedInverter = false; dualStackResult = null; dualStackEcOverride = { stack1: null, stack2: null }; parallelResult = null; populateInverters(); populateGateways(); updateAccessoryPrices(); updateBatteryMaxCap(); calculateQuote(); });
@@ -633,10 +846,14 @@ function populatePanels() {
 
 function populateInverters() {
     const sel = document.getElementById('inverterSelect'); sel.innerHTML = '';
-    getInverters().forEach(m => {
+    // Filter inverters based on system mode
+    var solarOnly = isSolarOnly();
+    var filterMode = solarOnly ? true : (currentSystemType === 'battery_only' || state.desiredBatteryKwh > 0 ? false : null);
+    getInverters(filterMode).forEach(m => {
         const o = document.createElement('option'); o.value = m.sku;
-        o.textContent = m.sku + ' -  ' + m.kw + 'kW -  Max PV: ' + m.max_pv_kw + 'kW';
+        o.textContent = m.sku + ' - ' + m.kw + 'kW - Max PV: ' + m.max_pv_kw + 'kW';
         o.dataset.kw = m.kw; o.dataset.price = m.price; o.dataset.maxPv = m.max_pv_kw; o.dataset.supplierCode = m.supplier_code || '';
+        o.dataset.solarOnly = m.solar_only ? 'true' : 'false';
         sel.appendChild(o);
     });
     updateInverterSectionLabel();
@@ -1324,7 +1541,14 @@ function calculateQuote() {
         if (!CONFIG.manufacturers) return;
         syncStateFromDOM();
 
+        // Update UI based on system mode (solar-only, battery-only, or hybrid)
+        updateSystemModeUI();
+
         document.getElementById('panelKwDisplay').textContent = state.sysKw.toFixed(2) + ' kW';
+
+        // Skip battery logic entirely for solar-only
+        var solarOnly = isSolarOnly();
+        var batteryOnly = isBatteryOnly();
 
         // Gateway UI: mandatory for Sigenergy with batteries -- auto-select cheapest
         const sigGwMandatory = currentManufacturer === 'sigenergy' && state.desiredBatteryKwh > 0;
@@ -1526,43 +1750,97 @@ function calculateQuote() {
             } else { document.getElementById('cecWarning').style.display = 'none'; document.getElementById('cecApproved').style.display = 'none'; }
         }
 
-        const costPanels = state.panelCount * state.panelCost;
+        // --- COST CALCULATIONS ---
+        // Solar-only: no battery/inverter costs
+        // Battery-only: no PV/roof costs
+        let costPanels, costRoofKit, costRoofSurcharge, installPv;
         let costInverter, costBattery, costGateway, costMount, installBat;
 
-        if (isDualStack && dualStackResult) {
-            costInverter = dualStackResult.totalEcCost;
-            costBattery = dualStackResult.totalBatteryCost;
-            costGateway = dualStackResult.gwPrice; // mandatory gateway
-            costMount = dualStackResult.mountCost;
-            installBat = dualStackResult.labourCost;
-            // If user picked a more expensive gateway, use that instead
-            const gw = document.getElementById('gatewaySelect');
-            const userGwPrice = parseFloat(gw.options[gw.selectedIndex]?.dataset.price) || 0;
-            if (userGwPrice > costGateway) costGateway = userGwPrice;
-        } else if (isParallel && parallelResult) {
-            costInverter = state.invPrice;
-            costBattery = parallelResult.totalBatteryCost;
-            const gw = document.getElementById('gatewaySelect');
-            costGateway = parseFloat(gw.options[gw.selectedIndex]?.dataset.price) || 0;
-            costMount = 0; // SolaX has no battery mounting
-            installBat = state.installBatPerStack; // 1 inverter, 1 install
+        if (solarOnly) {
+            // Solar-only mode: PV costs + inverter (SolaX X1-HYBRID)
+            costPanels = state.panelCount * state.panelCost;
+            const roof = CONFIG.installation?.roof_types?.[state.roofType] || { surcharge: 0 };
+            costRoofSurcharge = roof.surcharge;
+            const mountingResult = getMountingKitItems(state.panelCount, state.roofType, state.orientation, state.numRows, state.numArrays, state.tiltAngle, state.panelWidthMm, state.panelHeightMm);
+            costRoofKit = mountingResult.total;
+            installPv = state.sysKw * state.installPvPerKw;
+
+            // Include inverter cost for PV-only (SolaX X1-HYBRID)
+            costInverter = state.invPrice || 0;
+            costBattery = 0;
+            costGateway = 0;
+            costMount = 0;
+            installBat = 0;
+        } else if (batteryOnly) {
+            // Battery-only mode: no PV costs
+            costPanels = 0;
+            costRoofKit = 0;
+            costRoofSurcharge = 0;
+            installPv = 0;
+
+            // Battery costs as normal
+            if (isDualStack && dualStackResult) {
+                costInverter = dualStackResult.totalEcCost;
+                costBattery = dualStackResult.totalBatteryCost;
+                costGateway = dualStackResult.gwPrice;
+                costMount = dualStackResult.mountCost;
+                installBat = dualStackResult.labourCost;
+                const gw = document.getElementById('gatewaySelect');
+                const userGwPrice = parseFloat(gw.options[gw.selectedIndex]?.dataset.price) || 0;
+                if (userGwPrice > costGateway) costGateway = userGwPrice;
+            } else if (isParallel && parallelResult) {
+                costInverter = state.invPrice;
+                costBattery = parallelResult.totalBatteryCost;
+                const gw = document.getElementById('gatewaySelect');
+                costGateway = parseFloat(gw.options[gw.selectedIndex]?.dataset.price) || 0;
+                costMount = 0;
+                installBat = state.installBatPerStack;
+            } else {
+                costInverter = state.invPrice;
+                costBattery = bat.equipmentCost;
+                const gw = document.getElementById('gatewaySelect');
+                costGateway = parseFloat(gw.options[gw.selectedIndex]?.dataset.price) || 0;
+                const mfgMount = getMfg().battery_mounting || {};
+                costMount = (bat.totalModules > 0 && mfgMount.show !== false) ? (mfgMount[state.mountingType === 'wall' ? 'mount_wall' : 'mount_ground'] ?? 0) : 0;
+                installBat = (bat.totalModules > 0) ? state.installBatPerStack : 0;
+            }
         } else {
-            costInverter = state.invPrice;
-            costBattery = bat.equipmentCost;
-            const gw = document.getElementById('gatewaySelect');
-            costGateway = parseFloat(gw.options[gw.selectedIndex]?.dataset.price) || 0;
-            const mfgMount = getMfg().battery_mounting || {};
-            costMount = (bat.totalModules > 0 && mfgMount.show !== false) ? (mfgMount[state.mountingType === 'wall' ? 'mount_wall' : 'mount_ground'] ?? 0) : 0;
-            installBat = (bat.totalModules > 0) ? state.installBatPerStack : 0;
+            // Hybrid mode: both PV and battery costs
+            costPanels = state.panelCount * state.panelCost;
+            const roof = CONFIG.installation?.roof_types?.[state.roofType] || { surcharge: 0 };
+            costRoofSurcharge = roof.surcharge;
+            const mountingResult = getMountingKitItems(state.panelCount, state.roofType, state.orientation, state.numRows, state.numArrays, state.tiltAngle, state.panelWidthMm, state.panelHeightMm);
+            costRoofKit = mountingResult.total;
+            installPv = state.sysKw * state.installPvPerKw;
+
+            if (isDualStack && dualStackResult) {
+                costInverter = dualStackResult.totalEcCost;
+                costBattery = dualStackResult.totalBatteryCost;
+                costGateway = dualStackResult.gwPrice;
+                costMount = dualStackResult.mountCost;
+                installBat = dualStackResult.labourCost;
+                const gw = document.getElementById('gatewaySelect');
+                const userGwPrice = parseFloat(gw.options[gw.selectedIndex]?.dataset.price) || 0;
+                if (userGwPrice > costGateway) costGateway = userGwPrice;
+            } else if (isParallel && parallelResult) {
+                costInverter = state.invPrice;
+                costBattery = parallelResult.totalBatteryCost;
+                const gw = document.getElementById('gatewaySelect');
+                costGateway = parseFloat(gw.options[gw.selectedIndex]?.dataset.price) || 0;
+                costMount = 0;
+                installBat = state.installBatPerStack;
+            } else {
+                costInverter = state.invPrice;
+                costBattery = bat.equipmentCost;
+                const gw = document.getElementById('gatewaySelect');
+                costGateway = parseFloat(gw.options[gw.selectedIndex]?.dataset.price) || 0;
+                const mfgMount = getMfg().battery_mounting || {};
+                costMount = (bat.totalModules > 0 && mfgMount.show !== false) ? (mfgMount[state.mountingType === 'wall' ? 'mount_wall' : 'mount_ground'] ?? 0) : 0;
+                installBat = (bat.totalModules > 0) ? state.installBatPerStack : 0;
+            }
         }
 
         let costAcc = getAccessoryCost();
-
-        const installPv = state.sysKw * state.installPvPerKw;
-        const roof = CONFIG.installation?.roof_types?.[state.roofType] || { surcharge: 0 };
-        const costRoofSurcharge = roof.surcharge;
-        const mountingResult = getMountingKitItems(state.panelCount, state.roofType, state.orientation, state.numRows, state.numArrays, state.tiltAngle, state.panelWidthMm, state.panelHeightMm);
-        const costRoofKit = mountingResult.total;
         let costCustom = 0;
         for (let i = 1; i <= customAddonCount; i++) { const ce = document.getElementById('customCost-' + i), ne = document.getElementById('customName-' + i); if (ce && ne && ne.value.trim()) costCustom += parseFloat(ce.value) || 0; }
         costAcc += costCustom;
@@ -1575,10 +1853,12 @@ function calculateQuote() {
 
         const zoneResult = lookupZone(document.getElementById('installPostcode').value);
         const zoneRating = zoneResult ? zoneResult.rating : 0;
-        const pvStcCount = zoneRating > 0 ? Math.floor(state.sysKw * zoneRating * state.deemingPeriod) : 0;
+        // PV rebate only if we have panels
+        const pvStcCount = (!solarOnly && !batteryOnly) || !batteryOnly ? (zoneRating > 0 ? Math.floor(state.sysKw * zoneRating * state.deemingPeriod) : 0) : 0;
         const pvReb = pvStcCount * state.stcPrice;
-        const usableKwh = (isDualStack && dualStackResult) ? dualStackResult.totalUsableKwh : (isParallel && parallelResult) ? parallelResult.totalUsableKwh : bat.usableKwh;
-        const batReb = calcBatteryRebate(usableKwh, state.batteryRebatePerKwh);
+        // Battery rebate only if we have batteries
+        const usableKwh = solarOnly ? 0 : ((isDualStack && dualStackResult) ? dualStackResult.totalUsableKwh : (isParallel && parallelResult) ? parallelResult.totalUsableKwh : bat.usableKwh);
+        const batReb = solarOnly ? 0 : calcBatteryRebate(usableKwh, state.batteryRebatePerKwh);
         const gpAmt = totalCog * (state.gpMargin / 100);
         const priceBeforeCommission = totalCog + gpAmt;
         const commRate = state.salesCommission / 100;
@@ -1656,8 +1936,11 @@ function updateSummaryComponents(isDualStack, isParallel, bat, costRoofKit, cost
     var bt = getBatteryType();
     var modules = getBatteryModules();
 
+    var solarOnly = isSolarOnly();
+    var batteryOnly = isBatteryOnly();
+
     // --- PV Equipment ---
-    if (state.panelCount > 0) {
+    if (!batteryOnly && state.panelCount > 0) {
         var panelDesc = state.panelBrand + ' ' + state.panelModel + ' ' + state.panelWattage + 'W';
         if (state.panelColour) panelDesc += ' ' + state.panelColour;
         pvHtml += summaryRow(panelDesc, state.panelCount);
@@ -1667,10 +1950,23 @@ function updateSummaryComponents(isDualStack, isParallel, bat, costRoofKit, cost
             pvHtml += summaryRow((roof.label || state.roofType) + ' Roof Surcharge', 1);
         }
     }
-    if (!pvHtml) pvHtml = '<div class="summary-row" style="color:var(--text-quaternary);">No panels selected</div>';
+    if (!pvHtml) {
+        if (batteryOnly) {
+            pvHtml = '<div class="summary-row" style="color:var(--text-quaternary);">Battery-only system</div>';
+        } else {
+            pvHtml = '<div class="summary-row" style="color:var(--text-quaternary);">No panels selected</div>';
+        }
+    }
+
+    // Add inverter to PV section for solar-only
+    if (solarOnly && state.invPrice > 0) {
+        pvHtml += summaryRow(state.invSku + ' (' + state.invKw + 'kW)', 1);
+    }
 
     // --- Battery & Inverter ---
-    if (isDualStack && dualStackResult) {
+    if (solarOnly) {
+        batHtml = '<div class="summary-row" style="color:var(--text-quaternary);">Solar-only system</div>';
+    } else if (isDualStack && dualStackResult) {
         var ds = dualStackResult;
         var phaseLabel = state.phase === 'single_phase' ? 'SP' : 'TP';
         // Stack 1
@@ -1825,48 +2121,60 @@ function buildBOM() {
     const invLabel = getInverterLabel();
     let bom = [];
 
-    // === PV EQUIPMENT ===
-    let pvItems = [];
-    pvItems.push({ desc: state.panelBrand + ' ' + state.panelModel + ' ' + state.panelWattage + 'W ' + state.panelColour, sku: state.panelModel, qty: state.panelCount, unit: state.panelCost, total: state.panelCount * state.panelCost, supplier_code: state.panelSupplierCode });
-    getMountingKitItems(state.panelCount, roofType, state.orientation, state.numRows, state.numArrays, state.tiltAngle, state.panelWidthMm, state.panelHeightMm).items.forEach(item => pvItems.push(item));
-    if (roof.surcharge > 0) pvItems.push({ desc: roof.label + ' Roof Surcharge', sku: '', qty: 1, unit: roof.surcharge, total: roof.surcharge, supplier_code: 'BDS:ROOF-SURCHARGE' });
-    bom.push({ category: 'PV Equipment & Mounting', items: pvItems });
+    var solarOnly = isSolarOnly();
+    var batteryOnly = isBatteryOnly();
 
-    // === BATTERY & INVERTER ===
-    let batItems = [];
-    const isDualBom = dualStackResult && currentManufacturer === 'sigenergy' && state.desiredBatteryKwh > 48;
-    const isParallelBom = parallelResult && currentManufacturer === 'solax' && parallelResult.isParallel;
+    // === PV EQUIPMENT (skip for battery-only) ===
+    if (!batteryOnly && state.panelCount > 0) {
+        let pvItems = [];
+        pvItems.push({ desc: state.panelBrand + ' ' + state.panelModel + ' ' + state.panelWattage + 'W ' + state.panelColour, sku: state.panelModel, qty: state.panelCount, unit: state.panelCost, total: state.panelCount * state.panelCost, supplier_code: state.panelSupplierCode });
+        getMountingKitItems(state.panelCount, roofType, state.orientation, state.numRows, state.numArrays, state.tiltAngle, state.panelWidthMm, state.panelHeightMm).items.forEach(item => pvItems.push(item));
+        if (roof.surcharge > 0) pvItems.push({ desc: roof.label + ' Roof Surcharge', sku: '', qty: 1, unit: roof.surcharge, total: roof.surcharge, supplier_code: 'BDS:ROOF-SURCHARGE' });
+        
+        // For solar-only, add inverter to PV section
+        if (solarOnly && state.invPrice > 0) {
+            pvItems.push({ desc: state.invSku + ' (' + state.invKw + 'kW ' + (state.phase === 'single_phase' ? 'Single' : 'Three') + ' Phase)', sku: state.invSku, qty: 1, unit: state.invPrice, total: state.invPrice, supplier_code: state.invSupplierCode });
+        }
+        
+        bom.push({ category: 'PV Equipment & Mounting', items: pvItems });
+    }
 
-    if (isDualBom) {
-        // Dual-stack BOM: 2x ECs, 2x battery groups, 2x mounts, mandatory gateway
-        const ds = dualStackResult;
-        const phaseLabel = state.phase === 'single_phase' ? 'Single' : 'Three';
-        const ec1Key = getCecKey(ds.stack1.ec.sku), ec2Key = getCecKey(ds.stack2.ec.sku);
+    // === BATTERY & INVERTER (skip for solar-only) ===
+    if (!solarOnly && state.desiredBatteryKwh > 0) {
+        let batItems = [];
+        const isDualBom = dualStackResult && currentManufacturer === 'sigenergy' && state.desiredBatteryKwh > 48;
+        const isParallelBom = parallelResult && currentManufacturer === 'solax' && parallelResult.isParallel;
 
-        // Stack 1 EC
-        batItems.push({ desc: 'Stack 1: ' + ds.stack1.ec.sku + ' (' + ds.stack1.ec.kw + 'kW ' + phaseLabel + ' Phase, ' + ds.stack1.panels + ' panels)', sku: ds.stack1.ec.sku, qty: 1, unit: ds.stack1.ec.price, total: ds.stack1.ec.price, supplier_code: ds.stack1.ec.supplier_code || '' });
-        // Stack 1 batteries
-        modules.forEach(b => { const q = ds.stack1.batteryQtys[b.kwh] || 0; if (q > 0) batItems.push({ desc: 'Stack 1: ' + (b.label || b.kwh + 'kWh') + ' Battery', sku: '', qty: q, unit: b.price, total: q * b.price, supplier_code: b.supplier_code || '' }); });
+        if (isDualBom) {
+            // Dual-stack BOM: 2x ECs, 2x battery groups, 2x mounts, mandatory gateway
+            const ds = dualStackResult;
+            const phaseLabel = state.phase === 'single_phase' ? 'Single' : 'Three';
+            const ec1Key = getCecKey(ds.stack1.ec.sku), ec2Key = getCecKey(ds.stack2.ec.sku);
 
-        // Stack 2 EC
-        batItems.push({ desc: 'Stack 2: ' + ds.stack2.ec.sku + ' (' + ds.stack2.ec.kw + 'kW ' + phaseLabel + ' Phase, ' + ds.stack2.panels + ' panels)', sku: ds.stack2.ec.sku, qty: 1, unit: ds.stack2.ec.price, total: ds.stack2.ec.price, supplier_code: ds.stack2.ec.supplier_code || '' });
-        // Stack 2 batteries
-        modules.forEach(b => { const q = ds.stack2.batteryQtys[b.kwh] || 0; if (q > 0) batItems.push({ desc: 'Stack 2: ' + (b.label || b.kwh + 'kWh') + ' Battery', sku: '', qty: q, unit: b.price, total: q * b.price, supplier_code: b.supplier_code || '' }); });
+            // Stack 1 EC
+            batItems.push({ desc: 'Stack 1: ' + ds.stack1.ec.sku + ' (' + ds.stack1.ec.kw + 'kW ' + phaseLabel + ' Phase, ' + ds.stack1.panels + ' panels)', sku: ds.stack1.ec.sku, qty: 1, unit: ds.stack1.ec.price, total: ds.stack1.ec.price, supplier_code: ds.stack1.ec.supplier_code || '' });
+            // Stack 1 batteries
+            modules.forEach(b => { const q = ds.stack1.batteryQtys[b.kwh] || 0; if (q > 0) batItems.push({ desc: 'Stack 1: ' + (b.label || b.kwh + 'kWh') + ' Battery', sku: '', qty: q, unit: b.price, total: q * b.price, supplier_code: b.supplier_code || '' }); });
 
-        // Gateway (mandatory for dual-stack)
-        if (ds.gateway) batItems.push({ desc: 'Gateway: ' + ds.gateway.sku, sku: ds.gateway.sku, qty: 1, unit: ds.gwPrice, total: ds.gwPrice, supplier_code: ds.gateway.supplier_code || '' });
+            // Stack 2 EC
+            batItems.push({ desc: 'Stack 2: ' + ds.stack2.ec.sku + ' (' + ds.stack2.ec.kw + 'kW ' + phaseLabel + ' Phase, ' + ds.stack2.panels + ' panels)', sku: ds.stack2.ec.sku, qty: 1, unit: ds.stack2.ec.price, total: ds.stack2.ec.price, supplier_code: ds.stack2.ec.supplier_code || '' });
+            // Stack 2 batteries
+            modules.forEach(b => { const q = ds.stack2.batteryQtys[b.kwh] || 0; if (q > 0) batItems.push({ desc: 'Stack 2: ' + (b.label || b.kwh + 'kWh') + ' Battery', sku: '', qty: q, unit: b.price, total: q * b.price, supplier_code: b.supplier_code || '' }); });
 
-        // 2x mount kits
-        const mfgMount2 = getMfg().battery_mounting || {};
-        const mt = state.mountingType, mp = mfgMount2[mt === 'wall' ? 'mount_wall' : 'mount_ground'] ?? 0;
-        const mc = mfgMount2[mt === 'wall' ? 'mount_wall_code' : 'mount_ground_code'] || '';
-        if (mp > 0) batItems.push({ desc: (mt === 'wall' ? 'Wall' : 'Ground') + ' Mount Kit', sku: '', qty: 2, unit: mp, total: 2 * mp, supplier_code: mc });
+            // Gateway (mandatory for dual-stack)
+            if (ds.gateway) batItems.push({ desc: 'Gateway: ' + ds.gateway.sku, sku: ds.gateway.sku, qty: 1, unit: ds.gwPrice, total: ds.gwPrice, supplier_code: ds.gateway.supplier_code || '' });
 
-        // Power Sensor
-        var psAcc = (getMfg().accessories || []).find(function(a) { return a.id === 'power_sensor'; });
-        if (psAcc) { var psPrice = state.phase === 'single_phase' ? psAcc.price_single : psAcc.price_three; var psCode = state.phase === 'single_phase' ? (psAcc.supplier_code_single || '') : (psAcc.supplier_code_three || ''); batItems.push({ desc: psAcc.label, sku: '', qty: 1, unit: psPrice, total: psPrice, supplier_code: psCode }); }
+            // 2x mount kits
+            const mfgMount2 = getMfg().battery_mounting || {};
+            const mt = state.mountingType, mp = mfgMount2[mt === 'wall' ? 'mount_wall' : 'mount_ground'] ?? 0;
+            const mc = mfgMount2[mt === 'wall' ? 'mount_wall_code' : 'mount_ground_code'] || '';
+            if (mp > 0) batItems.push({ desc: (mt === 'wall' ? 'Wall' : 'Ground') + ' Mount Kit', sku: '', qty: 2, unit: mp, total: 2 * mp, supplier_code: mc });
 
-    } else if (isParallelBom) {
+            // Power Sensor
+            var psAcc = (getMfg().accessories || []).find(function(a) { return a.id === 'power_sensor'; });
+            if (psAcc) { var psPrice = state.phase === 'single_phase' ? psAcc.price_single : psAcc.price_three; var psCode = state.phase === 'single_phase' ? (psAcc.supplier_code_single || '') : (psAcc.supplier_code_three || ''); batItems.push({ desc: psAcc.label, sku: '', qty: 1, unit: psPrice, total: psPrice, supplier_code: psCode }); }
+
+        } else if (isParallelBom) {
         // SolaX Parallel BOM: 1x inverter, 2x battery systems, parallel box
         var pr = parallelResult;
         var modP = modules[0];
@@ -1960,8 +2268,9 @@ function buildBOM() {
         // Power Sensor
         var psAcc2 = (getMfg().accessories || []).find(function(a) { return a.id === 'power_sensor'; });
         if (psAcc2) { var psPrice2 = state.phase === 'single_phase' ? psAcc2.price_single : psAcc2.price_three; var psCode2 = state.phase === 'single_phase' ? (psAcc2.supplier_code_single || '') : (psAcc2.supplier_code_three || ''); batItems.push({ desc: psAcc2.label, sku: '', qty: 1, unit: psPrice2, total: psPrice2, supplier_code: psCode2 }); }
+        }
+        bom.push({ category: 'Battery Components', items: batItems });
     }
-    bom.push({ category: 'Battery Components', items: batItems });
 
     // === ACCESSORIES & ADD-ONS ===
     let accItems = getAccessoryBomItems();
@@ -1970,15 +2279,28 @@ function buildBOM() {
 
     // === INSTALLATION ===
     let installItems = [];
-    installItems.push({ desc: 'PV Installation (' + state.sysKw.toFixed(2) + 'kW)', sku: 'Labour', qty: 1, unit: state.sysKw * state.installPvPerKw, total: state.sysKw * state.installPvPerKw, supplier_code: 'BDS:LABOUR-PV' });
-    if (isDualBom) {
-        installItems.push({ desc: 'Battery Installation (2 stacks)', sku: 'Labour', qty: 2, unit: state.installBatPerStack, total: 2 * state.installBatPerStack, supplier_code: 'BDS:LABOUR-BAT' });
-    } else if (isParallelBom) {
-        installItems.push({ desc: 'Battery Installation (parallel)', sku: 'Labour', qty: 1, unit: state.installBatPerStack, total: state.installBatPerStack, supplier_code: 'BDS:LABOUR-BAT' });
-    } else if (bat.totalModules > 0) {
-        installItems.push({ desc: 'Battery Installation', sku: 'Labour', qty: 1, unit: state.installBatPerStack, total: state.installBatPerStack, supplier_code: 'BDS:LABOUR-BAT' });
+    var isDualBom = dualStackResult && currentManufacturer === 'sigenergy' && state.desiredBatteryKwh > 48;
+    var isParallelBom = parallelResult && currentManufacturer === 'solax' && parallelResult.isParallel;
+
+    // PV installation (skip for battery-only)
+    if (!batteryOnly && state.panelCount > 0) {
+        installItems.push({ desc: 'PV Installation (' + state.sysKw.toFixed(2) + 'kW)', sku: 'Labour', qty: 1, unit: state.sysKw * state.installPvPerKw, total: state.sysKw * state.installPvPerKw, supplier_code: 'BDS:LABOUR-PV' });
     }
-    bom.push({ category: 'Installation (Labour)', items: installItems });
+
+    // Battery installation (skip for solar-only)
+    if (!solarOnly && state.desiredBatteryKwh > 0) {
+        if (isDualBom) {
+            installItems.push({ desc: 'Battery Installation (2 stacks)', sku: 'Labour', qty: 2, unit: state.installBatPerStack, total: 2 * state.installBatPerStack, supplier_code: 'BDS:LABOUR-BAT' });
+        } else if (isParallelBom) {
+            installItems.push({ desc: 'Battery Installation (parallel)', sku: 'Labour', qty: 1, unit: state.installBatPerStack, total: state.installBatPerStack, supplier_code: 'BDS:LABOUR-BAT' });
+        } else if (bat.totalModules > 0) {
+            installItems.push({ desc: 'Battery Installation', sku: 'Labour', qty: 1, unit: state.installBatPerStack, total: state.installBatPerStack, supplier_code: 'BDS:LABOUR-BAT' });
+        }
+    }
+
+    if (installItems.length > 0) {
+        bom.push({ category: 'Installation (Labour)', items: installItems });
+    }
     return bom;
 }
 
@@ -2075,6 +2397,7 @@ function collectQuoteData() {
         search_suburb: (document.getElementById('installSuburb').value || '').toLowerCase(),
         search_postcode: (document.getElementById('installPostcode').value || '').trim(),
         system: {
+            systemType: currentSystemType,
             manufacturer: currentManufacturer,
             batteryTypeIdx: currentBatteryTypeIdx,
             phase: state.phase,
@@ -2149,16 +2472,35 @@ async function saveQuote() {
             if (!firstEl && el) firstEl = el;
         }
     }
-    if (!state.sysKw || state.sysKw <= 0) {
-        missing.push('Panel system (kW must be > 0)');
+
+    // Validation based on system type
+    var hasPanels = state.sysKw && state.sysKw > 0;
+    var hasBattery = state.desiredBatteryKwh && state.desiredBatteryKwh > 0;
+    
+    if (currentSystemType === 'pv_only') {
+        if (!hasPanels) {
+            missing.push('Panel system (kW must be > 0 for PV Only)');
+        }
+    } else if (currentSystemType === 'battery_only') {
+        if (!hasBattery) {
+            missing.push('Battery capacity (kWh must be > 0 for Battery Only)');
+        }
+    } else {
+        // Hybrid: need both
+        if (!hasPanels) {
+            missing.push('Panel system (kW must be > 0)');
+        }
+        if (!hasBattery) {
+            missing.push('Battery capacity (kWh must be > 0)');
+        }
     }
-    if (!state.desiredBatteryKwh || state.desiredBatteryKwh <= 0) {
-        missing.push('Battery capacity (kWh must be > 0)');
-    }
+
+    // Inverter required for battery systems and PV-only SolaX
     var invSel = document.getElementById('inverterSelect');
-    if (!invSel || invSel.options.length === 0) {
+    if ((hasBattery || currentSystemType === 'pv_only') && (!invSel || invSel.options.length === 0)) {
         missing.push('Inverter selection');
     }
+
     if (missing.length > 0) {
         alert('Please complete the following before saving:\n\n- ' + missing.join('\n- '));
         if (firstEl) firstEl.focus();
@@ -2289,7 +2631,14 @@ async function loadQuote(quoteId) {
         const data = doc.data();
         currentQuoteId = quoteId;
 
-        // Restore manufacturer first
+        // Restore system type first
+        if (data.system?.systemType) {
+            currentSystemType = data.system.systemType;
+            document.getElementById('systemTypeSelect').value = currentSystemType;
+            updateManufacturerOptions();
+        }
+
+        // Restore manufacturer
         if (data.system?.manufacturer) {
             currentManufacturer = data.system.manufacturer;
             document.getElementById('manufacturerSelect').value = currentManufacturer;
