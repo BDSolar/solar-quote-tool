@@ -17,25 +17,17 @@ let lastSystemMode = null; // tracks 'solar_only', 'battery_only', or 'hybrid' f
 let currentSystemType = 'hybrid'; // 'hybrid', 'battery_only', or 'pv_only'
 
 // ====================
-// FIREBASE INIT
+// SUPABASE INIT
 // ====================
 
-const firebaseConfig = {
-    apiKey: "AIzaSyASi1ahdUdwJhtmJLHevTvmHKu-P__mTyE",
-    authDomain: "bds-quotes.firebaseapp.com",
-    projectId: "bds-quotes",
-    storageBucket: "bds-quotes.firebasestorage.app",
-    messagingSenderId: "719766770849",
-    appId: "1:719766770849:web:dcc683dc22662d2da84ce0"
-};
-
-let db = null;
+const SUPABASE_URL = 'https://rjobiaevpjcwgmlhdevf.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJqb2JpYWV2cGpjd2dtbGhkZXZmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE1ODA4ODMsImV4cCI6MjA4NzE1Njg4M30.tPdtYhznf7-Zc4BNFazTNsKu5ecUtUVPNcRM3bnGO0s';
+let supabaseClient = null;
 try {
-    firebase.initializeApp(firebaseConfig);
-    db = firebase.firestore();
-    console.log('[OK] Firebase connected');
+    supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    console.log('[OK] Supabase connected');
 } catch (err) {
-    console.warn('[!] Firebase init failed:', err.message);
+    console.warn('[!] Supabase init failed:', err);
 }
 
 // ====================
@@ -483,15 +475,33 @@ function validateConfig(cfg) {
 
 async function loadConfig() {
     if (!CONFIG || !CONFIG.manufacturers) {
-    try {
-        const r = await fetch('config.json?v=' + Date.now());
-        if (!r.ok) throw new Error('HTTP ' + r.status);
-        CONFIG = await r.json();
-        validateConfig(CONFIG);
-        console.log('[OK] Config loaded from config.json');
-    } catch (err) {
-        console.warn('[!] Could not load config.json (' + err.message + '), using embedded fallback');
-        CONFIG = DEFAULT_CONFIG;
+    // Try Supabase config first, fall back to local config.json
+    let loaded = false;
+    if (supabaseClient) {
+        try {
+            const { data: cfgRow, error } = await supabaseClient
+                .from('config').select('data, version').eq('id', 'current').single();
+            if (!error && cfgRow?.data) {
+                CONFIG = cfgRow.data;
+                validateConfig(CONFIG);
+                console.log('[OK] Config loaded from Supabase (v' + cfgRow.version + ')');
+                loaded = true;
+            }
+        } catch (e) {
+            console.warn('[!] Supabase config fetch failed, trying local fallback');
+        }
+    }
+    if (!loaded) {
+        try {
+            const r = await fetch('config.json?v=' + Date.now());
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            CONFIG = await r.json();
+            validateConfig(CONFIG);
+            console.log('[OK] Config loaded from config.json (local fallback)');
+        } catch (err) {
+            console.warn('[!] Could not load config.json (' + err.message + '), using embedded fallback');
+            CONFIG = DEFAULT_CONFIG;
+        }
     }
     } else { console.log('[OK] Config already loaded (preview mode)'); }
     if (!CONFIG || !CONFIG.manufacturers) {
@@ -2373,7 +2383,7 @@ function closeBOM() { document.getElementById('bomOverlay').style.display = 'non
 function toggleBomGroup(gi) { const el = document.getElementById('bomGroup' + gi), ch = document.getElementById('bomChevron' + gi); if (el.style.display === 'none') { el.style.display = 'block'; ch.style.transform = 'rotate(90deg)'; } else { el.style.display = 'none'; ch.style.transform = 'rotate(0deg)'; } }
 
 // ====================
-// FIREBASE QUOTE SAVE / SEARCH / LOAD
+// SUPABASE QUOTE SAVE / SEARCH / LOAD
 // ====================
 
 function collectQuoteData() {
@@ -2389,13 +2399,6 @@ function collectQuoteData() {
             state: document.getElementById('installState').value || '',
             postcode: document.getElementById('installPostcode').value || ''
         },
-        // Searchable fields (lowercase for case-insensitive search)
-        search_name: (document.getElementById('customerName').value || '').toLowerCase(),
-        search_phone: (document.getElementById('customerPhone').value || '').replace(/\s/g, ''),
-        search_email: (document.getElementById('customerEmail').value || '').toLowerCase(),
-        search_address: (document.getElementById('installAddress').value || '').toLowerCase(),
-        search_suburb: (document.getElementById('installSuburb').value || '').toLowerCase(),
-        search_postcode: (document.getElementById('installPostcode').value || '').trim(),
         system: {
             systemType: currentSystemType,
             manufacturer: currentManufacturer,
@@ -2431,12 +2434,12 @@ function collectQuoteData() {
             gpMargin: state.gpMargin,
             salesCommission: state.salesCommission
         },
-        customAddons: getCustomAddons(),
+        custom_addons: getCustomAddons(),
         totals: {
-            finalPrice: document.getElementById('customerPriceDisplay').textContent,
+            customerPrice: document.getElementById('customerPriceDisplay').textContent,
             totalCog: fmtExGst(state.totalCog || 0),
             sysKw: state.sysKw,
-            actualBatteryKwh: bat.totalKwh
+            batteryKwh: bat.totalKwh
         }
     };
 }
@@ -2451,7 +2454,7 @@ function getCustomAddons() {
 }
 
 async function saveQuote() {
-    if (!db) { alert('Firebase not connected. Check your internet connection.'); return; }
+    if (!supabaseClient) { alert('Database not connected. Check your internet connection.'); return; }
 
     // -- Mandatory field validation --
     var missing = [];
@@ -2476,7 +2479,7 @@ async function saveQuote() {
     // Validation based on system type
     var hasPanels = state.sysKw && state.sysKw > 0;
     var hasBattery = state.desiredBatteryKwh && state.desiredBatteryKwh > 0;
-    
+
     if (currentSystemType === 'pv_only') {
         if (!hasPanels) {
             missing.push('Panel system (kW must be > 0 for PV Only)');
@@ -2509,23 +2512,25 @@ async function saveQuote() {
 
     const name = document.getElementById('customerName').value.trim();
     const data = collectQuoteData();
-    data.updated_at = firebase.firestore.FieldValue.serverTimestamp();
 
     try {
         if (currentQuoteId) {
-            await db.collection('quotes').doc(currentQuoteId).update(data);
+            const { error } = await supabaseClient.from('quotes')
+                .update(data).eq('id', currentQuoteId);
+            if (error) throw error;
             console.log('[OK] Quote updated:', currentQuoteId);
         } else {
-            data.created_at = firebase.firestore.FieldValue.serverTimestamp();
-            const docRef = await db.collection('quotes').add(data);
-            currentQuoteId = docRef.id;
+            const { data: row, error } = await supabaseClient.from('quotes')
+                .insert(data).select('id').single();
+            if (error) throw error;
+            currentQuoteId = row.id;
             console.log('[OK] Quote saved:', currentQuoteId);
         }
         showActiveQuote(name, currentQuoteId);
         alert('Quote saved successfully.' + (currentQuoteId ? '\nID: ' + currentQuoteId : ''));
     } catch (err) {
         console.error('[!] Save failed:', err);
-        alert('Failed to save quote: ' + err.message);
+        alert('Failed to save quote: ' + (err.message || err.details || 'Unknown error'));
     }
 }
 
@@ -2565,7 +2570,7 @@ document.addEventListener('click', function(e) {
 });
 
 async function searchQuotes() {
-    if (!db) { alert('Firebase not connected.'); return; }
+    if (!supabaseClient) { alert('Database not connected.'); return; }
     const term = document.getElementById('quoteSearchInput').value.trim().toLowerCase();
     if (!term) { alert('Enter a name, address, or phone number to search.'); return; }
 
@@ -2574,29 +2579,26 @@ async function searchQuotes() {
     resultsEl.innerHTML = '<div style="color:#6b7280;padding:8px;">Searching...</div>';
 
     try {
-        const results = [];
-        // Search by name
-        const nameSnap = await db.collection('quotes')
-            .where('search_name', '>=', term).where('search_name', '<=', term + '\uf8ff')
-            .orderBy('search_name').limit(20).get();
-        nameSnap.forEach(doc => results.push({ id: doc.id, ...doc.data() }));
+        let builder = supabaseClient.from('quotes')
+            .select('id, customer, totals, updated_at')
+            .order('updated_at', { ascending: false })
+            .limit(20);
 
-        // Search by suburb
-        const suburbSnap = await db.collection('quotes')
-            .where('search_suburb', '>=', term).where('search_suburb', '<=', term + '\uf8ff')
-            .orderBy('search_suburb').limit(20).get();
-        suburbSnap.forEach(doc => { if (!results.find(r => r.id === doc.id)) results.push({ id: doc.id, ...doc.data() }); });
-
-        // Search by phone (strip spaces)
-        const phoneTerm = term.replace(/\s/g, '');
-        if (/^\d{3,}$/.test(phoneTerm)) {
-            const phoneSnap = await db.collection('quotes')
-                .where('search_phone', '>=', phoneTerm).where('search_phone', '<=', phoneTerm + '\uf8ff')
-                .orderBy('search_phone').limit(20).get();
-            phoneSnap.forEach(doc => { if (!results.find(r => r.id === doc.id)) results.push({ id: doc.id, ...doc.data() }); });
+        const isNumeric = /^\d+$/.test(term);
+        if (isNumeric) {
+            if (term.length === 4) {
+                builder = builder.eq('search_postcode', term);
+            } else {
+                builder = builder.ilike('search_phone', '%' + term.replace(/\s/g, '') + '%');
+            }
+        } else {
+            builder = builder.or('search_name.ilike.%' + term + '%,search_suburb.ilike.%' + term + '%');
         }
 
-        if (results.length === 0) {
+        const { data: results, error } = await builder;
+        if (error) throw error;
+
+        if (!results || results.length === 0) {
             resultsEl.innerHTML = '<div style="color:#6b7280;padding:8px;">No quotes found for "' + esc(term) + '"</div>';
             return;
         }
@@ -2604,14 +2606,14 @@ async function searchQuotes() {
         let html = '';
         results.forEach(r => {
             const c = r.customer || {};
-            const date = r.updated_at ? new Date(r.updated_at.seconds * 1000).toLocaleDateString('en-AU') : '';
-            const sysInfo = (r.totals?.sysKw ? r.totals.sysKw.toFixed(1) + 'kW' : '') + (r.totals?.actualBatteryKwh ? ' / ' + fmtKwh(r.totals.actualBatteryKwh) + 'kWh' : '');
+            const date = r.updated_at ? new Date(r.updated_at).toLocaleDateString('en-AU') : '';
+            const sysInfo = (r.totals?.sysKw ? r.totals.sysKw.toFixed(1) + 'kW' : '') + (r.totals?.batteryKwh ? ' / ' + fmtKwh(r.totals.batteryKwh) + 'kWh' : '');
             html += '<div onclick="loadQuote(\'' + r.id + '\')" style="padding:10px 16px;background:#141414;border:1px solid #2a2a2a;border-radius:6px;margin-bottom:6px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;" onmouseover="this.style.borderColor=\'#e000f0\'" onmouseout="this.style.borderColor=\'#2a2a2a\'">';
             html += '<div><span style="color:#f0f0f0;font-weight:500;">' + esc(c.name || 'Unknown') + '</span>';
             if (c.suburb) html += '<span style="color:#6b7280;font-size:12px;margin-left:8px;">' + esc(c.suburb) + '</span>';
             if (c.phone) html += '<span style="color:#6b7280;font-size:12px;margin-left:8px;">' + esc(c.phone) + '</span>';
             html += '</div>';
-            html += '<div style="text-align:right;"><span style="color:#e000f0;font-size:13px;">' + esc(r.totals?.finalPrice || '') + '</span>';
+            html += '<div style="text-align:right;"><span style="color:#e000f0;font-size:13px;">' + esc(r.totals?.customerPrice || '') + '</span>';
             if (sysInfo) html += '<span style="color:#6b7280;font-size:11px;margin-left:8px;">' + esc(sysInfo) + '</span>';
             if (date) html += '<span style="color:#6b7280;font-size:11px;margin-left:8px;">' + date + '</span>';
             html += '</div></div>';
@@ -2619,16 +2621,16 @@ async function searchQuotes() {
         resultsEl.innerHTML = html;
     } catch (err) {
         console.error('[!] Search failed:', err);
-        resultsEl.innerHTML = '<div style="color:#ef4444;padding:8px;">Search failed: ' + esc(err.message) + '</div>';
+        resultsEl.innerHTML = '<div style="color:#ef4444;padding:8px;">Search failed: ' + esc(err.message || err.details || 'Unknown error') + '</div>';
     }
 }
 
 async function loadQuote(quoteId) {
-    if (!db) return;
+    if (!supabaseClient) return;
     try {
-        const doc = await db.collection('quotes').doc(quoteId).get();
-        if (!doc.exists) { alert('Quote not found.'); return; }
-        const data = doc.data();
+        const { data, error } = await supabaseClient.from('quotes')
+            .select('*').eq('id', quoteId).single();
+        if (error || !data) { alert('Quote not found.'); return; }
         currentQuoteId = quoteId;
 
         // Restore system type first
@@ -2674,16 +2676,8 @@ async function loadQuote(quoteId) {
         if (s.gatewaySelectIdx != null) document.getElementById('gatewaySelect').selectedIndex = s.gatewaySelectIdx;
         else if (s.addGateway && document.getElementById('gatewaySelect').options.length > 1) document.getElementById('gatewaySelect').selectedIndex = 1;
 
-        // Restore accessories (unified - backward compatible with old saves)
+        // Restore accessories
         var loadedAccs = (s.selectedAccessories || []).filter(function(a) { return a.id !== 'power_sensor'; });
-        // Merge old selectedAddons into accessories if present (backward compat)
-        if (s.selectedAddons && s.selectedAddons.length > 0) {
-            s.selectedAddons.forEach(function(a) { loadedAccs.push({ id: a.id, label: a.label, price: a.price, type: 'addon', supplier_code: a.supplier_code || '' }); });
-        }
-        // Backward compat: old EV charger checkbox
-        if (s.addEvCharger) {
-            loadedAccs.push({ id: 'ev_charger', label: 'EV Charger', price: 0, type: 'ev_charger', evModel: null });
-        }
         selectedAccessories = loadedAccs;
         renderSelectedAccessories();
 
@@ -2707,9 +2701,8 @@ async function loadQuote(quoteId) {
         document.getElementById('gpMargin').value = p.gpMargin ?? CONFIG.gp_margin;
         document.getElementById('salesCommission').value = p.salesCommission ?? CONFIG.sales_commission;
 
-        // Restore custom add-ons
-        const ca = data.customAddons || [];
-        // Clear existing custom addons
+        // Restore custom add-ons (new key: custom_addons; fallback to old customAddons)
+        const ca = data.custom_addons || data.customAddons || [];
         customAddonCount = 0;
         document.getElementById('customAddons').innerHTML = '';
         ca.forEach(item => { addCustomAddon(); document.getElementById('customName-' + customAddonCount).value = item.name; document.getElementById('customCost-' + customAddonCount).value = item.cost; });
@@ -2723,7 +2716,7 @@ async function loadQuote(quoteId) {
         console.log('[OK] Quote loaded:', quoteId);
     } catch (err) {
         console.error('[!] Load failed:', err);
-        alert('Failed to load quote: ' + err.message);
+        alert('Failed to load quote: ' + (err.message || err.details || 'Unknown error'));
     }
 }
 
