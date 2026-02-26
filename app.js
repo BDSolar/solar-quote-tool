@@ -15,6 +15,7 @@ let dualStackEcOverride = { stack1: null, stack2: null }; // user EC upgrade ove
 let parallelResult = null; // holds SolaX parallel battery optimizer output when active
 let lastSystemMode = null; // tracks 'solar_only', 'battery_only', or 'hybrid' for inverter repopulation
 let currentSystemType = 'hybrid'; // 'hybrid', 'battery_only', or 'pv_only'
+let currentRepId = null; // selected rep UUID
 
 // ====================
 // SUPABASE INIT
@@ -28,6 +29,40 @@ try {
     console.log('[OK] Supabase connected');
 } catch (err) {
     console.warn('[!] Supabase init failed:', err);
+}
+
+// ====================
+// REP LOADING
+// ====================
+
+async function loadReps() {
+    if (!supabaseClient) return;
+    try {
+        const { data, error } = await supabaseClient.from('reps')
+            .select('id, name').eq('active', true).order('name');
+        if (error || !data) return;
+        const sel = document.getElementById('repSelect');
+        data.forEach(r => {
+            const o = document.createElement('option');
+            o.value = r.id;
+            o.textContent = r.name;
+            sel.appendChild(o);
+        });
+        // Restore from localStorage
+        const saved = localStorage.getItem('bds_rep_id');
+        if (saved && data.find(r => r.id === saved)) {
+            sel.value = saved;
+            currentRepId = saved;
+        }
+        sel.addEventListener('change', function() {
+            currentRepId = this.value || null;
+            if (currentRepId) localStorage.setItem('bds_rep_id', currentRepId);
+            else localStorage.removeItem('bds_rep_id');
+        });
+        console.log('[OK] Reps loaded (' + data.length + ')');
+    } catch (e) {
+        console.warn('[!] Failed to load reps:', e);
+    }
 }
 
 // ====================
@@ -519,6 +554,7 @@ async function loadConfig() {
     document.getElementById('gpMargin').value = CONFIG.gp_margin;
     document.getElementById('salesCommission').value = CONFIG.sales_commission;
     populateManufacturers(); populatePanels(); populateBatteryTypes(); buildBatteryUI(); populateInverters(); populateGateways(); buildAccessoriesUI(); updateBatteryMountVisibility(); bindEvents(); updateRoofInfo(); updateMountingKitInfo(); updateZoneDisplay(); updateHeaderSubtitle(); updateInverterSectionLabel(); updateGatewaySectionLabel(); updatePowerSensorModel(); applyManufacturerDefaults(); calculateQuote();
+    loadReps();
 }
 
 // ====================
@@ -2440,7 +2476,8 @@ function collectQuoteData() {
             totalCog: fmtExGst(state.totalCog || 0),
             sysKw: state.sysKw,
             batteryKwh: bat.totalKwh
-        }
+        },
+        rep_id: currentRepId || null
     };
 }
 
@@ -2474,6 +2511,11 @@ async function saveQuote() {
             missing.push(checks[i].label);
             if (!firstEl && el) firstEl = el;
         }
+    }
+
+    if (!currentRepId) {
+        missing.push('Sales Rep');
+        if (!firstEl) firstEl = document.getElementById('repSelect');
     }
 
     // Validation based on system type
@@ -2580,7 +2622,7 @@ async function searchQuotes() {
 
     try {
         let builder = supabaseClient.from('quotes')
-            .select('id, customer, totals, updated_at')
+            .select('id, customer, totals, updated_at, reps(name)')
             .order('updated_at', { ascending: false })
             .limit(20);
 
@@ -2612,6 +2654,8 @@ async function searchQuotes() {
             html += '<div><span style="color:#f0f0f0;font-weight:500;">' + esc(c.name || 'Unknown') + '</span>';
             if (c.suburb) html += '<span style="color:#6b7280;font-size:12px;margin-left:8px;">' + esc(c.suburb) + '</span>';
             if (c.phone) html += '<span style="color:#6b7280;font-size:12px;margin-left:8px;">' + esc(c.phone) + '</span>';
+            const repName = r.reps?.name;
+            if (repName) html += '<span style="color:#a78bfa;font-size:11px;margin-left:8px;">' + esc(repName) + '</span>';
             html += '</div>';
             html += '<div style="text-align:right;"><span style="color:#e000f0;font-size:13px;">' + esc(r.totals?.customerPrice || '') + '</span>';
             if (sysInfo) html += '<span style="color:#6b7280;font-size:11px;margin-left:8px;">' + esc(sysInfo) + '</span>';
@@ -2632,6 +2676,12 @@ async function loadQuote(quoteId) {
             .select('*').eq('id', quoteId).single();
         if (error || !data) { alert('Quote not found.'); return; }
         currentQuoteId = quoteId;
+
+        // Restore rep
+        if (data.rep_id) {
+            currentRepId = data.rep_id;
+            document.getElementById('repSelect').value = data.rep_id;
+        }
 
         // Restore system type first
         if (data.system?.systemType) {
@@ -2722,6 +2772,7 @@ async function loadQuote(quoteId) {
 
 function clearQuote() {
     currentQuoteId = null;
+    // Keep rep selection (sticky) — don't reset repSelect
     document.getElementById('customerName').value = '';
     document.getElementById('customerPhone').value = '';
     document.getElementById('customerEmail').value = '';
