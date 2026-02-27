@@ -678,32 +678,16 @@
             border-bottom: 1px solid var(--separator);
             background: var(--bg-secondary);
         }
-        .pricing-filter-pills {
-            display: flex;
-            gap: 4px;
-            flex-wrap: wrap;
-        }
-        .pricing-filter-pills .pill {
-            padding: 5px 12px;
+        .pricing-category-select {
+            padding: 6px 12px;
             border: 1px solid var(--separator-hover);
-            border-radius: 14px;
-            background: transparent;
-            color: var(--text-tertiary);
+            border-radius: 6px;
+            background: var(--bg-input);
+            color: var(--text-primary);
             font-family: var(--font-display);
-            font-size: 11px;
-            font-weight: 600;
+            font-size: 12px;
+            font-weight: 500;
             cursor: pointer;
-            transition: all 0.15s;
-            white-space: nowrap;
-        }
-        .pricing-filter-pills .pill.active {
-            background: var(--accent);
-            border-color: var(--accent);
-            color: #fff;
-        }
-        .pricing-filter-pills .pill:hover:not(.active) {
-            border-color: var(--separator-strong);
-            color: var(--text-secondary);
         }
         #pricingContent {
             padding: 20px;
@@ -882,8 +866,8 @@
 <!-- PRICING VIEW (hidden by default) -->
 <div id="pricingView" style="display:none;">
     <div class="pricing-toolbar">
-        <div class="pricing-filter-pills" id="pricingCategoryPills"></div>
-        <div class="pricing-filter-pills" id="pricingMfrPills"></div>
+        <select id="pricingCategorySelect" class="pricing-category-select" onchange="setPricingCategory(this.value)"></select>
+        <select id="pricingMfrSelect" class="pricing-category-select" onchange="setPricingMfr(this.value)"></select>
         <span class="toolbar-spacer"></span>
         <button class="btn-sm primary" onclick="openProductModal()">+ Add Product</button>
         <button class="btn-sm" onclick="openBulkImportModal()">Bulk Import</button>

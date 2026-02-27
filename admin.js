@@ -921,24 +921,24 @@ async function loadPricingData() {
 // PRICING FILTERS
 // ==============================
 function renderPricingFilters() {
-    var catPills = document.getElementById('pricingCategoryPills');
-    var mfrPills = document.getElementById('pricingMfrPills');
+    var catSelect = document.getElementById('pricingCategorySelect');
+    var mfrSelect = document.getElementById('pricingMfrSelect');
 
     var totalCount = Object.values(allTables).reduce(function(s, arr) { return s + arr.length; }, 0);
 
-    // Category pills
+    // Category dropdown
     var cats = ['all'].concat(PRODUCT_TYPE_ORDER);
-    catPills.innerHTML = cats.map(function(c) {
-        var label = c === 'all' ? 'All' : (PRODUCT_TYPE_LABELS[c] || c);
+    catSelect.innerHTML = cats.map(function(c) {
+        var label = c === 'all' ? 'All Products' : (PRODUCT_TYPE_LABELS[c] || c);
         var count = c === 'all' ? totalCount : (allTables[TYPE_TO_TABLE[c]] || []).length;
-        return '<button class="pill ' + (pricingCategoryFilter === c ? 'active' : '') + '" onclick="setPricingCategory(\'' + c + '\')">' + label + ' <span style="opacity:0.6">(' + count + ')</span></button>';
+        return '<option value="' + c + '"' + (pricingCategoryFilter === c ? ' selected' : '') + '>' + label + ' (' + count + ')</option>';
     }).join('');
 
-    // Manufacturer pills
+    // Manufacturer dropdown
     var mfrs = ['all', 'sigenergy', 'solax', 'shared'];
-    mfrPills.innerHTML = mfrs.map(function(m) {
-        var label = m === 'all' ? 'All Mfrs' : m === 'shared' ? 'Shared' : (m === 'sigenergy' ? 'Sigenergy' : 'SolaX');
-        return '<button class="pill ' + (pricingMfrFilter === m ? 'active' : '') + '" onclick="setPricingMfr(\'' + m + '\')">' + label + '</button>';
+    var mfrLabels = { all: 'All Manufacturers', sigenergy: 'Sigenergy', solax: 'SolaX', shared: 'Shared' };
+    mfrSelect.innerHTML = mfrs.map(function(m) {
+        return '<option value="' + m + '"' + (pricingMfrFilter === m ? ' selected' : '') + '>' + mfrLabels[m] + '</option>';
     }).join('');
 }
 
