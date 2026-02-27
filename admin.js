@@ -906,9 +906,9 @@ async function loadPricingData() {
         queries.push(sb.from('business_params').select('*').limit(1).single());
         var results = await Promise.all(queries);
         tableNames.forEach(function(t, i) { allTables[t] = results[i].data || []; });
-        allBatteryPackages = results[10].data || [];
-        allBmsParts = results[11].data || [];
-        businessParamsRow = results[12].data || null;
+        allBatteryPackages = results[tableNames.length].data || [];
+        allBmsParts = results[tableNames.length + 1].data || [];
+        businessParamsRow = results[tableNames.length + 2].data || null;
         renderPricingFilters();
         renderPricingContent();
     } catch (e) {
