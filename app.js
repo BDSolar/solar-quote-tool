@@ -3203,6 +3203,11 @@ function showBOM() {
     totHtml += totRow('Installation (Labour)', fmtExGst(installTotal));
     totHtml += totRow('Total COG (ex GST)', fmtExGst(grandTotal), 'border-top:1px solid #333; font-weight:700;');
     totHtml += totRow('GP (' + state.gpMargin + '%)', fmtExGst(gpAmt));
+    const priceBeforeComm = grandTotal + gpAmt;
+    const commRate = state.salesCommission / 100;
+    const baseIncGst = priceBeforeComm * GST;
+    const commAmt = (baseIncGst - pvReb - batReb) * commRate / (1 - commRate * GST) / GST;
+    totHtml += totRow('Commission (' + state.salesCommission + '%)', fmtExGst(commAmt));
     if (pvReb > 0) totHtml += totRow('PV STC Rebate (' + pvStcCount + ' STCs)', '-' + fmtExGst(pvReb), 'color:#34d399;');
     if (batReb > 0) totHtml += totRow('Battery STC Rebate', '-' + fmtExGst(batReb), 'color:#34d399;');
     totHtml += '</table>';
