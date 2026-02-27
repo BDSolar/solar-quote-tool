@@ -1,11 +1,7 @@
 {
-    "_notes": "Solar Quote Builder Configuration. All prices are AUD ex GST. supplier_code format: SUPPLIER:PART_NO (RAY=Raystech, SIG=Sigenergy, SOLAX=SolaX, BDS=Black Diamond Solar internal). Manufacturer-specific data nested under 'manufacturers' key.",
+    "_notes": "Solar Quote Builder Configuration — STRUCTURAL DATA ONLY. All pricing now lives in Supabase (products, battery_packages, battery_types, business_params tables). This file contains rules, CEC tables, zone data, and mounting calculation parameters. Prices here are placeholders (0) that get overlaid by DB values at load time.",
 
-    "panels": [
-        { "brand": "Longi", "model": "X10", "wattage": 475, "price": 121.13, "colour": "Black", "width_mm": 1134, "height_mm": 1800, "supplier_code": "RAY:LONGI-X10-475" },
-        { "brand": "Longi", "model": "Hi-MO 7", "wattage": 450, "price": 200, "colour": "Black", "width_mm": 1134, "height_mm": 1722, "supplier_code": "RAY:LONGI-HIMO7-450" },
-        { "brand": "Longi", "model": "Hi-MO 7", "wattage": 440, "price": 190, "colour": "Silver", "width_mm": 1134, "height_mm": 1722, "supplier_code": "RAY:LONGI-HIMO7-440" }
-    ],
+    "panels": [],
 
     "manufacturers": {
         "sigenergy": {
@@ -15,30 +11,14 @@
             "inverter_label": "Energy Controller",
             "pv_oversizing": { "single_phase": 2.0, "three_phase": 1.6 },
             "inverters": {
-                "single_phase": [
-                    { "sku": "SigenStor EC 5.0 SP", "kw": 5, "price": 1343, "max_pv_kw": 10, "supplier_code": "SIG:EC-5.0-SP" },
-                    { "sku": "SigenStor EC 6.0 SP", "kw": 6, "price": 1452, "max_pv_kw": 12, "supplier_code": "SIG:EC-6.0-SP" },
-                    { "sku": "SigenStor EC 8.0 SP", "kw": 8, "price": 2482, "max_pv_kw": 16, "supplier_code": "SIG:EC-8.0-SP" },
-                    { "sku": "SigenStor EC 10.0 SP", "kw": 10, "price": 2675, "max_pv_kw": 20, "supplier_code": "SIG:EC-10.0-SP" },
-                    { "sku": "SigenStor EC 12.0 SP", "kw": 12, "price": 2869, "max_pv_kw": 24, "supplier_code": "SIG:EC-12.0-SP" }
-                ],
-                "three_phase": [
-                    { "sku": "SigenStor EC 5.0 TP", "kw": 5, "price": 2300, "max_pv_kw": 8, "supplier_code": "SIG:EC-5.0-TP" },
-                    { "sku": "SigenStor EC 10.0 TP", "kw": 10, "price": 2663, "max_pv_kw": 16, "supplier_code": "SIG:EC-10.0-TP" },
-                    { "sku": "SigenStor EC 15.0 TP", "kw": 15, "price": 3511, "max_pv_kw": 24, "supplier_code": "SIG:EC-15.0-TP" },
-                    { "sku": "SigenStor EC 20.0 TP", "kw": 20, "price": 4007, "max_pv_kw": 32, "supplier_code": "SIG:EC-20.0-TP" },
-                    { "sku": "SigenStor EC 25.0 TP", "kw": 25, "price": 4600, "max_pv_kw": 40, "supplier_code": "SIG:EC-25.0-TP" },
-                    { "sku": "SigenStor EC 30.0 TP", "kw": 30, "price": 5060, "max_pv_kw": 48, "supplier_code": "SIG:EC-30.0-TP" }
-                ]
+                "single_phase": [],
+                "three_phase": []
             },
             "battery_types": [
                 {
                     "id": "sig_default",
                     "label": "SigenStor (8kWh)",
-                    "modules": [
-                        { "kwh": 5, "usable_kwh": 5.2, "price": 2905, "label": "5 kWh", "supplier_code": "SIG:BAT-5.0", "enabled": false },
-                        { "kwh": 8, "usable_kwh": 7.8, "price": 3632, "label": "8 kWh", "supplier_code": "SIG:BAT-8.0" }
-                    ],
+                    "modules": [],
                     "can_mix": true,
                     "bms_cost": 0,
                     "bms_code": "",
@@ -56,41 +36,12 @@
                 }
             ],
             "gateways": {
-                "single_phase": [
-                    { "sku": "Sigen Gateway Home SP AU (Pro)", "price": 695, "desc": "Home Pro - Back Entry", "supplier_code": "SIG:GW-HOME-SP-PRO" },
-                    { "sku": "Sigen Gateway Home SP", "price": 645, "desc": "Home Standard", "supplier_code": "SIG:GW-HOME-SP" },
-                    { "sku": "Sigen CUST Gateway SP-63", "price": 2200, "desc": "Custom 63A - Up to 24kW", "supplier_code": "SIG:GW-CUST-SP-63" },
-                    { "sku": "Sigen CUST Gateway SP-63-Hybrid", "price": 3000, "desc": "Custom 63A Hybrid", "supplier_code": "SIG:GW-CUST-SP-63-HYB" },
-                    { "sku": "Sigen CUST Gateway SP-125", "price": 3200, "desc": "Custom 125A - Up to 24kW", "supplier_code": "SIG:GW-CUST-SP-125" }
-                ],
-                "three_phase": [
-                    { "sku": "Sigen Gateway Home TP AU (Pro)", "price": 859, "desc": "Home Pro - 2 Inverter", "supplier_code": "SIG:GW-HOME-TP-PRO" },
-                    { "sku": "Sigen Gateway Home TP", "price": 1575, "desc": "Home Standard", "supplier_code": "SIG:GW-HOME-TP" },
-                    { "sku": "Sigen Gateway C60 AU", "price": 1769, "desc": "Commercial 60kW", "supplier_code": "SIG:GW-C60" }
-                ]
+                "single_phase": [],
+                "three_phase": []
             },
-            "ev_chargers": {
-                "dc_12_5": { "price": 2277, "desc": "DC 12kW 5m", "supplier_code": "SIG:EVDC-12-5S2" },
-                "dc_25_5": { "price": 3105, "desc": "DC 25kW 5m", "supplier_code": "SIG:EVDC-25-5S2" },
-                "dc_12_7.5": { "price": 2484, "desc": "DC 12kW 7.5m", "supplier_code": "SIG:EVDC-12-7.5S2" },
-                "dc_25_7.5": { "price": 3312, "desc": "DC 25kW 7.5m", "supplier_code": "SIG:EVDC-25-7.5S2" },
-                "dc_12_10": { "price": 2588, "desc": "DC 12kW 10m", "supplier_code": "SIG:EVDC-12-10S2" },
-                "dc_25_10": { "price": 3416, "desc": "DC 25kW 10m", "supplier_code": "SIG:EVDC-25-10S2" },
-                "ac_7_cable": { "price": 907, "desc": "AC 7kW w/cable", "supplier_code": "SIG:EVAC-7-T2-WH" },
-                "ac_11_cable": { "price": 981, "desc": "AC 11kW w/cable", "supplier_code": "SIG:EVAC-11-T2-WH" },
-                "ac_22_cable": { "price": 1089, "desc": "AC 22kW w/cable", "supplier_code": "SIG:EVAC-22-T2-WH" },
-                "ac_7_socket": { "price": 782, "desc": "AC 7kW socket", "supplier_code": "SIG:EVAC-7-T2SH-WH" },
-                "ac_11_socket": { "price": 863, "desc": "AC 11kW socket", "supplier_code": "SIG:EVAC-11-T2SH-WH" },
-                "ac_22_socket": { "price": 932, "desc": "AC 22kW socket", "supplier_code": "SIG:EVAC-22-T2SH-WH" }
-            },
-            "accessories": [
-                { "id": "power_sensor", "label": "Power Sensor", "price_single": 101, "price_three": 202, "phase_dependent": true, "default_checked": true, "supplier_code_single": "SIG:SENSOR-SP-CT100", "supplier_code_three": "SIG:SENSOR-TP-CT100", "desc": "Monitors real-time energy flow between grid, solar, battery and loads. Auto-selected based on phase. Required for system operation." },
-                { "id": "comm_4g", "label": "4G Comms Module (poor Wi-Fi)", "price": 177, "phase_dependent": false, "default_checked": false, "supplier_code": "SIG:4G-COMMMOD", "desc": "Cellular backup for monitoring when site Wi-Fi is weak or unreliable. Plugs directly into the Energy Controller." },
-                { "id": "sub1g", "label": "Sub1G Sensor Kit", "price": 127, "phase_dependent": false, "default_checked": false, "supplier_code": "SIG:SUB1G-KIT-AU", "desc": "Wireless sensor for CT-less energy monitoring. Uses sub-1GHz radio for long range, low power." }
-            ],
+            "ev_chargers": {},
+            "accessories": [],
             "battery_mounting": {
-                "mount_wall": 202, "mount_wall_code": "SIG:MOUNT-WALL",
-                "mount_ground": 202, "mount_ground_code": "SIG:MOUNT-GROUND",
                 "show": true
             },
             "cec_approved": {
@@ -119,52 +70,21 @@
             "inverter_label": "Hybrid Inverter",
             "pv_oversizing": { "single_phase": 2.0, "three_phase": 2.0 },
             "inverters": {
-                "single_phase": [
-                    { "sku": "X1-HYBRID-5.0D", "kw": 5, "price": 1416, "max_pv_kw": 10, "supplier_code": "SOLAX:X1-HYBRID-5.0D", "solar_only": true },
-                    { "sku": "X1-HYBRID-6.0D", "kw": 6, "price": 1440, "max_pv_kw": 12, "supplier_code": "SOLAX:X1-HYBRID-6.0D", "solar_only": true },
-                    { "sku": "X1-HYBRID-7.5D", "kw": 7.5, "price": 1500, "max_pv_kw": 15, "supplier_code": "SOLAX:X1-HYBRID-7.5D", "solar_only": true },
-                    { "sku": "X1-VAST-5K", "kw": 5, "price": 1738, "max_pv_kw": 10, "supplier_code": "SOLAX:X1-VAST-5K" },
-                    { "sku": "X1-VAST-8K", "kw": 8, "price": 2258, "max_pv_kw": 16, "supplier_code": "SOLAX:X1-VAST-8K" },
-                    { "sku": "X1-VAST-10K", "kw": 10, "price": 2500, "max_pv_kw": 20, "supplier_code": "SOLAX:X1-VAST-10K" }
-                ],
-                "three_phase": [
-                    { "sku": "X3-HYBRID-5.0D", "kw": 5, "price": 1810, "max_pv_kw": 10, "supplier_code": "SOLAX:X3-HYB-5D" },
-                    { "sku": "X3-HYBRID-8.0D", "kw": 8, "price": 2100, "max_pv_kw": 16, "supplier_code": "SOLAX:X3-HYB-8D" },
-                    { "sku": "X3-HYBRID-10.0D", "kw": 10, "price": 2450, "max_pv_kw": 20, "supplier_code": "SOLAX:X3-HYB-10D" },
-                    { "sku": "X3-HYBRID-15.0D", "kw": 15, "price": 2688, "max_pv_kw": 30, "supplier_code": "SOLAX:X3-HYB-15D" },
-                    { "sku": "X3-ULT-15KP", "kw": 15, "price": 3655, "max_pv_kw": 30, "supplier_code": "SOLAX:X3-ULT-15KP" },
-                    { "sku": "X3-ULT-20KP", "kw": 20, "price": 3910, "max_pv_kw": 40, "supplier_code": "SOLAX:X3-ULT-20KP" },
-                    { "sku": "X3-ULT-25K", "kw": 25, "price": 4751, "max_pv_kw": 50, "supplier_code": "SOLAX:X3-ULT-25K" },
-                    { "sku": "X3-ULT-30K", "kw": 30, "price": 4900, "max_pv_kw": 60, "supplier_code": "SOLAX:X3-ULT-30K" }
-                ]
+                "single_phase": [],
+                "three_phase": []
             },
             "battery_types": [
                 {
                     "id": "tp_hs36",
                     "label": "T-BAT TP-HS36 (3.6 kWh modules)",
                     "use_package_pricing": true,
-                    "modules": [
-                        { "kwh": 3.6, "usable_kwh": 3.25, "price": 1140, "label": "3.6 kWh", "supplier_code": "SOLAX-BAT-TP-HS36" }
-                    ],
-                    "packages": [
-                        { "modules": 2,  "kwh": 7.2,  "price": 3130, "sku": "SOLAX-T-BAT-HS7.2",  "includes": "2x TP-HS36 + BMS" },
-                        { "modules": 3,  "kwh": 10.8, "price": 4270, "sku": "SOLAX-T-BAT-HS10.8", "includes": "3x TP-HS36 + BMS" },
-                        { "modules": 4,  "kwh": 14.4, "price": 5410, "sku": "SOLAX-T-BAT-HS14.4", "includes": "4x TP-HS36 + BMS" },
-                        { "modules": 5,  "kwh": 18.0, "price": 6550, "sku": "SOLAX-T-BAT-HS18.0", "includes": "5x TP-HS36 + BMS" },
-                        { "modules": 6,  "kwh": 21.6, "price": 7690, "sku": "SOLAX-T-BAT-HS21.6", "includes": "6x TP-HS36 + BMS" },
-                        { "modules": 7,  "kwh": 25.2, "price": 8830, "sku": "SOLAX-T-BAT-HS25.2", "includes": "7x TP-HS36 + BMS" },
-                        { "modules": 8,  "kwh": 28.8, "price": 9970, "sku": "SOLAX-T-BAT-HS28.8", "includes": "8x TP-HS36 + BMS" },
-                        { "modules": 9,  "kwh": 32.4, "price": 11110, "sku": "SOLAX-T-BAT-HS32.4", "includes": "9x TP-HS36 + BMS + Series Box" },
-                        { "modules": 10, "kwh": 36.0, "price": 12800, "sku": "SOLAX-T-BAT-HS36",   "includes": "10x TP-HS36 + BMS + Series Box" },
-                        { "modules": 11, "kwh": 39.6, "price": 13940, "sku": "SOLAX-T-BAT-HS39.6", "includes": "11x TP-HS36 + BMS + Series Box" },
-                        { "modules": 12, "kwh": 43.2, "price": 15080, "sku": "SOLAX-T-BAT-HS43.2", "includes": "12x TP-HS36 + BMS + Series Box" },
-                        { "modules": 13, "kwh": 46.8, "price": 16220, "sku": "SOLAX-T-BAT-HS46.8", "includes": "13x TP-HS36 + BMS + Series Box" }
-                    ],
+                    "modules": [],
+                    "packages": [],
                     "can_mix": false,
-                    "bms_cost": 850,
-                    "bms_code": "SOLAX-TBMS-MCS0800",
-                    "series_box_cost": 550,
-                    "series_box_code": "SOLAX-HS36-SERIES-BOX",
+                    "bms_cost": 0,
+                    "bms_code": "",
+                    "series_box_cost": 0,
+                    "series_box_code": "",
                     "series_box_threshold": 9,
                     "rules": {
                         "max_modules": 13,
@@ -179,14 +99,12 @@
                     "id": "tb_hs51",
                     "label": "T-BAT TB-HS51 (5.1 kWh modules)",
                     "use_package_pricing": false,
-                    "modules": [
-                        { "kwh": 5.1, "usable_kwh": 5.1, "price": 1850, "label": "5.1 kWh", "supplier_code": "SOLAX-BAT-TB-HS510" }
-                    ],
+                    "modules": [],
                     "can_mix": false,
-                    "bms_cost": 1100,
-                    "bms_code": "SOLAX-TBMS-S51-80",
-                    "series_box_cost": 740,
-                    "series_box_code": "SOLAX-BAT-TB-HS510-SERIES-BOX",
+                    "bms_cost": 0,
+                    "bms_code": "",
+                    "series_box_cost": 0,
+                    "series_box_code": "",
                     "series_box_threshold": 9,
                     "rules": {
                         "max_modules": 13,
@@ -199,43 +117,11 @@
                 }
             ],
             "gateways": {
-                "single_phase": [
-                    { "sku": "SolaX EPS Box SP", "price": 250, "desc": "EPS Box - Single Phase Backup", "supplier_code": "SOLAX-EPS-1P" }
-                ],
-                "three_phase": [
-                    { "sku": "SolaX EPS Box TP", "price": 358, "desc": "EPS Box - Three Phase Backup", "supplier_code": "SOLAX-EPS-3P" }
-                ]
+                "single_phase": [],
+                "three_phase": []
             },
-            "ev_chargers": {
-                "hac_4p_cable": { "price": 500, "desc": "Hyper EV 4.6kW 1P (X1-HAC-4P)", "supplier_code": "SOLAX:X1-HAC-4P", "phase": "single_phase" },
-                "hac_7p_cable": { "price": 565, "desc": "Hyper EV 7kW 1P (X1-HAC-7P)", "supplier_code": "SOLAX:X1-HAC-7P", "phase": "single_phase" },
-                "hac_11p_cable": { "price": 600, "desc": "Hyper EV 11kW 3P (X3-HAC-11P)", "supplier_code": "SOLAX:X3-HAC-11P", "phase": "three_phase" },
-                "hac_22p_cable": { "price": 680, "desc": "Hyper EV 22kW 3P (X3-HAC-22P)", "supplier_code": "SOLAX:X3-HAC-22P", "phase": "three_phase" }
-            },
-            "accessories": [
-                { "id": "ct_x3hyb", "label": "CT (X3-Hybrid G4)", "price": 88, "phase_dependent": false, "default_checked": false, "supplier_code": "SOLAX-CT-X3HYB", "note": "Required for X3-Hybrid G4", "desc": "Current transformer for the X3-Hybrid G4 inverter. Required for energy monitoring." },
-                { "id": "ct_smart", "label": "CT (Smart)", "price": 18, "phase_dependent": false, "default_checked": false, "supplier_code": "SOLAX-CT-SMART", "desc": "Current transformer for Smart inverter models." },
-                { "id": "ct_all", "label": "CT (All Models)", "price": 35, "phase_dependent": false, "default_checked": false, "supplier_code": "SOLAX-CT-ALL", "desc": "Universal current transformer compatible with all SolaX inverters." },
-                { "id": "pocket_wifi_lan", "label": "Pocket WiFi+LAN (G4)", "price": 58, "phase_dependent": false, "default_checked": false, "supplier_code": "SOLAX-POCKET-WIFI+LAN", "note": "Included with X1-VAST", "desc": "WiFi and LAN connectivity module for G4 series inverters." },
-                { "id": "pocket_wifi_4g", "label": "Pocket WiFi+4GM", "price": 86, "phase_dependent": false, "default_checked": false, "supplier_code": "SOLAX-POCKET-WIFI+4GM", "desc": "WiFi and 4G cellular connectivity module for remote monitoring." },
-                { "id": "wifi_v3", "label": "WiFi V3.0", "price": 40, "phase_dependent": false, "default_checked": false, "supplier_code": "SOLAX-WIFI-V3.0", "desc": "WiFi dongle for inverter monitoring and cloud connectivity." },
-                { "id": "ac_plug", "label": "AC Plug", "price": 30, "phase_dependent": false, "default_checked": false, "supplier_code": "SOLAX-AC-PLUG", "desc": "AC connection plug for SolaX inverter installation." },
-                { "id": "meter_m1_40", "label": "Meter M1-40 (1P)", "price": 120, "phase_dependent": false, "default_checked": false, "supplier_code": "SOLAX-METER-M1-40", "desc": "Single-phase energy meter for monitoring grid import/export. Direct connection up to 40A." },
-                { "id": "meter_m3_40", "label": "Meter M3-40 (3P)", "price": 240, "phase_dependent": false, "default_checked": false, "supplier_code": "SOLAX-METER-M3-40", "desc": "Three-phase energy meter for monitoring grid import/export. Direct connection up to 40A." },
-                { "id": "meter_m3_40_dual", "label": "Meter M3-40-Dual (3P)", "price": 308, "phase_dependent": false, "default_checked": false, "supplier_code": "SOLAX-METER-M3-40-DUAL", "desc": "Dual three-phase energy meter for monitoring two separate grid connections." },
-                { "id": "meter_ddsu666", "label": "Meter DDSU666 (1P)", "price": 88, "phase_dependent": false, "default_checked": false, "supplier_code": "SOLAX-METER-1P-DDSU666", "desc": "Single-phase energy meter. Chint DDSU666 direct connect model." },
-                { "id": "meter_ddsu666_ct", "label": "Meter DDSU666-CT (1P)", "price": 112, "phase_dependent": false, "default_checked": false, "supplier_code": "SOLAX-METER-1P-DDSU666-CT", "desc": "Single-phase energy meter with CT connection. For higher current installations." },
-                { "id": "meter_sdm230", "label": "Meter SDM230 (1P)", "price": 77, "phase_dependent": false, "default_checked": false, "supplier_code": "SOLAX-METER-1P-SDM230", "desc": "Single-phase energy meter. Eastron SDM230 direct connect model." },
-                { "id": "meter_sdm630m", "label": "Meter SDM630M (3P)", "price": 165, "phase_dependent": false, "default_checked": false, "supplier_code": "SOLAX-METER-3P-SDM630M", "desc": "Three-phase energy meter. Eastron SDM630M direct connect model." },
-                { "id": "meter_sdm630m_ct", "label": "Meter SDM630M-CT (3P)", "price": 250, "phase_dependent": false, "default_checked": false, "supplier_code": "SOLAX-METER-3P-SDM630M-CT", "desc": "Three-phase energy meter with CT connection. For higher current installations." },
-                { "id": "meter_dtsu666_ct", "label": "Meter DTSU666-CT (3P)", "price": 280, "phase_dependent": false, "default_checked": false, "supplier_code": "SOLAX-METER-3P-DTSU666-CT", "desc": "Three-phase energy meter with CT connection. Chint DTSU666 model." },
-                { "id": "bms_parallel_box", "label": "BMS Parallel Box II G1", "price": 860, "phase_dependent": false, "default_checked": false, "supplier_code": "SOLAX-BMS-PARALLEL-BOX-II-G1", "desc": "Required when running multiple battery stacks in parallel. Manages communication between stacks." },
-                { "id": "wireless_bridge", "label": "Wireless Bridge (Wi-BR)", "price": 380, "phase_dependent": false, "default_checked": false, "supplier_code": "SOLAX-WI-BR", "desc": "Wireless communication bridge between inverter and battery when cabling is not practical." },
-                { "id": "cable_positive_5m", "label": "Cable Positive 5M", "price": 20, "phase_dependent": false, "default_checked": false, "supplier_code": "SOLAX-CABLE-POSITIVE-5M", "desc": "5-metre positive DC cable extension for battery to inverter connection." },
-                { "id": "cable_communication", "label": "Cable Communication", "price": 20, "phase_dependent": false, "default_checked": false, "supplier_code": "SOLAX-CABLE-COMMUNICATION", "desc": "Communication cable for battery-to-inverter data link." },
-                { "id": "cooling_fan_1", "label": "Upgrade Cooling Fan 1", "price": 60, "phase_dependent": false, "default_checked": false, "supplier_code": "SOLAX-UPGRADE-COOLING-FAN-1", "desc": "Upgrade cooling fan for improved thermal management in high-temp environments." },
-                { "id": "cooling_fan_2", "label": "Upgrade Cooling Fan 2", "price": 60, "phase_dependent": false, "default_checked": false, "supplier_code": "SOLAX-UPGRADE-COOLING-FAN-2", "desc": "Upgrade cooling fan for improved thermal management in high-temp environments." }
-            ],
+            "ev_chargers": {},
+            "accessories": [],
             "battery_mounting": {
                 "show": false
             },
@@ -282,20 +168,22 @@
     },
 
     "installation": {
-        "install_pv_per_kw": 300,
-        "install_battery_per_stack": 1600,
+        "install_pv_per_kw": 0,
+        "install_battery_per_stack": 0,
         "roof_types": {
-            "metal":    { "label": "Metal",               "surcharge": 0, "kit_cost_per_panel": 0 },
-            "tile":     { "label": "Tile",                "surcharge": 100, "kit_cost_per_panel": 0 },
-            "concrete": { "label": "Concrete/Terracotta", "surcharge": 200, "kit_cost_per_panel": 0 },
-            "flat":     { "label": "Flat",                "surcharge": 300, "kit_cost_per_panel": 0 }
+            "metal":      { "label": "Metal",               "surcharge": 0, "kit_cost_per_panel": 0 },
+            "tile":       { "label": "Tile",                "surcharge": 0, "kit_cost_per_panel": 0 },
+            "concrete":   { "label": "Concrete/Terracotta", "surcharge": 0, "kit_cost_per_panel": 0 },
+            "kliplock":   { "label": "Klip Lock",           "surcharge": 0, "kit_cost_per_panel": 0 },
+            "terracotta": { "label": "Terracotta",          "surcharge": 0, "kit_cost_per_panel": 0 },
+            "flat":       { "label": "Flat",                "surcharge": 0, "kit_cost_per_panel": 0 }
         }
     },
 
     "rebates": {
-        "stc_price": 37,
-        "stc_deeming_period": 5,
-        "battery_rebate_per_kwh": 311,
+        "stc_price": 0,
+        "stc_deeming_period": 0,
+        "battery_rebate_per_kwh": 0,
         "stc_zones": [
             [0,799,3,1.382],[800,853,2,1.536],[854,854,3,1.382],[855,861,2,1.536],
             [862,862,3,1.382],[863,869,2,1.536],[870,879,1,1.622],[880,885,3,1.382],
@@ -335,53 +223,59 @@
         ]
     },
 
-    "addons": {
-        "hot_water_timer": 350, "hot_water_timer_code": "BDS:HWT-001", "hot_water_timer_desc": "Shifts hot water heating to off-peak or solar hours. Includes timer and full installation.",
-        "meter_board_partial": 800, "meter_board_partial_code": "BDS:MB-PART", "meter_board_partial_desc": "Switchboard tidy-up. Needed when board is non-compliant or too crowded for new breakers.",
-        "meter_board_full": 1200, "meter_board_full_code": "BDS:MB-FULL", "meter_board_full_desc": "Complete switchboard replacement. Required when board is too old or unsafe.",
-        "meter_board_relocation": 1800, "meter_board_relocation_code": "BDS:MB-RELOC", "meter_board_relocation_desc": "Full switchboard replacement plus physical relocation to a new position.",
-        "ev_charger_desc": "Electric vehicle charger. Choose AC or DC model after adding. DC connects to inverter for solar-direct charging."
-    },
-
-    "gp_margin": 37.5,
-    "sales_commission": 8.75,
-    "default_panel_count": 28,
-    "default_battery_kwh": 20,
+    "gp_margin": 0,
+    "sales_commission": 0,
+    "default_panel_count": 0,
+    "default_battery_kwh": 0,
 
     "mounting_kits": {
         "kits": {
-            "tin_2kw":    { "label": "Tin Roof 2kW Pack",   "panels_covered": 4, "price": 46.50, "roof_types": ["metal","flat"], "supplier_code": "RAY:KIT-TIN-2KW" },
-            "tin_1_5kw":  { "label": "Tin Roof 1.5kW Pack", "panels_covered": 3, "price": 34.90, "roof_types": ["metal","flat"], "supplier_code": "RAY:KIT-TIN-1.5KW" },
-            "tile_2kw":   { "label": "Tile Roof 2kW Pack",  "panels_covered": 4, "price": 93.00, "roof_types": ["tile","concrete"], "supplier_code": "RAY:KIT-TILE-2KW" },
-            "tile_1_5kw": { "label": "Tile Roof 1.5kW Pack","panels_covered": 3, "price": 69.50, "roof_types": ["tile","concrete"], "supplier_code": "RAY:KIT-TILE-1.5KW" }
+            "tin_2kw":    { "label": "Tin Roof 2kW Pack",   "panels_covered": 4, "price": 0, "roof_types": ["metal","flat"], "supplier_code": "" },
+            "tin_1_5kw":  { "label": "Tin Roof 1.5kW Pack", "panels_covered": 3, "price": 0, "roof_types": ["metal","flat"], "supplier_code": "" },
+            "tile_2kw":   { "label": "Tile Roof 2kW Pack",  "panels_covered": 4, "price": 0, "roof_types": ["tile","concrete"], "supplier_code": "" },
+            "tile_1_5kw": { "label": "Tile Roof 1.5kW Pack","panels_covered": 3, "price": 0, "roof_types": ["tile","concrete"], "supplier_code": "" }
         },
         "tilt_angles": {
-            "10_15": { "label": "10-15 deg", "price": 11.99, "supplier_code": "RAY:TILT-10/15" },
-            "15_30": { "label": "15-30 deg", "price": 13.99, "supplier_code": "RAY:TILT-15/30" },
-            "30_60": { "label": "30-60 deg", "price": 14.99, "supplier_code": "RAY:TILT-30/60" }
+            "10_15": { "label": "10-15 deg", "price": 0, "supplier_code": "" },
+            "15_30": { "label": "15-30 deg", "price": 0, "supplier_code": "" },
+            "30_60": { "label": "30-60 deg", "price": 0, "supplier_code": "" }
         },
         "split_array_surcharge": {
             "parts": [
-                { "desc": "End Clamp 30/35mm", "qty": 4, "price": 1.10, "supplier_code": "RAY:END-30/35" },
-                { "desc": "Earthing Lug (GLG)", "qty": 2, "price": 0.85, "supplier_code": "RAY:GLG" },
-                { "desc": "Earthing Clip (GC)", "qty": 2, "price": 0.20, "supplier_code": "RAY:GC" }
+                { "desc": "End Clamp 30/35mm", "qty": 4, "price": 0, "supplier_code": "RAY:END-30/35" },
+                { "desc": "Earthing Lug (GLG)", "qty": 2, "price": 0, "supplier_code": "RAY:GLG" },
+                { "desc": "Earthing Clip (GC)", "qty": 2, "price": 0, "supplier_code": "RAY:GC" }
             ],
-            "labour_surcharge": 100.00
+            "labour_surcharge": 0
         },
         "rails": {
             "portrait_per_row": 2,
             "landscape_per_row": 3,
-            "price": 25.50,
+            "price": 0,
             "length_mm": 4800,
             "clamp_gap_mm": 25,
-            "splicer_price": 1.60,
-            "supplier_code": "RAY:R-4800-BLK",
-            "splicer_code": "RAY:R-SP"
+            "splicer_price": 0,
+            "supplier_code": "",
+            "splicer_code": ""
         },
         "landscape_extras": {
-            "tin_attachment_price": 1.60, "tin_attachment_code": "RAY:TH-L",
-            "tile_attachment_price": 4.90, "tile_attachment_code": "RAY:RH-1#",
+            "tin_attachment_price": 0, "tin_attachment_code": "",
+            "tile_attachment_price": 0, "tile_attachment_code": "",
             "attachments_per_row": 4
+        },
+        "kliplock": {
+            "clamps_per_panel": 2,
+            "profiles": {
+                "kliplock_406": { "label": "Klip-Lok 406", "price": 0, "supplier_code": "" },
+                "kliplock_700": { "label": "Klip-Lok 700", "price": 0, "supplier_code": "" },
+                "kliplock_606": { "label": "Universal 406/700", "price": 0, "supplier_code": "" },
+                "kliplock_105": { "label": "Klip-Lok 105", "price": 0, "supplier_code": "" }
+            },
+            "default_profile": "kliplock_606",
+            "mid_clamp": { "label": "Mid Clamp 30/35mm", "price": 0, "supplier_code": "" },
+            "end_clamp": { "label": "End Clamp 30/35mm", "price": 0, "supplier_code": "" },
+            "earthing_clip": { "label": "Earthing Clip", "price": 0, "per_panel": 1, "supplier_code": "" },
+            "earthing_lug": { "label": "Earthing Lug", "price": 0, "per_array": 2, "supplier_code": "" }
         }
     }
 }

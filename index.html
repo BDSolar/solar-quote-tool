@@ -6,7 +6,7 @@
     <title>Black Diamond Solar  -  Quote Builder</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -14,13 +14,16 @@
     <div class="toolbar" id="mainToolbar">
         <img class="toolbar-logo-left" src="BDS_Logo_-_Black.png" alt="Black Diamond Solar">
         <select id="repSelect" class="toolbar-rep-select"><option value="">Rep...</option></select>
+        <select id="contractorSelect" class="toolbar-rep-select"><option value="">Contractor...</option></select>
         <div class="toolbar-actions" id="toolbarActions">
-            <button class="toolbar-btn" onclick="clearQuote()">New</button>
-            <button class="toolbar-btn primary" onclick="saveQuote()">Save</button>
-            <button class="toolbar-btn" onclick="generateQuote()">Print</button>
-            <button class="toolbar-btn" onclick="showBOM()">BOM</button>
-            <button class="toolbar-btn" onclick="toggleSearch()"><svg class="mag-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg></button>
-            <button class="toolbar-btn toolbar-btn-demo" onclick="loadDemoData()">Demo</button>
+            <button class="toolbar-pill" onclick="clearQuote()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg> New</button>
+            <button class="toolbar-pill primary" onclick="saveQuote()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Save</button>
+            <button class="toolbar-pill" onclick="generateQuote()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg> Print</button>
+            <span class="toolbar-divider"></span>
+            <button class="toolbar-pill subtle" onclick="showBOM()">BOM</button>
+            <button class="toolbar-pill subtle" onclick="toggleSearch()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg></button>
+            <button class="toolbar-pill demo" onclick="loadDemoData()">Demo</button>
+            <a href="admin.html" class="toolbar-pill subtle" style="text-decoration:none;" title="Contractor Admin"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg></a>
         </div>
         <div class="search-overlay" id="searchOverlay">
             <input type="text" id="quoteSearchInput" placeholder="Search by name, address, or phone...">
@@ -83,54 +86,63 @@
                 <div id="cecApproved" class="cec-shield approved" style="display:none;"></div>
             </div>
             <div class="section">
-                <div class="section-title collapsible" onclick="this.classList.toggle('open');this.nextElementSibling.style.display=this.classList.contains('open')?'block':'none'">Accessories &amp; Add-Ons<span class="collapse-arrow"></span></div>
+                <div class="section-title collapsible" onclick="this.classList.toggle('open');this.nextElementSibling.style.display=this.classList.contains('open')?'block':'none'">Installation Details<span class="collapse-arrow"></span></div>
+                <div class="collapsible-content" style="display:none;">
+                <div class="grid-2">
+                    <div class="form-group"><label>Building Storeys</label><select id="storeyCount"><option value="1">Single Storey</option><option value="2">Double Storey</option></select></div>
+                    <div class="form-group" id="roofTypeGroup"><label>Roof Type</label><select id="roofType"><option value="metal">Metal</option><option value="tile">Tile</option><option value="concrete">Concrete/Terracotta</option><option value="kliplock">Klip Lock</option><option value="terracotta">Terracotta</option><option value="flat">Flat</option></select></div>
+                </div>
+                <div class="grid-2">
+                    <div class="form-group" id="numRowsGroup"><label>Number of Rows</label><input type="number" id="numRows" value="1" min="1" max="20" step="1"></div>
+                    <div class="form-group" id="numArraysGroup"><label>Split Arrays (roof sections)</label><input type="number" id="numArrays" value="1" min="1" max="10" step="1"></div>
+                </div>
+                <div class="grid-2">
+                    <div class="form-group" id="mountingTypeGroup"><label>Battery Mounting Type</label><select id="mountingType"><option value="wall">Wall Mount</option><option value="ground" selected>Ground Mount</option></select></div>
+                    <div class="form-group" id="orientationGroup"><label>Panel Orientation</label><select id="panelOrientation"><option value="portrait">Portrait</option><option value="landscape">Landscape</option></select></div>
+                </div>
+                <div id="wallMountWarningGroup" style="display:none;"><div id="wallMountWarning" class="cec-shield warning" style="margin-top:0;font-size:12px;"></div></div>
+                <div id="tiltAngleGroup" style="display:none;">
+                    <div class="form-group"><label>Tilt Angle (Flat Roof)</label><select id="tiltAngle"><option value="10_15">10-15&deg;</option><option value="15_30">15-30&deg;</option><option value="30_60">30-60&deg;</option></select></div>
+                </div>
+                <div id="kliplockProfileGroup" style="display:none;">
+                    <div class="form-group"><label>Kliplock Profile</label><select id="kliplockProfile" onchange="syncStateFromDOM();calculateQuote()"><option value="kliplock_606">Universal 406/700 (Recommended)</option><option value="kliplock_700">Klip-Lok 700</option><option value="kliplock_406">Klip-Lok 406</option><option value="kliplock_105">Klip-Lok 105</option></select></div>
+                </div>
+                </div>
+            </div>
+            <div class="section">
+                <div class="section-title collapsible" onclick="this.classList.toggle('open');this.nextElementSibling.style.display=this.classList.contains('open')?'block':'none'">Accessories<span class="collapse-arrow"></span></div>
                 <div class="collapsible-content" style="display:none;">
                 <div id="accessoriesContainer"></div>
                 <div id="customAddons"></div>
                 <button class="add-custom-btn" onclick="addCustomAddon()">+ Add Custom Item</button>
                 </div>
             </div>
-            <div class="section">
-                <div class="section-title collapsible" onclick="this.classList.toggle('open');this.nextElementSibling.style.display=this.classList.contains('open')?'block':'none'">Installation Details<span class="collapse-arrow"></span></div>
+            <div class="section" id="installCostsSection" style="display:none;">
+                <div class="section-title collapsible" onclick="this.classList.toggle('open');this.nextElementSibling.style.display=this.classList.contains('open')?'block':'none'">Electrical Upgrades<span class="collapse-arrow"></span></div>
                 <div class="collapsible-content" style="display:none;">
-                <div class="grid-2" id="roofOrientationRow">
-                    <div class="form-group" id="roofTypeGroup"><label>Roof Type</label><select id="roofType"><option value="metal">Metal</option><option value="tile">Tile</option><option value="concrete">Concrete/Terracotta</option><option value="flat">Flat</option></select></div>
-                    <div class="form-group" id="orientationGroup"><label>Panel Orientation</label><select id="panelOrientation"><option value="portrait">Portrait</option><option value="landscape">Landscape</option></select></div>
+                <div id="rcAutoItems" style="display:none;"></div>
+                <div id="rcStandardItems"></div>
+                <div id="rcCheckboxItems"></div>
+                <div id="rcAddonSection">
+                    <div class="rc-addon-header">
+                        <select id="rcAddonSelect" class="rc-addon-dropdown"><option value="">+ Add item...</option></select>
+                    </div>
+                    <div id="rcAddonRows"></div>
                 </div>
-                <div class="grid-2" id="rowsArraysRow">
-                    <div class="form-group" id="numRowsGroup"><label>Number of Rows</label><input type="number" id="numRows" value="1" min="1" max="20" step="1"></div>
-                    <div class="form-group" id="numArraysGroup"><label>Split Arrays (roof sections)</label><input type="number" id="numArrays" value="1" min="1" max="10" step="1"></div>
+                <div class="grid-2" id="rcBackupTravelRow">
+                    <div class="form-group" id="rcBackupCircuits" style="display:none;"><label>Backup Circuits (inc RCBO)</label><input type="number" id="backupCircuitCount" min="0" max="20" value="0" step="1"></div>
+                    <div class="form-group" id="rcTravelSection" style="display:none;"><label>Travel Distance (km)</label><input type="number" id="travelDistanceKm" min="0" value="0" step="1"></div>
                 </div>
-                <div id="tiltAngleGroup" style="display:none;">
-                    <div class="form-group"><label>Tilt Angle (Flat Roof)</label><select id="tiltAngle"><option value="10_15">10-15&deg;</option><option value="15_30">15-30&deg;</option><option value="30_60">30-60&deg;</option></select></div>
-                </div>
-                <div class="grid-2" id="batteryMountGroup" style="align-items:end;">
-                    <div class="form-group" id="mountingTypeGroup"><label>Battery Mounting Type</label><select id="mountingType"><option value="wall">Wall Mount</option><option value="ground" selected>Ground Mount</option></select></div>
-                    <div id="wallMountWarningGroup" style="display:none;padding-bottom:1px;"><div id="wallMountWarning" class="cec-shield warning" style="margin-top:0;font-size:12px;"></div></div>
-                </div>
+                <span id="rcSubtotal" style="display:none;">$0</span>
                 </div>
             </div>
-            <div class="section">
-                <div class="section-title collapsible" onclick="this.classList.toggle('open');this.nextElementSibling.style.display=this.classList.contains('open')?'block':'none'">Rates &amp; Margins<span class="collapse-arrow"></span></div>
-                <div class="collapsible-content" style="display:none;">
-                <div class="grid-2">
-                    <div class="form-group" id="installPvGroup"><label>PV Install ($/kW)</label><input type="number" id="installPerKwPv" min="0" step="1"></div>
-                    <div class="form-group" id="installBatGroup"><label>Battery Install (per stack)</label><input type="number" id="installPerStack" min="0" step="1"></div>
-                </div>
-                <div class="grid-2">
-                    <div class="form-group"><label>STC Price ($/cert)</label><input type="number" id="stcPrice" step="0.5" min="0"></div>
-                    <div class="form-group"><label>Deeming Period (yrs)</label><input type="number" id="stcDeemingPeriod" step="1" min="1" max="10" class="readonly-field" readonly></div>
-                </div>
-                <div class="grid-2">
-                    <div class="form-group"><label>Battery Rebate ($/kWh)</label><input type="number" id="batteryRebatePerKwh" step="1" class="readonly-field" readonly></div>
-                    <div class="form-group"><label>GP Margin (%)</label><input type="number" id="gpMargin" min="0" max="100" step="0.1"></div>
-                </div>
-                <div class="grid-2">
-                    <div class="form-group"><label>Sales Commission (%)</label><input type="number" id="salesCommission" min="0" max="100" step="0.1"></div>
-                    <div class="form-group"></div>
-                </div>
-                </div>
-            </div>
+            <input type="hidden" id="installPerKwPv">
+            <input type="hidden" id="installPerStack">
+            <input type="hidden" id="stcPrice">
+            <input type="hidden" id="stcDeemingPeriod">
+            <input type="hidden" id="batteryRebatePerKwh">
+            <input type="hidden" id="gpMargin">
+            <input type="hidden" id="salesCommission">
         </div>
         <div class="quote-summary">
             <div class="price-card">
@@ -138,6 +150,7 @@
                     <div class="pc-hero-label">Customer Price</div>
                     <div class="pc-hero-price" id="customerPriceDisplay">$0</div>
                     <div class="pc-hero-sub">inc GST after rebates</div>
+                    <div class="pc-hero-system" id="systemSummaryLine"></div>
                 </div>
                 <div class="pc-urgency" id="urgencyBanner" style="display:none;">
                     <div class="pc-urg-left">
@@ -162,6 +175,12 @@
                         <div class="pc-inv-title">Add-ons</div>
                         <div id="summaryAddonRows"></div>
                     </div>
+                    <div class="pc-inv-section" id="summaryInstallCard" style="display:none;">
+                        <div class="pc-inv-title" id="summaryInstallTitle">Installation</div>
+                        <div id="summaryInstallRows"></div>
+                        <div class="pc-inv-divider"></div>
+                        <div class="pc-inv-total"><span>Install Subtotal</span><span id="installSubtotal">$0</span></div>
+                    </div>
                     <div class="pc-inv-divider"></div>
                     <div class="pc-inv-total"><span>Price Before Rebates</span><span id="priceBeforeRebates">$0</span></div>
                     <div class="pc-inv-row"><span>GST</span><span id="gstAmount">$0</span></div>
@@ -175,6 +194,13 @@
             </div>
         </div>
     </div>
+</div>
+
+<!-- Mobile Floating Price Bar -->
+<div class="mobile-price-bar" id="mobilePriceBar">
+    <div class="mpb-label">Customer Price</div>
+    <div class="mpb-price" id="mobilePriceDisplay">$0</div>
+    <div class="mpb-sub">inc GST</div>
 </div>
 
 <!-- BOM Overlay -->
