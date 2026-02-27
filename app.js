@@ -3190,8 +3190,8 @@ function showBOM() {
     });
     document.getElementById('bomContent').innerHTML = html;
 
-    const partsTotal = bom.filter(g => g.category !== 'Installation (Labour)').reduce((s, g) => s + g.items.reduce((s2, i) => s2 + i.total, 0), 0);
-    const installTotal = bom.filter(g => g.category === 'Installation (Labour)').reduce((s, g) => s + g.items.reduce((s2, i) => s2 + i.total, 0), 0);
+    const partsTotal = bom.filter(g => !g.category.startsWith('Installation')).reduce((s, g) => s + g.items.reduce((s2, i) => s2 + i.total, 0), 0);
+    const installTotal = bom.filter(g => g.category.startsWith('Installation')).reduce((s, g) => s + g.items.reduce((s2, i) => s2 + i.total, 0), 0);
     const zoneResult = lookupZone(document.getElementById('installPostcode').value);
     const zoneRating = zoneResult ? zoneResult.rating : 0;
     const pvStcCount = zoneRating > 0 ? Math.floor(state.sysKw * zoneRating * state.deemingPeriod) : 0;
