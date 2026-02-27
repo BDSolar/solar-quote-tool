@@ -3198,9 +3198,11 @@ function showBOM() {
     const pvReb = pvStcCount * state.stcPrice, batSummary = getBatterySummary(), batUsable = (parallelResult && parallelResult.isParallel) ? parallelResult.totalUsableKwh : (dualStackResult && dualStackResult.isDualStack) ? dualStackResult.totalUsableKwh : batSummary.usableKwh, batReb = calcBatteryRebate(batUsable, state.batteryRebatePerKwh);
     let totHtml = '<table style="width:100%; font-size:14px; border-collapse:collapse;">';
     const totRow = (l, v, s) => '<tr style="' + (s || '') + '"><td style="padding:8px 0; color:#9ca3af;">' + l + '</td><td style="padding:8px 0; text-align:right; color:#f0f0f0; font-weight:500;">' + v + '</td></tr>';
+    const gpAmt = grandTotal * (state.gpMargin / 100);
     totHtml += totRow('Parts & Accessories', fmtExGst(partsTotal));
     totHtml += totRow('Installation (Labour)', fmtExGst(installTotal));
     totHtml += totRow('Total COG (ex GST)', fmtExGst(grandTotal), 'border-top:1px solid #333; font-weight:700;');
+    totHtml += totRow('GP (' + state.gpMargin + '%)', fmtExGst(gpAmt));
     if (pvReb > 0) totHtml += totRow('PV STC Rebate (' + pvStcCount + ' STCs)', '-' + fmtExGst(pvReb), 'color:#34d399;');
     if (batReb > 0) totHtml += totRow('Battery STC Rebate', '-' + fmtExGst(batReb), 'color:#34d399;');
     totHtml += '</table>';
