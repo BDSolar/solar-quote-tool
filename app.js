@@ -23,6 +23,12 @@ let rateCardResult = null; // result of calculateInstallationCosts()
 let installationAddons = { standardItems: {}, checkboxItems: {}, addonItems: {} };
 
 // ====================
+// DEBOUNCE UTILITY
+// ====================
+function debounce(fn, ms) { let t; return function() { clearTimeout(t); t = setTimeout(fn, ms); }; }
+const debouncedCalculateQuote = debounce(() => calculateQuote(), 150);
+
+// ====================
 // SUPABASE INIT
 // ====================
 
@@ -1727,7 +1733,7 @@ function updateStepperBatteryLabel() {
 
 function bindEvents() {
     const dedicatedIds = ['inverterSelect','phaseType','desiredBatteryKwh','manufacturerSelect','batteryTypeSelect','roofType','panelOrientation','numRows','numArrays','tiltAngle','gatewaySelect','installPostcode','systemTypeSelect'];
-    document.querySelectorAll('input, select').forEach(el => { if (!dedicatedIds.includes(el.id)) { el.addEventListener('input', calculateQuote); el.addEventListener('change', calculateQuote); } });
+    document.querySelectorAll('input, select').forEach(el => { if (!dedicatedIds.includes(el.id)) { el.addEventListener('input', debouncedCalculateQuote); el.addEventListener('change', calculateQuote); } });
     document.getElementById('installPostcode').addEventListener('input', function() { this.value = this.value.replace(/\D/g, '').slice(0, 4); updateZoneDisplay(); calculateQuote(); });
     document.getElementById('systemTypeSelect').addEventListener('change', onSystemTypeChange);
     document.querySelectorAll('.sys-tab').forEach(function(tab) {
@@ -3385,10 +3391,13 @@ function collectQuoteData() {
             panelMode: state.panelMode,
             panelCount: state.panelCount,
             panelSelectIdx: document.getElementById('panelSelect').selectedIndex,
+            panelValue: document.getElementById('panelSelect').value,
             desiredBatteryKwh: state.desiredBatteryKwh,
             inverterSelectIdx: document.getElementById('inverterSelect').selectedIndex,
+            inverterValue: document.getElementById('inverterSelect').value,
             userChangedInverter: userChangedInverter,
             gatewaySelectIdx: document.getElementById('gatewaySelect').selectedIndex,
+            gatewayValue: document.getElementById('gatewaySelect').value,
             selectedAccessories: selectedAccessories.map(function(a) {
                 var copy = { id: a.id, label: a.label, price: a.price, type: a.type, supplier_code: a.supplier_code || '' };
                 if (a.type === 'ev_charger') { copy.evModel = a.evModel; copy.evDesc = a.evDesc || ''; copy.evSupplierCode = a.evSupplierCode || ''; }
@@ -3669,7 +3678,8 @@ async function loadQuote(quoteId) {
         syncSegmentedFromSelect('phaseType');
         populateInverters(); populateGateways();
 
-        if (s.panelSelectIdx != null) document.getElementById('panelSelect').selectedIndex = s.panelSelectIdx;
+        if (s.panelValue) { document.getElementById('panelSelect').value = s.panelValue; }
+        else if (s.panelSelectIdx != null) document.getElementById('panelSelect').selectedIndex = s.panelSelectIdx;
         document.getElementById('panelCount').value = s.panelCount || CONFIG.default_panel_count;
         syncStepperDisplay(); updateStepperPanelLabel(); syncBatteryStepperDisplay(); updateStepperBatteryLabel();
 
@@ -3677,9 +3687,11 @@ async function loadQuote(quoteId) {
         buildBatteryUI();
 
         userChangedInverter = s.userChangedInverter || false;
-        if (s.inverterSelectIdx != null) document.getElementById('inverterSelect').selectedIndex = s.inverterSelectIdx;
+        if (s.inverterValue) { document.getElementById('inverterSelect').value = s.inverterValue; }
+        else if (s.inverterSelectIdx != null) document.getElementById('inverterSelect').selectedIndex = s.inverterSelectIdx;
 
-        if (s.gatewaySelectIdx != null) document.getElementById('gatewaySelect').selectedIndex = s.gatewaySelectIdx;
+        if (s.gatewayValue) { document.getElementById('gatewaySelect').value = s.gatewayValue; }
+        else if (s.gatewaySelectIdx != null) document.getElementById('gatewaySelect').selectedIndex = s.gatewaySelectIdx;
         else if (s.addGateway && document.getElementById('gatewaySelect').options.length > 1) document.getElementById('gatewaySelect').selectedIndex = 1;
 
         // Restore accessories
