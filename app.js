@@ -609,7 +609,7 @@ function getBatteryRules() {
 
 const state = {
     phase: 'single_phase', panelMode: 'panels', panelCount: 0, panelWattage: 450, panelCost: 200,
-    panelBrand: '', panelModel: '', panelColour: '', panelWidthMm: 1134, panelHeightMm: 1800, panelSupplierCode: '',
+    panelManufacturer: '', panelModel: '', panelColour: '', panelWidthMm: 1134, panelHeightMm: 1800, panelSupplierCode: '',
     sysKw: 0, desiredBatteryKwh: 0, actualBatteryKwh: 0,
     invSku: '', invPrice: 0, invKw: 0, invMaxPv: 0, invSupplierCode: '',
     gpMargin: 0, salesCommission: 0, stcPrice: 0, deemingPeriod: 0, batteryRebatePerKwh: 0,
@@ -642,7 +642,7 @@ function syncStateFromDOM() {
     if (panelOpt) {
         state.panelWattage = parseFloat(panelOpt.dataset.wattage) || 450;
         state.panelCost = parseFloat(panelOpt.dataset.price) || 200;
-        state.panelBrand = panelOpt.dataset.brand || '';
+        state.panelManufacturer = panelOpt.dataset.manufacturer || '';
         state.panelModel = panelOpt.dataset.model || '';
         state.panelColour = panelOpt.dataset.colour || '';
         state.panelWidthMm = parseInt(panelOpt.dataset.widthMm) || 1134;
@@ -1011,7 +1011,7 @@ function reconstructConfig(baseConfig, tables, batteryPackages, bmsParts, busine
     // --- Panels (from panels table) ---
     var panelRows = (tables.panels || []).sort(function(a, b) { return a.sort_order - b.sort_order; });
     cfg.panels = panelRows.map(function(p) {
-        return { brand: p.brand, model: p.model, wattage: p.wattage, price: Number(p.price),
+        return { manufacturer: p.manufacturer, model: p.model, wattage: p.wattage, price: Number(p.price),
                  colour: p.colour, width_mm: p.width_mm, height_mm: p.height_mm, supplier_code: p.supplier_code };
     });
 
@@ -1774,8 +1774,8 @@ function populatePanels() {
     const sel = document.getElementById('panelSelect'); sel.innerHTML = '';
     CONFIG.panels.forEach((p, idx) => {
         const o = document.createElement('option'); o.value = idx;
-        o.textContent = p.brand + ' ' + p.model + ' ' + p.wattage + 'W ' + p.colour;
-        o.dataset.wattage = p.wattage; o.dataset.price = p.price; o.dataset.brand = p.brand; o.dataset.model = p.model;
+        o.textContent = p.manufacturer + ' ' + p.model + ' ' + p.wattage + 'W ' + p.colour;
+        o.dataset.wattage = p.wattage; o.dataset.price = p.price; o.dataset.manufacturer = p.manufacturer; o.dataset.model = p.model;
         o.dataset.colour = p.colour; o.dataset.widthMm = p.width_mm || 1134; o.dataset.heightMm = p.height_mm || 1800; o.dataset.supplierCode = p.supplier_code || '';
         sel.appendChild(o);
     });
@@ -2901,7 +2901,7 @@ function updateSummaryComponents(isDualStack, isParallel, bat, costRoofKit, cost
 
     // --- PV Equipment ---
     if (!batteryOnly && state.panelCount > 0) {
-        var panelDesc = state.panelBrand + ' ' + state.panelModel + ' ' + state.panelWattage + 'W';
+        var panelDesc = state.panelManufacturer + ' ' + state.panelModel + ' ' + state.panelWattage + 'W';
         if (state.panelColour) panelDesc += ' ' + state.panelColour;
         pvHtml += summaryRow(panelDesc, state.panelCount);
         if (costRoofKit > 0) pvHtml += summaryRow('Roof Mounting Kit', 1);
@@ -3091,7 +3091,7 @@ function buildBOM() {
     // === PV EQUIPMENT (skip for battery-only) ===
     if (!batteryOnly && state.panelCount > 0) {
         let pvItems = [];
-        pvItems.push({ desc: state.panelBrand + ' ' + state.panelModel + ' ' + state.panelWattage + 'W ' + state.panelColour, sku: state.panelModel, qty: state.panelCount, unit: state.panelCost, total: state.panelCount * state.panelCost, supplier_code: state.panelSupplierCode });
+        pvItems.push({ desc: state.panelManufacturer + ' ' + state.panelModel + ' ' + state.panelWattage + 'W ' + state.panelColour, sku: state.panelModel, qty: state.panelCount, unit: state.panelCost, total: state.panelCount * state.panelCost, supplier_code: state.panelSupplierCode });
         getMountingKitItems(state.panelCount, roofType, state.orientation, state.numRows, state.numArrays, state.tiltAngle, state.panelWidthMm, state.panelHeightMm).items.forEach(item => pvItems.push(item));
         if (roof.surcharge > 0) pvItems.push({ desc: roof.label + ' Roof Surcharge', sku: '', qty: 1, unit: roof.surcharge, total: roof.surcharge, supplier_code: 'BDS:ROOF-SURCHARGE' });
         
@@ -4197,9 +4197,9 @@ function updateSystemSummaryLine() {
 
 const DEFAULT_CONFIG = {
     "panels": [
-        { "brand": "Longi", "model": "X10", "wattage": 475, "price": 121.13, "colour": "Black", "width_mm": 1134, "height_mm": 1800, "supplier_code": "RAY:LONGI-X10-475" },
-        { "brand": "Longi", "model": "Hi-MO 7", "wattage": 450, "price": 200, "colour": "Black", "width_mm": 1134, "height_mm": 1722, "supplier_code": "RAY:LONGI-HIMO7-450" },
-        { "brand": "Longi", "model": "Hi-MO 7", "wattage": 440, "price": 190, "colour": "Silver", "width_mm": 1134, "height_mm": 1722, "supplier_code": "RAY:LONGI-HIMO7-440" }
+        { "manufacturer": "Longi", "model": "X10", "wattage": 475, "price": 121.13, "colour": "Black", "width_mm": 1134, "height_mm": 1800, "supplier_code": "RAY:LONGI-X10-475" },
+        { "manufacturer": "Longi", "model": "Hi-MO 7", "wattage": 450, "price": 200, "colour": "Black", "width_mm": 1134, "height_mm": 1722, "supplier_code": "RAY:LONGI-HIMO7-450" },
+        { "manufacturer": "Longi", "model": "Hi-MO 7", "wattage": 440, "price": 190, "colour": "Silver", "width_mm": 1134, "height_mm": 1722, "supplier_code": "RAY:LONGI-HIMO7-440" }
     ],
     "manufacturers": {
         "sigenergy": {

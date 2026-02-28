@@ -966,8 +966,8 @@ function switchPricingSection(section) {
 
 // Table-specific column definitions
 var TABLE_COLUMNS = {
-    panel:            { headers: ['SKU','Brand','Model','Wattage','Colour','Price','Supplier Code','Active',''],
-                        row: function(p,t) { return '<td class="' + (!p.active?' inactive':'') + '">' + esc(p.sku) + '</td><td>' + esc(p.brand||'') + '</td><td>' + esc(p.model||'') + '</td><td>' + (p.wattage||'') + 'W</td><td>' + esc(p.colour||'') + '</td><td><input type="number" value="' + (p.price!=null?p.price:'') + '" step="0.01" onblur="inlineUpdateProduct(\'' + p.id + '\',\'' + t + '\',\'price\',this.value)"></td><td style="font-size:11px;color:var(--text-tertiary);font-family:monospace;">' + esc(p.supplier_code||'') + '</td>'; } },
+    panel:            { headers: ['SKU','Manufacturer','Model','Wattage','Colour','Price','Supplier Code','Active',''],
+                        row: function(p,t) { return '<td class="' + (!p.active?' inactive':'') + '">' + esc(p.sku) + '</td><td>' + esc(p.manufacturer||'') + '</td><td>' + esc(p.model||'') + '</td><td>' + (p.wattage||'') + 'W</td><td>' + esc(p.colour||'') + '</td><td><input type="number" value="' + (p.price!=null?p.price:'') + '" step="0.01" onblur="inlineUpdateProduct(\'' + p.id + '\',\'' + t + '\',\'price\',this.value)"></td><td style="font-size:11px;color:var(--text-tertiary);font-family:monospace;">' + esc(p.supplier_code||'') + '</td>'; } },
     inverter:         { headers: ['SKU','Mfr','Phase','kW','Max PV','Solar Only','Price','Supplier Code','Active',''],
                         row: function(p,t) { var mfrC = p.manufacturer==='sigenergy'?'sig':'solax'; var mfrL = p.manufacturer==='sigenergy'?'SIG':'SOLAX'; return '<td class="' + (!p.active?' inactive':'') + '">' + esc(p.sku) + '</td><td><span class="mfr-badge ' + mfrC + '">' + mfrL + '</span></td><td style="font-size:11px;color:var(--text-tertiary);">' + fmtPhase(p.phase) + '</td><td>' + (p.kw||'') + '</td><td>' + (p.max_pv_kw||'') + '</td><td>' + (p.solar_only?'Yes':'\u2014') + '</td><td><input type="number" value="' + (p.price!=null?p.price:'') + '" step="0.01" onblur="inlineUpdateProduct(\'' + p.id + '\',\'' + t + '\',\'price\',this.value)"></td><td style="font-size:11px;color:var(--text-tertiary);font-family:monospace;">' + esc(p.supplier_code||'') + '</td>'; } },
     battery_module:   { headers: ['SKU','Mfr','Type','kWh','Usable','Enabled','Price','Supplier Code','Active',''],
@@ -1180,7 +1180,7 @@ function renderTypeFields(type, p) {
     var html = '';
 
     if (type === 'panel') {
-        html += '<div class="grid-2"><div class="form-group"><label>Brand</label><input type="text" id="tf_brand" value="' + esc(p && p.brand || '') + '"></div>';
+        html += '<div class="grid-2"><div class="form-group"><label>Manufacturer</label><input type="text" id="tf_manufacturer" value="' + esc(p && p.manufacturer || '') + '"></div>';
         html += '<div class="form-group"><label>Model</label><input type="text" id="tf_model" value="' + esc(p && p.model || '') + '"></div></div>';
         html += '<div class="grid-2"><div class="form-group"><label>Wattage (W)</label><input type="number" id="tf_wattage" value="' + (p && p.wattage || '') + '"></div>';
         html += '<div class="form-group"><label>Colour</label><input type="text" id="tf_colour" value="' + esc(p && p.colour || '') + '"></div></div>';
@@ -1254,7 +1254,7 @@ function buildTypeData(type) {
     };
 
     if (type === 'panel') {
-        Object.assign(data, { brand: val('tf_brand') || null, model: val('tf_model') || null, wattage: num('tf_wattage'), colour: val('tf_colour') || null, width_mm: num('tf_width_mm'), height_mm: num('tf_height_mm'), price: num('tf_price') });
+        Object.assign(data, { manufacturer: val('tf_manufacturer') || null, model: val('tf_model') || null, wattage: num('tf_wattage'), colour: val('tf_colour') || null, width_mm: num('tf_width_mm'), height_mm: num('tf_height_mm'), price: num('tf_price') });
     } else if (type === 'inverter') {
         Object.assign(data, { manufacturer: val('tf_manufacturer'), phase: val('tf_phase'), kw: num('tf_kw'), max_pv_kw: num('tf_max_pv_kw'), solar_only: chk('tf_solar_only'), price: num('tf_price') });
     } else if (type === 'battery_module') {
