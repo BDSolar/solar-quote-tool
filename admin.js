@@ -13,6 +13,40 @@ try {
     console.warn('[!] Supabase init failed:', err);
 }
 
+// === AUTH ===
+async function checkAuth() {
+    if (!sb) return false;
+    var { data } = await sb.auth.getSession();
+    return !!(data && data.session);
+}
+
+async function handleLogin(e) {
+    e.preventDefault();
+    var email = document.getElementById('loginEmail').value.trim();
+    var pw = document.getElementById('loginPassword').value;
+    var errEl = document.getElementById('loginError');
+    errEl.style.display = 'none';
+    if (!sb) { errEl.textContent = 'Database not available'; errEl.style.display = 'block'; return; }
+    var { error } = await sb.auth.signInWithPassword({ email: email, password: pw });
+    if (error) {
+        errEl.textContent = error.message || 'Login failed';
+        errEl.style.display = 'block';
+        return;
+    }
+    document.getElementById('loginOverlay').style.display = 'none';
+    document.getElementById('adminContainer').style.display = '';
+    loadContractors();
+}
+
+async function handleLogout() {
+    if (!sb) return;
+    await sb.auth.signOut();
+    document.getElementById('adminContainer').style.display = 'none';
+    document.getElementById('loginOverlay').style.display = 'flex';
+    document.getElementById('loginPassword').value = '';
+    document.getElementById('loginError').style.display = 'none';
+}
+
 // === STATE ===
 let contractors = [];
 let selectedContractorId = null;
@@ -1460,6 +1494,11 @@ async function applyBulkImport() {
 // ==============================
 // INIT
 // ==============================
-document.addEventListener('DOMContentLoaded', () => {
-    loadContractors();
+document.addEventListener('DOMContentLoaded', async () => {
+    var authed = await checkAuth();
+    if (authed) {
+        document.getElementById('loginOverlay').style.display = 'none';
+        document.getElementById('adminContainer').style.display = '';
+        loadContractors();
+    }
 });

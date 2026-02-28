@@ -43,6 +43,20 @@ try {
 }
 
 // ====================
+// ADMIN SESSION CHECK (shows BOM button for authenticated users)
+// ====================
+async function checkAdminSession() {
+    if (!supabaseClient) return;
+    try {
+        var { data } = await supabaseClient.auth.getSession();
+        if (data && data.session) {
+            var btn = document.getElementById('bomBtn');
+            if (btn) btn.style.display = '';
+        }
+    } catch (e) { /* silent */ }
+}
+
+// ====================
 // REP LOADING
 // ====================
 
@@ -954,7 +968,7 @@ function getMountingKitItems(panelCount, roofType, orientation, numRows, numArra
 // CONFIG LOADING
 // ====================
 
-document.addEventListener('DOMContentLoaded', () => { loadConfig(); });
+document.addEventListener('DOMContentLoaded', () => { loadConfig(); checkAdminSession(); });
 
 function validateConfig(cfg) {
     if (!cfg.panels) throw new Error('Config missing: panels');
