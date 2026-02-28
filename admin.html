@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Black Diamond Solar - Contractor Admin</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=3">
     <style>
         /* === ADMIN LAYOUT === */
         .admin-toolbar {
@@ -820,13 +820,13 @@
     <div class="admin-toolbar">
         <img class="toolbar-logo-left" src="BDSLogoClaer.png" alt="Black Diamond Solar">
         <div class="toolbar-mode-switcher">
-            <button class="mode-btn active" data-mode="contractors" onclick="switchAdminMode('contractors')">Contractors</button>
-            <button class="mode-btn" data-mode="pricing" onclick="switchAdminMode('pricing')">Pricing</button>
+            <button type="button" class="mode-btn active" data-mode="contractors" onclick="switchAdminMode('contractors')">Contractors</button>
+            <button type="button" class="mode-btn" data-mode="pricing" onclick="switchAdminMode('pricing')">Pricing</button>
         </div>
         <span class="toolbar-spacer"></span>
         <span id="contractorToolbarActions">
-            <button class="toolbar-pill primary" onclick="newContractor()" title="New Contractor"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg> New</button>
-            <button class="toolbar-pill" onclick="showCloneModal()" title="Clone Contractor">Clone</button>
+            <button type="button" class="toolbar-pill primary" onclick="newContractor()" title="New Contractor"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg> New</button>
+            <button type="button" class="toolbar-pill" onclick="showCloneModal()" title="Clone Contractor">Clone</button>
         </span>
         <a href="index.html" class="toolbar-link">&larr; Quote Tool</a>
     </div>
@@ -845,8 +845,8 @@
             <div class="list-header">
                 <input type="text" id="listSearch" placeholder="Search contractors..." oninput="filterContractorList()">
                 <div class="list-filter-row">
-                    <button class="filter-btn active" data-filter="active" onclick="setListFilter('active')">Active</button>
-                    <button class="filter-btn" data-filter="all" onclick="setListFilter('all')">All</button>
+                    <button type="button" class="filter-btn active" data-filter="active" onclick="setListFilter('active')">Active</button>
+                    <button type="button" class="filter-btn" data-filter="all" onclick="setListFilter('all')">All</button>
                 </div>
             </div>
             <div class="contractor-list" id="contractorList"></div>
@@ -857,8 +857,8 @@
             <div class="detail-empty" id="detailEmpty">Select a contractor to view details</div>
             <div id="detailContent" style="display:none;">
                 <div class="detail-tabs">
-                    <button class="detail-tab active" data-tab="details" onclick="switchTab('details')">Details</button>
-                    <button class="detail-tab" data-tab="ratecard" onclick="switchTab('ratecard')">Rate Card</button>
+                    <button type="button" class="detail-tab active" data-tab="details" onclick="switchTab('details')">Details</button>
+                    <button type="button" class="detail-tab" data-tab="ratecard" onclick="switchTab('ratecard')">Rate Card</button>
                 </div>
                 <div class="detail-body" id="detailBody"></div>
             </div>
@@ -872,9 +872,9 @@
         <select id="pricingCategorySelect" class="pricing-category-select" onchange="setPricingCategory(this.value)"></select>
         <select id="pricingMfrSelect" class="pricing-category-select" onchange="setPricingMfr(this.value)"></select>
         <span class="toolbar-spacer"></span>
-        <button class="btn-sm primary" onclick="openProductModal()">+ Add Product</button>
-        <button class="btn-sm" onclick="openBulkImportModal()">Bulk Import</button>
-        <button class="btn-sm" onclick="switchPricingSection('params')">Business Params</button>
+        <button type="button" class="btn-sm primary" onclick="openProductModal()">+ Add Product</button>
+        <button type="button" class="btn-sm" onclick="openBulkImportModal()">Bulk Import</button>
+        <button type="button" class="btn-sm" onclick="switchPricingSection('params')">Business Params</button>
     </div>
     <div id="pricingContent">
         <div id="productTableWrap"></div>
@@ -887,7 +887,7 @@
     <div class="modal" style="max-width:600px;">
         <div class="modal-header">
             <h3 id="productModalTitle">Add Product</h3>
-            <button class="modal-close" onclick="closeModal('productEditModal')">&times;</button>
+            <button type="button" class="modal-close" onclick="closeModal('productEditModal')">&times;</button>
         </div>
         <div class="modal-body">
             <div class="grid-2">
@@ -919,8 +919,8 @@
             <div id="prodTypeFields"></div>
         </div>
         <div class="modal-footer">
-            <button class="btn-modal-cancel" onclick="closeModal('productEditModal')">Cancel</button>
-            <button class="btn-modal-confirm" onclick="saveProduct()">Save</button>
+            <button type="button" class="btn-modal-cancel" onclick="closeModal('productEditModal')">Cancel</button>
+            <button type="button" class="btn-modal-confirm" onclick="saveProduct()">Save</button>
         </div>
     </div>
 </div>
@@ -930,7 +930,7 @@
     <div class="modal" style="max-width:600px;">
         <div class="modal-header">
             <h3>Bulk Price Update</h3>
-            <button class="modal-close" onclick="closeModal('bulkImportModal')">&times;</button>
+            <button type="button" class="modal-close" onclick="closeModal('bulkImportModal')">&times;</button>
         </div>
         <div class="modal-body">
             <p style="color:var(--text-secondary);font-size:12px;margin-bottom:12px;">Paste CSV lines: <code>supplier_code, new_price</code> (one per line). Matches existing products by supplier_code and updates their price.</p>
@@ -938,9 +938,9 @@
             <div id="bulkPreview" style="margin-top:12px;"></div>
         </div>
         <div class="modal-footer">
-            <button class="btn-sm" onclick="previewBulkImport()">Preview</button>
-            <button class="btn-modal-cancel" onclick="closeModal('bulkImportModal')">Cancel</button>
-            <button class="btn-modal-confirm" id="bulkApplyBtn" onclick="applyBulkImport()" disabled>Apply Changes</button>
+            <button type="button" class="btn-sm" onclick="previewBulkImport()">Preview</button>
+            <button type="button" class="btn-modal-cancel" onclick="closeModal('bulkImportModal')">Cancel</button>
+            <button type="button" class="btn-modal-confirm" id="bulkApplyBtn" onclick="applyBulkImport()" disabled>Apply Changes</button>
         </div>
     </div>
 </div>
@@ -950,7 +950,7 @@
     <div class="modal" style="max-width:560px;">
         <div class="modal-header">
             <h3 id="itemModalTitle">Add Item</h3>
-            <button class="modal-close" onclick="closeModal('itemEditModal')">&times;</button>
+            <button type="button" class="modal-close" onclick="closeModal('itemEditModal')">&times;</button>
         </div>
         <div class="modal-body">
             <div class="grid-2">
@@ -1029,11 +1029,11 @@
             </div>
             <div class="detail-section-title" style="font-size:14px; margin-top:16px;">Conditions</div>
             <div id="conditionsEditor"></div>
-            <button class="btn-sm" onclick="addConditionRow()" style="margin-top:6px;">+ Add Condition</button>
+            <button type="button" class="btn-sm" onclick="addConditionRow()" style="margin-top:6px;">+ Add Condition</button>
         </div>
         <div class="modal-footer">
-            <button class="btn-modal-cancel" onclick="closeModal('itemEditModal')">Cancel</button>
-            <button class="btn-modal-confirm" id="itemModalSave" onclick="saveItemFromModal()">Save</button>
+            <button type="button" class="btn-modal-cancel" onclick="closeModal('itemEditModal')">Cancel</button>
+            <button type="button" class="btn-modal-confirm" id="itemModalSave" onclick="saveItemFromModal()">Save</button>
         </div>
     </div>
 </div>
@@ -1043,7 +1043,7 @@
     <div class="modal">
         <div class="modal-header">
             <h3>Clone Contractor</h3>
-            <button class="modal-close" onclick="closeModal('cloneModal')">&times;</button>
+            <button type="button" class="modal-close" onclick="closeModal('cloneModal')">&times;</button>
         </div>
         <div class="modal-body">
             <div class="form-group">
@@ -1060,8 +1060,8 @@
             </div>
         </div>
         <div class="modal-footer">
-            <button class="btn-modal-cancel" onclick="closeModal('cloneModal')">Cancel</button>
-            <button class="btn-modal-confirm" onclick="executeClone()">Clone</button>
+            <button type="button" class="btn-modal-cancel" onclick="closeModal('cloneModal')">Cancel</button>
+            <button type="button" class="btn-modal-confirm" onclick="executeClone()">Clone</button>
         </div>
     </div>
 </div>
@@ -1071,14 +1071,14 @@
     <div class="modal" style="max-width:400px;">
         <div class="modal-header">
             <h3 id="confirmTitle">Confirm</h3>
-            <button class="modal-close" onclick="closeModal('confirmModal')">&times;</button>
+            <button type="button" class="modal-close" onclick="closeModal('confirmModal')">&times;</button>
         </div>
         <div class="modal-body">
             <p id="confirmMessage" style="color:var(--text-secondary); font-size:13px; line-height:1.5;"></p>
         </div>
         <div class="modal-footer">
-            <button class="btn-modal-cancel" onclick="closeModal('confirmModal')">Cancel</button>
-            <button class="btn-modal-confirm" id="confirmBtn" onclick="executeConfirm()">Confirm</button>
+            <button type="button" class="btn-modal-cancel" onclick="closeModal('confirmModal')">Cancel</button>
+            <button type="button" class="btn-modal-confirm" id="confirmBtn" onclick="executeConfirm()">Confirm</button>
         </div>
     </div>
 </div>
