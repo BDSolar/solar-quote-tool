@@ -8,7 +8,7 @@
             "label": "Sigenergy",
             "default_battery_type_idx": 0,
             "default_inverter_kw": 10,
-            "inverter_label": "Energy Controller",
+            "inverter_label": "Inverter/Energy Controller",
             "pv_oversizing": { "single_phase": 2.0, "three_phase": 1.6 },
             "inverters": {
                 "single_phase": [],
@@ -67,7 +67,7 @@
             "label": "SolaX",
             "default_battery_type_idx": 1,
             "default_inverter_kw": 10,
-            "inverter_label": "Hybrid Inverter",
+            "inverter_label": "Inverter/Energy Controller",
             "pv_oversizing": { "single_phase": 2.0, "three_phase": 2.0 },
             "inverters": {
                 "single_phase": [],

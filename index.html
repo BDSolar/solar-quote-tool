@@ -3,16 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Black Diamond Solar  -  Quote Builder</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
+    <title>Black Diamond Solar - Quote Builder</title>
+    <link rel="stylesheet" href="style.css?v=2">
 </head>
-<body>
+<body spellcheck="false" autocomplete="off">
 <div class="container">
-    <div class="toolbar" id="mainToolbar">
-        <img class="toolbar-logo-left" src="BDS_Logo_-_Black.png" alt="Black Diamond Solar">
+    <!-- Header -->
+    <header class="toolbar" id="mainToolbar">
+        <img class="toolbar-logo-left" src="BDSLogoClaer.png" alt="Black Diamond Solar">
         <select id="repSelect" class="toolbar-rep-select"><option value="">Rep...</option></select>
         <select id="contractorSelect" class="toolbar-rep-select"><option value="">Contractor...</option></select>
         <div class="toolbar-actions" id="toolbarActions">
@@ -28,52 +26,133 @@
         <div class="search-overlay" id="searchOverlay">
             <input type="text" id="quoteSearchInput" placeholder="Search by name, address, or phone...">
         </div>
-    </div>
-    <div id="quoteSearchResults" style="display:none;margin-bottom:16px;"></div>
+    </header>
+    <div id="quoteSearchResults" style="display:none;margin:0 32px 16px;"></div>
+
+    <!-- Main Content -->
     <div class="content">
         <div class="form-section">
+            <!-- Customer Card -->
             <div class="section">
-                <div class="section-title">Customer Information</div>
-                <div class="form-group"><label>Customer Name</label><input type="text" id="customerName" placeholder="Enter customer name"></div>
-                <div class="grid-2">
-                    <div class="form-group"><label>Phone</label><input type="tel" id="customerPhone" placeholder="e.g. 0412 345 678"></div>
-                    <div class="form-group"><label>Email</label><input type="email" id="customerEmail" placeholder="e.g. name@example.com"></div>
+                <div class="section-title">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0066ff" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></svg>
+                    Customer Information
                 </div>
-                <div class="form-group"><label>Street Address</label><input type="text" id="installAddress" placeholder="e.g. 42 Smith Street"></div>
-                <div class="grid-2">
-                    <div class="form-group"><label>Suburb</label><input type="text" id="installSuburb" placeholder="e.g. Parramatta"></div>
-                    <div class="form-group"><label>State</label><select id="installState"><option value="">--</option><option value="NSW">NSW</option><option value="VIC">VIC</option><option value="QLD">QLD</option><option value="SA">SA</option><option value="WA">WA</option><option value="TAS">TAS</option><option value="NT">NT</option><option value="ACT">ACT</option></select></div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+                    <div class="form-group"><label>Customer Name</label><input type="text" id="customerName" placeholder="Full name"></div>
+                    <div class="form-group"><label>Email</label><input type="email" id="customerEmail" placeholder="name@example.com"></div>
+                    <div class="form-group"><label>Street Address</label><input type="text" id="installAddress" placeholder="Street address"></div>
+                    <div class="form-group"><label>Suburb</label><input type="text" id="installSuburb" placeholder="Suburb"></div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+                        <div class="form-group"><label>State</label><select id="installState"><option value="">--</option><option value="NSW">NSW</option><option value="VIC">VIC</option><option value="QLD">QLD</option><option value="SA">SA</option><option value="WA">WA</option><option value="TAS">TAS</option><option value="NT">NT</option><option value="ACT">ACT</option></select></div>
+                        <div class="form-group"><label>Postcode <span style="color:var(--red)">*</span></label><input type="text" id="installPostcode" placeholder="2000" maxlength="4" inputmode="numeric" pattern="[0-9]*"></div>
+                    </div>
+                    <div class="form-group"><label>Phone</label><input type="tel" id="customerPhone" placeholder="0400 000 000"></div>
                 </div>
+                <div class="form-group" style="display:none;"><label>STC Zone</label><div class="info-box" id="stcZoneInfo" style="margin-top:0;font-size:13px;">Enter postcode</div></div>
+            </div>
+
+            <!-- Installation Details Card -->
+            <div class="section">
+                <div class="section-title collapsible" onclick="this.classList.toggle('open');this.nextElementSibling.style.display=this.classList.contains('open')?'block':'none'">
+                    <span style="display:flex;align-items:center;gap:14px;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ff9500" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+                        Installation Details
+                    </span>
+                    <span class="collapse-arrow"></span>
+                </div>
+                <div class="collapsible-content" style="display:none;">
                 <div class="grid-2">
-                    <div class="form-group"><label>Postcode <span style="color:#ef4444">*</span></label><input type="text" id="installPostcode" placeholder="e.g. 2000" maxlength="4" inputmode="numeric" pattern="[0-9]*"></div>
-                    <div class="form-group"><label>STC Zone</label><div class="info-box" id="stcZoneInfo" style="margin-top:0;font-size:13px;">Enter postcode</div></div>
+                    <div>
+                        <div class="form-group"><label>Building Storeys</label><select id="storeyCount" style="display:none"><option value="1">Single Storey</option><option value="2">Double Storey</option></select><div class="seg-group" data-target="storeyCount"><button type="button" class="seg-btn active" data-value="1">Single</button><button type="button" class="seg-btn" data-value="2">Double</button></div></div>
+                        <div class="form-group" id="mountingTypeGroup"><label>Battery Mounting</label><select id="mountingType" style="display:none"><option value="wall">Wall Mount</option><option value="ground" selected>Ground Mount</option></select><div class="seg-group" data-target="mountingType"><button type="button" class="seg-btn" data-value="wall">Wall</button><button type="button" class="seg-btn active" data-value="ground">Ground</button></div></div>
+                        <div class="form-group" id="orientationGroup"><label>Panel Orientation</label><select id="panelOrientation" style="display:none"><option value="portrait">Portrait</option><option value="landscape">Landscape</option></select><div class="seg-group" data-target="panelOrientation"><button type="button" class="seg-btn active" data-value="portrait">Portrait</button><button type="button" class="seg-btn" data-value="landscape">Landscape</button></div></div>
+                    </div>
+                    <div>
+                        <div class="form-group" id="roofTypeGroup"><label>Roof Type</label><select id="roofType"><option value="metal">Metal</option><option value="tile">Tile</option><option value="concrete">Concrete/Terracotta</option><option value="kliplock">Klip Lock</option><option value="terracotta">Terracotta</option><option value="flat">Flat</option></select></div>
+                        <div class="grid-2">
+                            <div class="form-group" id="numRowsGroup"><label>Rows</label><div class="mini-stepper"><button type="button" class="mini-stepper-btn" id="numRowsDown">−</button><input type="number" id="numRows" value="1" min="1" max="20" step="1" readonly><button type="button" class="mini-stepper-btn" id="numRowsUp">+</button></div></div>
+                            <div class="form-group" id="numArraysGroup"><label>Arrays</label><div class="mini-stepper"><button type="button" class="mini-stepper-btn" id="numArraysDown">−</button><input type="number" id="numArrays" value="1" min="1" max="10" step="1" readonly><button type="button" class="mini-stepper-btn" id="numArraysUp">+</button></div></div>
+                        </div>
+                        <div class="form-group" id="phaseTypeGroup"><label>Phase</label><select id="phaseType" style="display:none"><option value="single_phase">Single Phase</option><option value="three_phase">Three Phase</option></select><div class="seg-group" data-target="phaseType"><button type="button" class="seg-btn active" data-value="single_phase">Single Phase</button><button type="button" class="seg-btn" data-value="three_phase">Three Phase</button></div></div>
+                    </div>
+                </div>
+                <div id="wallMountWarningGroup" style="display:none;"><div id="wallMountWarning" class="cec-shield warning" style="margin-top:0;font-size:12px;"></div></div>
+                <div id="tiltAngleGroup" style="display:none;">
+                    <div class="form-group"><label>Tilt Angle (Flat Roof)</label><select id="tiltAngle"><option value="10_15">10-15&deg;</option><option value="15_30">15-30&deg;</option><option value="30_60">30-60&deg;</option></select></div>
+                </div>
+                <div id="kliplockProfileGroup" style="display:none;">
+                    <div class="form-group"><label>Kliplock Profile</label><select id="kliplockProfile" onchange="syncStateFromDOM();calculateQuote()"><option value="kliplock_606">Universal 406/700 (Recommended)</option><option value="kliplock_700">Klip-Lok 700</option><option value="kliplock_406">Klip-Lok 406</option><option value="kliplock_105">Klip-Lok 105</option></select></div>
+                </div>
                 </div>
             </div>
+
+            <!-- System Card -->
             <div class="section">
-                <div class="section-title" style="display:flex;justify-content:space-between;align-items:center;">
-                    <span>System Configuration</span>
-                    <select id="systemTypeSelect" style="font-size:14px;font-weight:500;padding:6px 12px;width:auto;min-width:160px;"><option value="hybrid">Solar + Battery</option><option value="battery_only">Battery Only</option><option value="pv_only">PV Only</option></select>
+                <div class="section-title" style="justify-content:space-between;">
+                    <span style="display:flex;align-items:center;gap:14px;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00c853" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
+                        System Configuration
+                    </span>
+                    <select id="systemTypeSelect" style="display:none"><option value="hybrid">Solar + Battery</option><option value="battery_only">Battery Only</option><option value="pv_only">PV Only</option></select>
+                    <div class="sys-tabs">
+                        <button type="button" class="sys-tab active" data-value="hybrid">Solar + Battery</button>
+                        <button type="button" class="sys-tab" data-value="pv_only">Solar Only</button>
+                        <button type="button" class="sys-tab" data-value="battery_only">Battery Only</button>
+                    </div>
                 </div>
                 <div class="grid-2">
-                    <div class="form-group" id="manufacturerGroup"><label>Manufacturer</label><select id="manufacturerSelect"></select></div>
-                    <div class="form-group" id="phaseTypeGroup"><label>Phase Type</label><select id="phaseType"><option value="single_phase">Single Phase</option><option value="three_phase">Three Phase</option></select></div>
-                </div>
-                <div class="grid-2" id="panelSelectionRow">
+                    <div class="form-group" id="manufacturerGroup"><label>Battery Manufacturer</label><select id="manufacturerSelect" style="display:none"></select><div class="seg-group" id="manufacturerSegGroup" data-target="manufacturerSelect"></div></div>
                     <div class="form-group" id="panelSelectGroup"><label>Solar Panel</label><select id="panelSelect"></select></div>
-                    <div class="form-group" id="panelCountGroup"><label>Number of Panels</label><div class="input-with-suffix"><input type="number" id="panelCount" min="0" class="suffix-input"><span id="panelKwDisplay" class="input-suffix">0.00 kW</span></div></div>
                 </div>
-            </div>
-            <div class="section">
+                <div class="stepper-container" id="panelSelectionRow">
+                    <input type="hidden" id="panelCount" value="0">
+                    <div class="stepper-info">
+                        <h4>Number of Panels</h4>
+                        <p id="stepperPanelLabel">—</p>
+                    </div>
+                    <div class="stepper-controls">
+                        <button type="button" class="stepper-btn" id="panelCountDown">−</button>
+                        <div class="stepper-value">
+                            <div class="stepper-value-num" id="stepperPanelNum">0</div>
+                            <div class="stepper-value-label">panels</div>
+                        </div>
+                        <button type="button" class="stepper-btn" id="panelCountUp">+</button>
+                    </div>
+                    <div class="stepper-result">
+                        <div class="stepper-result-value" id="panelKwDisplay">0.00 kW</div>
+                        <div class="stepper-result-label">System size</div>
+                    </div>
+                </div>
+                <div class="stepper-container" id="batteryCapacityRow">
+                    <input type="hidden" id="desiredBatteryKwh" value="0" min="0" max="96">
+                    <div class="stepper-info">
+                        <h4>Battery Capacity</h4>
+                        <p id="stepperBatteryLabel">—</p>
+                    </div>
+                    <div class="stepper-controls">
+                        <button type="button" class="stepper-btn" id="batteryKwhDown">−</button>
+                        <div class="stepper-value">
+                            <div class="stepper-value-num" id="stepperBatteryNum">0</div>
+                            <div class="stepper-value-label">kWh</div>
+                        </div>
+                        <button type="button" class="stepper-btn" id="batteryKwhUp">+</button>
+                    </div>
+                    <div class="stepper-result">
+                        <div class="stepper-result-value" id="batteryActualDisplay">0 kWh</div>
+                        <div class="stepper-result-label">Actual capacity</div>
+                    </div>
+                </div>
                 <div id="batteryTypeGroup" style="display:none;">
                     <div class="form-group"><label>Battery Type</label><select id="batteryTypeSelect"></select></div>
                 </div>
-                <div class="grid-2" id="batteryCapacityRow">
-                    <div class="form-group" id="batteryKwhGroup"><label>Battery Capacity (kWh)</label><input type="number" id="desiredBatteryKwh" min="0" max="96" step="1"></div>
-                    <div class="form-group" id="inverterGroup"><label id="inverterDropdownLabel">Energy Controller</label><select id="inverterSelect"></select></div>
-                </div>
-                <div class="grid-2" id="gatewayPowerSensorRow">
-                    <div class="form-group" id="gatewayGroup"><label id="gatewayDropdownLabel">Gateway</label><select id="gatewaySelect"></select></div>
-                    <div class="form-group" id="powerSensorGroup"><label id="powerSensorLabel">Power Sensor</label><div class="power-sensor-display"><span id="powerSensorModel">Sigen Sensor TP-CT100</span><span id="powerSensorStatus" class="power-sensor-status">Included</span></div></div>
+            </div>
+
+            <!-- Battery & Inverter Card -->
+            <div class="section">
+                <div class="grid-2">
+                    <div class="form-group" id="inverterGroup"><label id="inverterDropdownLabel">Inverter/Energy Controller</label><select id="inverterSelect"></select></div>
+                    <div class="form-group" id="gatewayGroup"><label id="gatewayDropdownLabel">Gateway/Backup Protection</label><select id="gatewaySelect"></select></div>
                 </div>
                 <div id="batteryConfigPanel" class="info-box" style="display:none;">
                     <strong>Recommended Config:</strong> <span id="batteryBreakdown"></span>
@@ -85,40 +164,34 @@
                 <div id="cecWarning" class="cec-shield warning" style="display:none;"></div>
                 <div id="cecApproved" class="cec-shield approved" style="display:none;"></div>
             </div>
+
+            <div class="grid-2 acc-elec-row">
+            <!-- Accessories Card -->
             <div class="section">
-                <div class="section-title collapsible" onclick="this.classList.toggle('open');this.nextElementSibling.style.display=this.classList.contains('open')?'block':'none'">Installation Details<span class="collapse-arrow"></span></div>
+                <div class="section-title collapsible" onclick="this.classList.toggle('open');this.nextElementSibling.style.display=this.classList.contains('open')?'block':'none'">
+                    <span style="display:flex;align-items:center;gap:14px;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0066ff" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v4m0 14v4m-9-9h4m14 0h4"/></svg>
+                        Accessories
+                    </span>
+                    <span class="collapse-arrow"></span>
+                </div>
                 <div class="collapsible-content" style="display:none;">
-                <div class="grid-2">
-                    <div class="form-group"><label>Building Storeys</label><select id="storeyCount"><option value="1">Single Storey</option><option value="2">Double Storey</option></select></div>
-                    <div class="form-group" id="roofTypeGroup"><label>Roof Type</label><select id="roofType"><option value="metal">Metal</option><option value="tile">Tile</option><option value="concrete">Concrete/Terracotta</option><option value="kliplock">Klip Lock</option><option value="terracotta">Terracotta</option><option value="flat">Flat</option></select></div>
-                </div>
-                <div class="grid-2">
-                    <div class="form-group" id="numRowsGroup"><label>Number of Rows</label><input type="number" id="numRows" value="1" min="1" max="20" step="1"></div>
-                    <div class="form-group" id="numArraysGroup"><label>Split Arrays (roof sections)</label><input type="number" id="numArrays" value="1" min="1" max="10" step="1"></div>
-                </div>
-                <div class="grid-2">
-                    <div class="form-group" id="mountingTypeGroup"><label>Battery Mounting Type</label><select id="mountingType"><option value="wall">Wall Mount</option><option value="ground" selected>Ground Mount</option></select></div>
-                    <div class="form-group" id="orientationGroup"><label>Panel Orientation</label><select id="panelOrientation"><option value="portrait">Portrait</option><option value="landscape">Landscape</option></select></div>
-                </div>
-                <div id="wallMountWarningGroup" style="display:none;"><div id="wallMountWarning" class="cec-shield warning" style="margin-top:0;font-size:12px;"></div></div>
-                <div id="tiltAngleGroup" style="display:none;">
-                    <div class="form-group"><label>Tilt Angle (Flat Roof)</label><select id="tiltAngle"><option value="10_15">10-15&deg;</option><option value="15_30">15-30&deg;</option><option value="30_60">30-60&deg;</option></select></div>
-                </div>
-                <div id="kliplockProfileGroup" style="display:none;">
-                    <div class="form-group"><label>Kliplock Profile</label><select id="kliplockProfile" onchange="syncStateFromDOM();calculateQuote()"><option value="kliplock_606">Universal 406/700 (Recommended)</option><option value="kliplock_700">Klip-Lok 700</option><option value="kliplock_406">Klip-Lok 406</option><option value="kliplock_105">Klip-Lok 105</option></select></div>
-                </div>
-                </div>
-            </div>
-            <div class="section">
-                <div class="section-title collapsible" onclick="this.classList.toggle('open');this.nextElementSibling.style.display=this.classList.contains('open')?'block':'none'">Accessories<span class="collapse-arrow"></span></div>
-                <div class="collapsible-content" style="display:none;">
+                <div id="autoAccessories"></div>
                 <div id="accessoriesContainer"></div>
                 <div id="customAddons"></div>
                 <button class="add-custom-btn" onclick="addCustomAddon()">+ Add Custom Item</button>
                 </div>
             </div>
+
+            <!-- Electrical Upgrades Card -->
             <div class="section" id="installCostsSection" style="display:none;">
-                <div class="section-title collapsible" onclick="this.classList.toggle('open');this.nextElementSibling.style.display=this.classList.contains('open')?'block':'none'">Electrical Upgrades<span class="collapse-arrow"></span></div>
+                <div class="section-title collapsible" onclick="this.classList.toggle('open');this.nextElementSibling.style.display=this.classList.contains('open')?'block':'none'">
+                    <span style="display:flex;align-items:center;gap:14px;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ff9500" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                        Electrical Upgrades
+                    </span>
+                    <span class="collapse-arrow"></span>
+                </div>
                 <div class="collapsible-content" style="display:none;">
                 <div id="rcAutoItems" style="display:none;"></div>
                 <div id="rcStandardItems"></div>
@@ -136,6 +209,9 @@
                 <span id="rcSubtotal" style="display:none;">$0</span>
                 </div>
             </div>
+            </div>
+
+            <!-- Hidden rate/margin inputs -->
             <input type="hidden" id="installPerKwPv">
             <input type="hidden" id="installPerStack">
             <input type="hidden" id="stcPrice">
@@ -144,6 +220,8 @@
             <input type="hidden" id="gpMargin">
             <input type="hidden" id="salesCommission">
         </div>
+
+        <!-- Summary Sidebar -->
         <div class="quote-summary">
             <div class="price-card">
                 <div class="pc-hero">
@@ -154,8 +232,8 @@
                 </div>
                 <div class="pc-urgency" id="urgencyBanner" style="display:none;">
                     <div class="pc-urg-left">
-                        <div class="pc-urg-label">Price Increase</div>
-                        <div class="pc-urg-date">After 1 May 2026</div>
+                        <div class="pc-urg-label">After 1 May 2026</div>
+                        <div class="pc-urg-date">Price Increase</div>
                     </div>
                     <div class="pc-urg-right">
                         <div class="pc-urg-amount" id="urgencyIncrease">+$0</div>
@@ -172,7 +250,7 @@
                         <div id="summaryBatteryRows"></div>
                     </div>
                     <div class="pc-inv-section" id="summaryAddonsCard">
-                        <div class="pc-inv-title">Add-ons</div>
+                        <div class="pc-inv-title">Accessories</div>
                         <div id="summaryAddonRows"></div>
                     </div>
                     <div class="pc-inv-section" id="summaryInstallCard" style="display:none;">
@@ -204,20 +282,20 @@
 </div>
 
 <!-- BOM Overlay -->
-<div id="bomOverlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:#000; z-index:1000; overflow-y:auto;">
+<div id="bomOverlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:var(--white, #fff); z-index:1000; overflow-y:auto;">
     <div style="max-width:900px; margin:0 auto; padding:30px;">
         <div style="margin-bottom:24px;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-                <h2 style="color:var(--text-primary, #f5f5f7); font-size:28px; font-weight:700; letter-spacing:-0.02em; margin:0;">Bill of Materials</h2>
+                <h2 style="color:var(--gray-900, #171717); font-size:28px; font-weight:700; letter-spacing:-0.02em; margin:0;">Bill of Materials</h2>
                 <div class="bom-buttons" style="display:flex; gap:8px;">
-                    <button onclick="window.print()" style="background:var(--bg-input, #1c1c1e); border:1px solid rgba(255,255,255,0.15); color:var(--text-primary, #f5f5f7); padding:8px 20px; border-radius:8px; cursor:pointer; font-size:14px; font-family:inherit;">Print / Save PDF</button>
-                    <button onclick="closeBOM()" style="background:var(--bg-input, #1c1c1e); border:1px solid rgba(255,255,255,0.15); color:var(--text-primary, #f5f5f7); padding:8px 20px; border-radius:8px; cursor:pointer; font-size:14px; font-family:inherit;">Back to Quote</button>
+                    <button onclick="window.print()" style="background:var(--gray-100, #f5f5f5); border:1px solid var(--gray-200, #e8e8e8); color:var(--gray-900, #171717); padding:10px 20px; border-radius:var(--radius-sm, 12px); cursor:pointer; font-size:14px; font-family:inherit; font-weight:500;">Print / Save PDF</button>
+                    <button onclick="closeBOM()" style="background:var(--gray-100, #f5f5f5); border:1px solid var(--gray-200, #e8e8e8); color:var(--gray-900, #171717); padding:10px 20px; border-radius:var(--radius-sm, 12px); cursor:pointer; font-size:14px; font-family:inherit; font-weight:500;">Back to Quote</button>
                 </div>
             </div>
         </div>
-        <div id="bomCustomerHeader" style="background:var(--bg-secondary, #0d0d0d); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:16px 20px; margin-bottom:20px; color:var(--text-secondary, #a1a1a6); font-size:13px;"></div>
+        <div id="bomCustomerHeader" style="background:var(--gray-50, #fafafa); border:1px solid var(--gray-200, #e8e8e8); border-radius:var(--radius-sm, 12px); padding:16px 20px; margin-bottom:20px; color:var(--gray-500, #737373); font-size:13px;"></div>
         <div id="bomContent"></div>
-        <div id="bomTotals" style="background:var(--bg-secondary, #0d0d0d); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:16px 20px; margin-top:20px;"></div>
+        <div id="bomTotals" style="background:var(--gray-50, #fafafa); border:1px solid var(--gray-200, #e8e8e8); border-radius:var(--radius-sm, 12px); padding:16px 20px; margin-top:20px;"></div>
     </div>
 </div>
 

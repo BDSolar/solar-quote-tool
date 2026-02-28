@@ -331,21 +331,32 @@ function renderInstallationCostsUI() {
         }
     });
 
-    // Auto items are rendered dynamically in updateInstallationCostsDisplay()
-    // Standard items: checkbox rows, checked by default
-    var allCheckItems = [];
+    // Standard items: pill with checkbox, checked by default
+    // Checkbox items: pill with checkbox, unchecked by default
+    standardEl.innerHTML = '';
     standardItems.forEach(function(item) {
+        if (installationAddons.standardItems[item.id] === undefined) installationAddons.standardItems[item.id] = true;
         var checked = installationAddons.standardItems[item.id] !== false;
-        var rateText = item.rate ? fmtExGst(item.rate) : '';
-        allCheckItems.push('<div class="rc-check-row"><input type="checkbox" id="rcStd_' + item.id + '" ' + (checked ? 'checked' : '') + ' onchange="onRcStandardToggle(\'' + item.id + '\', this.checked)"><label for="rcStd_' + item.id + '">' + esc(item.label) + '</label><span class="rc-cost">' + rateText + '</span></div>');
+        var div = document.createElement('div');
+        div.className = 'auto-accessory' + (checked ? '' : ' acc-excluded');
+        div.innerHTML = '<input type="checkbox" class="acc-pill-check" id="rcStd_' + item.id + '" ' + (checked ? 'checked' : '') + '><span class="auto-acc-label">' + esc(item.label) + '</span><span class="auto-acc-badge">' + (checked ? 'Included' : 'Excluded') + '</span>';
+        div.querySelector('input').addEventListener('change', function() {
+            onRcStandardToggle(item.id, this.checked);
+            renderInstallationCostsUI();
+        });
+        standardEl.appendChild(div);
     });
     checkboxItems.forEach(function(item) {
         var checked = !!installationAddons.checkboxItems[item.id];
-        var rateText = item.rate ? fmtExGst(item.rate) : '';
-        allCheckItems.push('<div class="rc-check-row"><input type="checkbox" id="rcCb_' + item.id + '" ' + (checked ? 'checked' : '') + ' onchange="onRcCheckboxToggle(\'' + item.id + '\', this.checked)"><label for="rcCb_' + item.id + '">' + esc(item.label) + '</label><span class="rc-cost">' + rateText + '</span></div>');
+        var div = document.createElement('div');
+        div.className = 'auto-accessory' + (checked ? '' : ' acc-excluded');
+        div.innerHTML = '<input type="checkbox" class="acc-pill-check" id="rcCb_' + item.id + '" ' + (checked ? 'checked' : '') + '><span class="auto-acc-label">' + esc(item.label) + '</span><span class="auto-acc-badge">' + (checked ? 'Included' : 'Excluded') + '</span>';
+        div.querySelector('input').addEventListener('change', function() {
+            onRcCheckboxToggle(item.id, this.checked);
+            renderInstallationCostsUI();
+        });
+        standardEl.appendChild(div);
     });
-    var gridHtml = allCheckItems.length > 0 ? '<div class="rc-check-grid">' + allCheckItems.join('') + '</div>' : '';
-    standardEl.innerHTML = gridHtml;
     checkboxEl.innerHTML = '';
 
     // Addon dropdown: populate with items not yet added
@@ -390,33 +401,22 @@ function removeRcAddon(itemId) {
 function renderRcAddonRows() {
     var container = document.getElementById('rcAddonRows');
     if (!container) return;
-    var html = '';
+    container.innerHTML = '';
     for (var itemId in installationAddons.addonItems) {
         if (!installationAddons.addonItems.hasOwnProperty(itemId)) continue;
         var item = currentRateCardItems.find(function(i) { return i.id === itemId; });
         if (!item) continue;
-        var addonData = installationAddons.addonItems[itemId];
-        var inputHtml = '';
-        if (item.pricing_type === 'quoted') {
-            inputHtml = '<input type="number" value="' + (addonData.quotedAmount || 0) + '" min="0" step="1" placeholder="Amount" onchange="onRcAddonChange(\'' + itemId + '\', \'quotedAmount\', this.value)">';
-        } else if (item.pricing_type === 'per_panel') {
-            inputHtml = '<input type="number" value="' + (addonData.quantity || 0) + '" min="0" step="1" placeholder="Qty" onchange="onRcAddonChange(\'' + itemId + '\', \'quantity\', this.value)">';
-        } else if (item.pricing_type === 'per_metre') {
-            inputHtml = '<input type="number" value="' + (addonData.value || 0) + '" min="0" step="1" placeholder="Metres" onchange="onRcAddonChange(\'' + itemId + '\', \'value\', this.value)">';
-        } else {
-            inputHtml = '<input type="number" value="' + (addonData.quantity || 1) + '" min="1" step="1" placeholder="Qty" onchange="onRcAddonChange(\'' + itemId + '\', \'quantity\', this.value)">';
-        }
-        // Calculate cost for display
-        var ctx = buildQuoteContext();
-        var cost = calculateItemCost(item, ctx, installationAddons);
-        html += '<div class="rc-addon-row">';
-        html += '<span class="rc-addon-label">' + esc(item.label) + '</span>';
-        html += inputHtml;
-        html += '<span class="rc-addon-cost">' + fmtExGst(cost) + '</span>';
-        html += '<button onclick="removeRcAddon(\'' + itemId + '\')" title="Remove">&times;</button>';
-        html += '</div>';
+        var div = document.createElement('div');
+        div.className = 'auto-accessory added-accessory';
+        div.innerHTML = '<svg class="auto-acc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' +
+            '<span class="auto-acc-label">' + esc(item.label) + '</span>' +
+            '<span class="auto-acc-badge">Added</span>' +
+            '<button class="btn-remove-acc" title="Remove">&times;</button>';
+        (function(id) {
+            div.querySelector('.btn-remove-acc').addEventListener('click', function() { removeRcAddon(id); });
+        })(itemId);
+        container.appendChild(div);
     }
-    container.innerHTML = html;
 }
 
 function onRcAddonChange(itemId, field, value) {
@@ -590,6 +590,7 @@ function updateBatteryMaxCap() {
         el.max = max;
         if (parseFloat(el.value) > max) el.value = max;
     }
+    syncBatteryStepperDisplay();
 }
 
 function getBatteryRules() {
@@ -680,13 +681,24 @@ function isHybridSystem() {
 function onSystemTypeChange() {
     var sel = document.getElementById('systemTypeSelect');
     currentSystemType = sel ? sel.value : 'hybrid';
-    
+
+    // Battery Only: set panels to 0
+    if (currentSystemType === 'battery_only') {
+        document.getElementById('panelCount').value = 0;
+        syncStepperDisplay();
+    }
+    // PV Only: set battery to 0
+    if (currentSystemType === 'pv_only') {
+        document.getElementById('desiredBatteryKwh').value = 0;
+        syncBatteryStepperDisplay();
+    }
+
     // Update manufacturer options based on system type
     updateManufacturerOptions();
-    
+
     // Update field visibility/state
     updateSystemModeUI();
-    
+
     // Recalculate
     calculateQuote();
 }
@@ -767,7 +779,7 @@ function updateSystemModeUI() {
 
     // --- PV-related fields (disable when battery-only) ---
     setFieldDisabled('panelSelectGroup', batteryOnly);
-    setFieldDisabled('panelCountGroup', batteryOnly);
+    if (panelRow) panelRow.classList.toggle('disabled', batteryOnly);
     setFieldDisabled('roofTypeGroup', batteryOnly);
     setFieldDisabled('orientationGroup', batteryOnly);
     setFieldDisabled('numRowsGroup', batteryOnly);
@@ -787,20 +799,10 @@ function updateSystemModeUI() {
         }
     }
 
-    // --- Battery capacity row (hide for pv-only) ---
+    // --- Battery capacity stepper (hide for pv-only) ---
     var batCapRow = document.getElementById('batteryCapacityRow');
     if (batCapRow) {
-        // For PV only, hide the whole row but show inverter separately
-        if (solarOnly) {
-            // Hide battery kWh, but we need inverter visible
-            var batKwhGroup = document.getElementById('batteryKwhGroup');
-            if (batKwhGroup) batKwhGroup.style.display = 'none';
-            var invGroup = document.getElementById('inverterGroup');
-            if (invGroup) invGroup.style.display = '';
-        } else {
-            var batKwhGroup = document.getElementById('batteryKwhGroup');
-            if (batKwhGroup) batKwhGroup.style.display = '';
-        }
+        batCapRow.style.display = solarOnly ? 'none' : '';
     }
 
     // --- Battery-related fields (disable/hide when solar-only) ---
@@ -820,12 +822,6 @@ function updateSystemModeUI() {
     if (invGroup) {
         // Show for all modes now (PV-only has X1-HYBRID, battery modes have their inverters)
         invGroup.style.display = '';
-    }
-
-    // Hide gateway and power sensor rows for solar-only
-    var gwPsRow = document.getElementById('gatewayPowerSensorRow');
-    if (gwPsRow) {
-        gwPsRow.style.display = solarOnly ? 'none' : '';
     }
 
     // Hide battery config panel for solar-only
@@ -1294,12 +1290,13 @@ async function loadConfig() {
     }
     } else { console.log('[OK] Config already loaded (preview mode)'); }
     if (!CONFIG || !CONFIG.manufacturers) {
-        document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#0a0a0a;color:#ef4444;font-family:IBM Plex Sans,sans-serif;font-size:18px;text-align:center;padding:20px;">Configuration failed to load. Please refresh the page.<br>If the problem persists, check that config.json is accessible.</div>';
+        document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;background:var(--gray-100,#f5f5f5);color:var(--red,#ef4444);font-family:-apple-system,BlinkMacSystemFont,sans-serif;font-size:18px;text-align:center;padding:20px;">Configuration failed to load. Please refresh the page.<br>If the problem persists, check that config.json is accessible.</div>';
         return;
     }
     currentManufacturer = 'sigenergy'; currentBatteryTypeIdx = 0;
     batteryQtys = {};
     document.getElementById('panelCount').value = CONFIG.default_panel_count;
+    syncStepperDisplay(); updateStepperPanelLabel(); syncBatteryStepperDisplay(); updateStepperBatteryLabel();
     document.getElementById('installPerKwPv').value = CONFIG.installation.install_pv_per_kw;
     document.getElementById('installPerStack').value = CONFIG.installation.install_battery_per_stack;
     document.getElementById('stcPrice').value = CONFIG.rebates.stc_price;
@@ -1307,7 +1304,8 @@ async function loadConfig() {
     document.getElementById('batteryRebatePerKwh').value = CONFIG.rebates.battery_rebate_per_kwh;
     document.getElementById('gpMargin').value = CONFIG.gp_margin;
     document.getElementById('salesCommission').value = CONFIG.sales_commission;
-    populateManufacturers(); populatePanels(); populateBatteryTypes(); buildBatteryUI(); populateInverters(); populateGateways(); buildAccessoriesUI(); updateBatteryMountVisibility(); bindEvents(); updateRoofInfo(); updateMountingKitInfo(); updateZoneDisplay(); updateHeaderSubtitle(); updateInverterSectionLabel(); updateGatewaySectionLabel(); updatePowerSensorModel(); applyManufacturerDefaults(); calculateQuote();
+    populateManufacturers(); populatePanels(); populateBatteryTypes(); buildBatteryUI(); populateInverters(); populateGateways(); buildAccessoriesUI(); updateBatteryMountVisibility(); bindSegmentedButtons(); bindEvents(); updateRoofInfo(); updateMountingKitInfo(); updateZoneDisplay(); updateHeaderSubtitle(); updateInverterSectionLabel(); updateGatewaySectionLabel(); updatePowerSensorModel(); renderAutoAccessories(); applyManufacturerDefaults(); calculateQuote();
+    document.querySelectorAll('input, select, textarea').forEach(el => { el.setAttribute('spellcheck', 'false'); el.setAttribute('autocorrect', 'off'); el.setAttribute('autocomplete', 'off'); });
     loadReps();
     loadContractors();
 }
@@ -1318,12 +1316,27 @@ async function loadConfig() {
 
 function populateManufacturers() {
     const sel = document.getElementById('manufacturerSelect'); sel.innerHTML = '';
-    Object.entries(CONFIG.manufacturers || {}).forEach(([key, mfg]) => { const o = document.createElement('option'); o.value = key; o.textContent = mfg.label || key; sel.appendChild(o); });
+    const segGroup = document.getElementById('manufacturerSegGroup'); if (segGroup) segGroup.innerHTML = '';
+    Object.entries(CONFIG.manufacturers || {}).forEach(([key, mfg]) => {
+        const o = document.createElement('option'); o.value = key; o.textContent = mfg.label || key; sel.appendChild(o);
+        if (segGroup) {
+            const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'seg-btn'; btn.dataset.value = key; btn.textContent = mfg.label || key;
+            if (key === currentManufacturer) btn.classList.add('active');
+            btn.addEventListener('click', () => {
+                segGroup.querySelectorAll('.seg-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                sel.value = key; sel.dispatchEvent(new Event('change', { bubbles: true }));
+            });
+            segGroup.appendChild(btn);
+        }
+    });
     sel.value = currentManufacturer;
 }
 
 function switchManufacturer() {
     currentManufacturer = document.getElementById('manufacturerSelect').value;
+    syncSegmentedFromSelect('manufacturerSelect');
+    updateStepperBatteryLabel();
     currentBatteryTypeIdx = 0; userChangedInverter = false; dualStackResult = null; dualStackEcOverride = { stack1: null, stack2: null }; parallelResult = null;
     selectedAccessories = selectedAccessories.filter(function(a) { return a.type === 'addon'; });
     batteryQtys = {}; populateBatteryTypes(); buildBatteryUI(); populateInverters(); populateGateways(); buildAccessoriesUI(); updateBatteryMountVisibility(); updateHeaderSubtitle(); updateInverterSectionLabel(); updateGatewaySectionLabel(); updatePowerSensorModel();
@@ -1342,9 +1355,10 @@ function applyManufacturerDefaults() {
         if (btSel) btSel.value = btIdx;
     }
     // Set default battery on first load, preserve user value on subsequent switches
+    // Don't reset to default when in PV Only mode (battery intentionally 0)
     var batEl = document.getElementById('desiredBatteryKwh');
     var curBat = parseFloat(batEl.value) || 0;
-    if (curBat <= 0) batEl.value = CONFIG.default_battery_kwh;
+    if (curBat <= 0 && !isSolarOnly()) batEl.value = CONFIG.default_battery_kwh;
     updateBatteryMaxCap();
     curBat = parseFloat(batEl.value) || 0;
     var maxBat = getMaxBatteryKwh();
@@ -1365,7 +1379,7 @@ function applyManufacturerDefaults() {
 
 function updateHeaderSubtitle() { const el = document.getElementById('headerSubtitle'); if (el) el.textContent = (getMfg().label || 'Solar') + ' Residential Quote Builder'; }
 function updateInverterSectionLabel() { const lbl = document.getElementById('inverterDropdownLabel'); if (lbl) lbl.textContent = getInverterLabel(); }
-function updateGatewaySectionLabel() { const lbl = document.getElementById('gatewayDropdownLabel'); if (lbl) lbl.textContent = currentManufacturer === 'solax' ? 'Backup Protection' : 'Gateway'; }
+function updateGatewaySectionLabel() { /* label is now static: Gateway/Backup Protection */ }
 
 // ====================
 // BATTERY TYPE SWITCHING
@@ -1381,7 +1395,7 @@ function switchBatteryType() {
     currentBatteryTypeIdx = parseInt(document.getElementById('batteryTypeSelect').value) || 0;
     userChangedInverter = false; batteryQtys = {}; dualStackResult = null; dualStackEcOverride = { stack1: null, stack2: null }; parallelResult = null;
     updateBatteryMaxCap();
-    updatePowerSensorModel(); calculateQuote();
+    updateStepperBatteryLabel(); updatePowerSensorModel(); calculateQuote();
 }
 
 // ====================
@@ -1404,10 +1418,10 @@ function getAllDropdownItems() {
         var price = acc.phase_dependent ? (state.phase === 'single_phase' ? acc.price_single : acc.price_three) : acc.price;
         items.push({ id: acc.id, label: acc.label, price: price, type: 'accessory', source: acc, desc: acc.desc || '' });
     });
-    // EV Charger (if manufacturer has chargers)
+    // EV Charger (single entry that drills into models)
     var evChargers = getMfg().ev_chargers || {};
     if (Object.keys(evChargers).length > 0) {
-        items.push({ id: 'ev_charger', label: 'EV Charger', price: 0, type: 'ev_charger', desc: 'Electric vehicle charger. Choose AC or DC model after adding.' });
+        items.push({ id: 'ev_charger', label: 'EV Charger', price: 0, type: 'ev_charger_parent' });
     }
     return items;
 }
@@ -1418,15 +1432,42 @@ function buildAccessoriesUI() {
     // Dropdown row
     var row = document.createElement('div'); row.style.cssText = 'display:flex;gap:8px;margin-bottom:10px;';
     var sel = document.createElement('select'); sel.id = 'accessoryDropdown'; sel.style.flex = '1';
-    sel.innerHTML = '<option value="">-- Select item to add --</option>';
-    items.forEach(function(item, idx) {
-        var o = document.createElement('option'); o.value = idx;
-        o.textContent = item.label;
-        sel.appendChild(o);
-    });
+    function showMainOptions() {
+        sel.innerHTML = '<option value="">-- Select item to add --</option>';
+        items.forEach(function(item, idx) {
+            var o = document.createElement('option'); o.value = idx; o.textContent = item.label; sel.appendChild(o);
+        });
+    }
+    showMainOptions();
     sel.addEventListener('change', function() {
-        var idx = parseInt(sel.value); if (isNaN(idx)) return;
+        var val = sel.value; if (!val) return;
+        // EV Charger model selected (from drill-down)
+        if (val.startsWith('ev:')) {
+            var evKey = val.substring(3);
+            var evChargers = getMfg().ev_chargers || {};
+            var ev = evChargers[evKey];
+            if (ev) {
+                selectedAccessories = selectedAccessories.filter(function(a) { return !a.id.startsWith('ev_'); });
+                selectedAccessories.push({ id: 'ev_' + evKey, label: 'EV Charger — ' + ev.desc, price: ev.price, type: 'accessory', supplier_code: ev.supplier_code || '', desc: ev.desc || '' });
+                renderSelectedAccessories(); calculateQuote();
+            }
+            showMainOptions(); sel.value = '';
+            return;
+        }
+        var idx = parseInt(val); if (isNaN(idx)) return;
         var item = items[idx];
+        // EV Charger parent: drill into models
+        if (item.type === 'ev_charger_parent') {
+            var evChargers = getMfg().ev_chargers || {};
+            sel.innerHTML = '<option value="">-- Select EV Charger --</option>';
+            Object.entries(evChargers).forEach(function(pair) {
+                var key = pair[0], val = pair[1];
+                if (val.phase && val.phase !== state.phase) return;
+                var o = document.createElement('option'); o.value = 'ev:' + key; o.textContent = val.desc; sel.appendChild(o);
+            });
+            sel.value = '';
+            return;
+        }
         if (selectedAccessories.find(function(a) { return a.id === item.id; })) { sel.value = ''; return; }
         // Meter board tiers are mutually exclusive
         if (item.id.startsWith('meter_board_')) {
@@ -1434,7 +1475,6 @@ function buildAccessoriesUI() {
         }
         var entry = { id: item.id, label: item.label, price: item.price, type: item.type, supplier_code: item.supplier_code || '', desc: item.desc || '' };
         if (item.source) entry.source = item.source;
-        if (item.type === 'ev_charger') entry.evModel = null;
         selectedAccessories.push(entry);
         renderSelectedAccessories();
         sel.value = '';
@@ -1454,75 +1494,51 @@ function buildAccessoriesUI() {
     renderSelectedAccessories();
 }
 
-function buildEvChargerSubDropdown(entry, wrapper, priceSpan) {
+function buildEvChargerOptions(entry, wrapper) {
     var evChargers = getMfg().ev_chargers || {};
-    var subDiv = document.createElement('div'); subDiv.style.cssText = 'margin:4px 0 8px 0;';
-    var subSel = document.createElement('select'); subSel.className = 'ev-charger-sub';
-    subSel.innerHTML = '<option value="none"> - Select model - </option>';
-    var groups = { dc: [], ac_cable: [], ac_socket: [] };
+    var optDiv = document.createElement('div'); optDiv.className = 'ev-options';
+    var allItems = [];
     Object.entries(evChargers).forEach(function(pair) {
         var key = pair[0], val = pair[1];
         if (val.phase && val.phase !== state.phase) return;
-        if (key.startsWith('dc_')) groups.dc.push({ key: key, desc: val.desc, price: val.price, supplier_code: val.supplier_code || '' });
-        else if (key.includes('_cable')) groups.ac_cable.push({ key: key, desc: val.desc, price: val.price, supplier_code: val.supplier_code || '' });
-        else if (key.includes('_socket')) groups.ac_socket.push({ key: key, desc: val.desc, price: val.price, supplier_code: val.supplier_code || '' });
+        allItems.push({ key: key, desc: val.desc, price: val.price, supplier_code: val.supplier_code || '' });
     });
-    var addGroup = function(label, items) {
-        if (!items.length) return;
-        var sep = document.createElement('option'); sep.disabled = true; sep.textContent = '--- ' + label + ' ---'; sep.style.cssText = 'font-weight:bold;color:#9ca3af;'; subSel.appendChild(sep);
-        items.forEach(function(item) {
-            var o = document.createElement('option'); o.value = item.key;
-            o.textContent = '  ' + item.desc;
-            subSel.appendChild(o);
+    allItems.forEach(function(item) {
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'ev-option' + (entry.evModel === item.key ? ' active' : '');
+        btn.innerHTML = '<span class="ev-option-desc">' + esc(item.desc) + '</span><span class="ev-option-price">$' + item.price.toLocaleString() + '</span>';
+        btn.addEventListener('click', function() {
+            optDiv.querySelectorAll('.ev-option').forEach(function(b) { b.classList.remove('active'); });
+            btn.classList.add('active');
+            entry.evModel = item.key; entry.price = item.price; entry.evDesc = item.desc; entry.evSupplierCode = item.supplier_code;
+            calculateQuote();
         });
-    };
-    addGroup('DC (connects to ' + getInverterLabel() + ')', groups.dc);
-    addGroup('AC with Cable', groups.ac_cable);
-    addGroup('AC Socket Only', groups.ac_socket);
-    // Restore saved selection
-    if (entry.evModel) subSel.value = entry.evModel;
-    subSel.addEventListener('change', function() {
-        var key = subSel.value;
-        if (key === 'none') { entry.evModel = null; entry.price = 0; entry.evDesc = ''; entry.evSupplierCode = ''; }
-        else { var ev = evChargers[key]; entry.evModel = key; entry.price = ev.price; entry.evDesc = ev.desc; entry.evSupplierCode = ev.supplier_code || ''; }
-        if (priceSpan) {
-            priceSpan.textContent = entry.price > 0 ? '$' + entry.price.toLocaleString() : 'Select below';
-            priceSpan.style.color = entry.price > 0 ? '' : '#9ca3af';
-            priceSpan.style.fontStyle = entry.price > 0 ? '' : 'italic';
-        }
-        calculateQuote();
+        optDiv.appendChild(btn);
     });
-    subDiv.appendChild(subSel);
-    wrapper.appendChild(subDiv);
+    wrapper.appendChild(optDiv);
 }
 
 function renderSelectedAccessories() {
     var list = document.getElementById('accessoryList'); if (!list) return; list.innerHTML = '';
     selectedAccessories.forEach(function(acc, i) {
-        var price = 0;
         if (acc.type === 'accessory' && acc.source && acc.source.phase_dependent) {
-            price = state.phase === 'single_phase' ? acc.source.price_single : acc.source.price_three;
-            acc.price = price;
-        } else {
-            price = acc.price;
+            acc.price = state.phase === 'single_phase' ? acc.source.price_single : acc.source.price_three;
         }
-        var wrapper = document.createElement('div'); wrapper.style.cssText = 'margin-bottom:6px;';
-        var div = document.createElement('div'); div.className = 'addon-item';
-        var descText = acc.desc || (acc.source && acc.source.desc) || '';
-        var infoBtn = '';
-        if (descText) {
-            infoBtn = '<button class="btn-info-icon" title="Info" onmouseenter="showAccTip(this)" onmouseleave="hideAccTip(this)" data-desc="' + esc(descText).replace(/"/g, '&quot;') + '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg><div class="acc-tooltip"></div></button>';
-        }
-        div.innerHTML = '<label style="flex:1;cursor:default;font-size:13px;color:#d1d5db;">' + esc(acc.label) + '</label>' + infoBtn + '<button class="btn-remove-icon" title="Remove"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>';
-        div.querySelector('.btn-remove-icon').addEventListener('click', (function(idx) { return function() { selectedAccessories.splice(idx, 1); renderSelectedAccessories(); calculateQuote(); }; })(i));
-        wrapper.appendChild(div);
-        // EV charger sub-dropdown
-        if (acc.type === 'ev_charger') buildEvChargerSubDropdown(acc, wrapper, div.querySelector('.addon-price'));
-        list.appendChild(wrapper);
+        // Legacy: old ev_charger type from saved quotes
+        if (acc.type === 'ev_charger' && acc.evModel) acc.label = 'EV Charger — ' + (acc.evDesc || acc.evModel);
+        var div = document.createElement('div');
+        div.className = 'auto-accessory added-accessory';
+        div.innerHTML = '<svg class="auto-acc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' +
+            '<span class="auto-acc-label">' + esc(acc.label) + '</span>' +
+            '<span class="auto-acc-badge">Added</span>' +
+            '<button class="btn-remove-acc" title="Remove">&times;</button>';
+        div.querySelector('.btn-remove-acc').addEventListener('click', (function(idx) { return function() { selectedAccessories.splice(idx, 1); renderSelectedAccessories(); calculateQuote(); }; })(i));
+        list.appendChild(div);
     });
 }
 
-function updateAccessoryPrices() { renderSelectedAccessories(); buildAccessoriesUI(); updatePowerSensorModel(); }
+function updateAccessoryPrices() { renderSelectedAccessories(); buildAccessoriesUI(); updatePowerSensorModel(); renderAutoAccessories(); }
 
 function updatePowerSensorModel() {
     var el = document.getElementById('powerSensorModel');
@@ -1550,6 +1566,40 @@ function updatePowerSensorModel() {
         el.textContent = state.phase === 'single_phase' ? 'Sigen Sensor SP-CT100' : 'Sigen Sensor TP-CT100';
         if (statusEl) { statusEl.textContent = 'Included'; statusEl.style.color = 'var(--green)'; }
     }
+}
+
+function renderAutoAccessories() {
+    var container = document.getElementById('autoAccessories');
+    if (!container) return;
+    container.innerHTML = '';
+    var solarOnly = isSolarOnly();
+    var batteryOnly = isBatteryOnly();
+    var items = [];
+
+    // Power Sensor / BMS
+    if (!solarOnly) {
+        if (currentManufacturer === 'solax') {
+            var bt = getBatteryType();
+            if (bt && bt.bms_code) {
+                var bmsName = bt.bms_code;
+                if (bt.id === 'tp_hs36') bmsName = 'TBMS-MCS0800';
+                else if (bt.id === 'tb_hs51') bmsName = 'TBMS-S51-80';
+                items.push({ label: 'BMS: ' + bmsName, badge: bt.bms_cost > 0 ? '$' + bt.bms_cost.toLocaleString() : 'Included' });
+            }
+        } else {
+            var sensorModel = state.phase === 'single_phase' ? 'Sigen Sensor SP-CT100' : 'Sigen Sensor TP-CT100';
+            items.push({ label: 'Power Sensor: ' + sensorModel, badge: 'Included' });
+        }
+    }
+
+    items.forEach(function(item) {
+        var div = document.createElement('div');
+        div.className = 'auto-accessory';
+        div.innerHTML = '<svg class="auto-acc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' +
+            '<span class="auto-acc-label">' + item.label + '</span>' +
+            '<span class="auto-acc-badge">' + item.badge + '</span>';
+        container.appendChild(div);
+    });
 }
 
 function getAccessoryCost() {
@@ -1590,7 +1640,67 @@ function updateBatteryMountVisibility() { var el = document.getElementById('batt
 // ====================
 
 function lookupZone(postcode) { const pc = parseInt(postcode); if (isNaN(pc) || pc < 0 || pc > 9999) return null; for (const z of (CONFIG.rebates?.stc_zones || [])) { if (pc >= z[0] && pc <= z[1]) return { zone: z[2], rating: z[3] }; } return null; }
-function updateZoneDisplay() { const pc = document.getElementById('installPostcode').value, info = document.getElementById('stcZoneInfo'), result = lookupZone(pc); if (!pc) { info.textContent = 'Enter postcode'; info.style.color = '#6b7280'; return; } if (!result) { info.textContent = 'Invalid postcode'; info.style.color = '#ef4444'; return; } info.textContent = 'Zone ' + result.zone + ' -  Rating ' + result.rating; info.style.color = '#34d399'; }
+function updateZoneDisplay() { const pc = document.getElementById('installPostcode').value, info = document.getElementById('stcZoneInfo'), result = lookupZone(pc); if (!pc) { info.textContent = 'Enter postcode'; info.style.color = 'var(--gray-500)'; return; } if (!result) { info.textContent = 'Invalid postcode'; info.style.color = 'var(--red)'; return; } info.textContent = 'Zone ' + result.zone + ' -  Rating ' + result.rating; info.style.color = 'var(--green)'; }
+
+// ====================
+// SEGMENTED BUTTONS
+// ====================
+
+function bindSegmentedButtons() {
+    document.querySelectorAll('.seg-group').forEach(group => {
+        const targetId = group.dataset.target;
+        const sel = document.getElementById(targetId);
+        group.querySelectorAll('.seg-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                group.querySelectorAll('.seg-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                if (sel) { sel.value = btn.dataset.value; sel.dispatchEvent(new Event('change', { bubbles: true })); }
+            });
+        });
+    });
+}
+
+function syncSegmentedFromSelect(selectId) {
+    var sel = document.getElementById(selectId);
+    if (!sel) return;
+    var group = document.querySelector('.seg-group[data-target="' + selectId + '"]');
+    if (!group) return;
+    group.querySelectorAll('.seg-btn').forEach(b => { b.classList.toggle('active', b.dataset.value === sel.value); });
+}
+
+// ====================
+// PANEL STEPPER
+// ====================
+
+function syncStepperDisplay() {
+    var v = parseInt(document.getElementById('panelCount').value) || 0;
+    document.getElementById('stepperPanelNum').textContent = v;
+}
+
+function updateStepperPanelLabel() {
+    var sel = document.getElementById('panelSelect');
+    var opt = sel.options[sel.selectedIndex];
+    var label = opt ? opt.textContent : '—';
+    document.getElementById('stepperPanelLabel').textContent = label;
+}
+
+// ====================
+// BATTERY STEPPER
+// ====================
+
+function syncBatteryStepperDisplay() {
+    var v = parseInt(document.getElementById('desiredBatteryKwh').value) || 0;
+    document.getElementById('stepperBatteryNum').textContent = v;
+    var actual = state.actualBatteryKwh || 0;
+    document.getElementById('batteryActualDisplay').textContent = actual > 0 ? actual.toFixed(1) + ' kWh' : '—';
+}
+
+function updateStepperBatteryLabel() {
+    var mfg = getMfg();
+    var bt = getBatteryType();
+    var label = (mfg.label || '') + (bt.label ? ' ' + bt.label : '');
+    document.getElementById('stepperBatteryLabel').textContent = label || '—';
+}
 
 // ====================
 // EVENT BINDING
@@ -1601,11 +1711,27 @@ function bindEvents() {
     document.querySelectorAll('input, select').forEach(el => { if (!dedicatedIds.includes(el.id)) { el.addEventListener('input', calculateQuote); el.addEventListener('change', calculateQuote); } });
     document.getElementById('installPostcode').addEventListener('input', function() { this.value = this.value.replace(/\D/g, '').slice(0, 4); updateZoneDisplay(); calculateQuote(); });
     document.getElementById('systemTypeSelect').addEventListener('change', onSystemTypeChange);
+    document.querySelectorAll('.sys-tab').forEach(function(tab) {
+        tab.addEventListener('click', function() {
+            document.querySelectorAll('.sys-tab').forEach(function(t) { t.classList.remove('active'); });
+            tab.classList.add('active');
+            var sel = document.getElementById('systemTypeSelect');
+            sel.value = tab.dataset.value;
+            sel.dispatchEvent(new Event('change', { bubbles: true }));
+        });
+    });
     document.getElementById('manufacturerSelect').addEventListener('change', switchManufacturer);
     document.getElementById('batteryTypeSelect').addEventListener('change', switchBatteryType);
     document.getElementById('phaseType').addEventListener('change', () => { syncStateFromDOM(); userChangedInverter = false; dualStackResult = null; dualStackEcOverride = { stack1: null, stack2: null }; parallelResult = null; populateInverters(); populateGateways(); updateAccessoryPrices(); updateBatteryMaxCap(); calculateQuote(); });
-    document.getElementById('panelSelect').addEventListener('change', calculateQuote);
-    document.getElementById('desiredBatteryKwh').addEventListener('input', () => { var el = document.getElementById('desiredBatteryKwh'); var max = getMaxBatteryKwh(); if (parseFloat(el.value) > max) el.value = max; userChangedInverter = false; dualStackResult = null; dualStackEcOverride = { stack1: null, stack2: null }; parallelResult = null; calculateQuote(); });
+    document.getElementById('panelSelect').addEventListener('change', () => { updateStepperPanelLabel(); calculateQuote(); });
+    document.getElementById('panelCountUp').addEventListener('click', () => { var el = document.getElementById('panelCount'); el.value = (parseInt(el.value) || 0) + 1; syncStepperDisplay(); calculateQuote(); });
+    document.getElementById('panelCountDown').addEventListener('click', () => { var el = document.getElementById('panelCount'); var v = (parseInt(el.value) || 0) - 1; if (v < 0) v = 0; el.value = v; syncStepperDisplay(); calculateQuote(); });
+    document.getElementById('batteryKwhUp').addEventListener('click', () => { var el = document.getElementById('desiredBatteryKwh'); var v = (parseInt(el.value) || 0) + 1; var max = getMaxBatteryKwh(); if (v > max) v = max; el.value = v; userChangedInverter = false; dualStackResult = null; dualStackEcOverride = { stack1: null, stack2: null }; parallelResult = null; syncBatteryStepperDisplay(); calculateQuote(); });
+    document.getElementById('batteryKwhDown').addEventListener('click', () => { var el = document.getElementById('desiredBatteryKwh'); var v = (parseInt(el.value) || 0) - 1; if (v < 0) v = 0; el.value = v; userChangedInverter = false; dualStackResult = null; dualStackEcOverride = { stack1: null, stack2: null }; parallelResult = null; syncBatteryStepperDisplay(); calculateQuote(); });
+    document.getElementById('numRowsUp').addEventListener('click', () => { var el = document.getElementById('numRows'); var v = (parseInt(el.value) || 1) + 1; if (v > 20) v = 20; el.value = v; updateMountingKitInfo(); calculateQuote(); });
+    document.getElementById('numRowsDown').addEventListener('click', () => { var el = document.getElementById('numRows'); var v = (parseInt(el.value) || 1) - 1; if (v < 1) v = 1; el.value = v; updateMountingKitInfo(); calculateQuote(); });
+    document.getElementById('numArraysUp').addEventListener('click', () => { var el = document.getElementById('numArrays'); var v = (parseInt(el.value) || 1) + 1; if (v > 10) v = 10; el.value = v; updateMountingKitInfo(); calculateQuote(); });
+    document.getElementById('numArraysDown').addEventListener('click', () => { var el = document.getElementById('numArrays'); var v = (parseInt(el.value) || 1) - 1; if (v < 1) v = 1; el.value = v; updateMountingKitInfo(); calculateQuote(); });
     document.getElementById('inverterSelect').addEventListener('change', () => { userChangedInverter = true; calculateQuote(); });
     document.getElementById('roofType').addEventListener('change', updateRoofInfo);
     document.getElementById('panelOrientation').addEventListener('change', () => { updateMountingKitInfo(); calculateQuote(); });
@@ -1634,6 +1760,7 @@ function populatePanels() {
         o.dataset.colour = p.colour; o.dataset.widthMm = p.width_mm || 1134; o.dataset.heightMm = p.height_mm || 1800; o.dataset.supplierCode = p.supplier_code || '';
         sel.appendChild(o);
     });
+    updateStepperPanelLabel();
 }
 
 function populateInverters() {
@@ -2079,7 +2206,7 @@ function renderParallelBreakdown() {
     if (!parallelResult) return;
     var bt = getBatteryType();
     var mod = getBatteryModules()[0];
-    var html = '<span style="color:#e000f0;font-weight:600;">PARALLEL BATTERY</span>';
+    var html = '<span style="color:var(--blue);font-weight:600;">PARALLEL BATTERY</span>';
     html += ' <span style="color:var(--text-secondary);font-size:12px;">(' + parallelResult.totalModules + ' modules split across 2 systems)</span>';
 
     html += '<div style="display:flex;gap:8px;margin-top:8px;">';
@@ -2126,13 +2253,13 @@ function renderDualStackBreakdown() {
     var ecKey1 = getCecKey(dualStackResult.stack1.ec.sku);
     var ecKey2 = getCecKey(dualStackResult.stack2.ec.sku);
 
-    var html = '<span style="color:#e000f0;font-weight:600;">DUAL-STACK</span>';
+    var html = '<span style="color:var(--blue);font-weight:600;">DUAL-STACK</span>';
 
     html += '<div style="display:flex;gap:8px;margin-top:8px;">';
 
     // Stack 1
     html += '<div style="flex:1;">';
-    html += '<label style="display:block;font-size:12px;font-weight:500;color:var(--text-secondary);margin-bottom:5px;">Stack 1 - Energy Controller</label>';
+    html += '<label style="display:block;font-size:12px;font-weight:500;color:var(--text-secondary);margin-bottom:5px;">Stack 1 - Inverter/Energy Controller</label>';
     html += '<select id="dualEcSelect1" onchange="changeDualStackEc(1)" style="width:100%;padding:7px 12px;border:1px solid var(--separator-hover);border-radius:8px;font-size:14px;font-family:inherit;font-weight:400;background:var(--bg-input);color:var(--text-primary);height:36px;letter-spacing:-0.01em;margin-bottom:6px;appearance:none;-webkit-appearance:none;background-image:url(&quot;data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2710%27 height=%276%27 viewBox=%270 0 10 6%27%3E%3Cpath d=%27M1 1l4 4 4-4%27 stroke=%27%236e6e73%27 stroke-width=%271.5%27 fill=%27none%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27/%3E%3C/svg%3E&quot;);background-repeat:no-repeat;background-position:right 12px center;padding-right:30px;cursor:pointer;">';
     html += getDualEcOptions(1);
     html += '</select>';
@@ -2143,7 +2270,7 @@ function renderDualStackBreakdown() {
 
     // Stack 2
     html += '<div style="flex:1;">';
-    html += '<label style="display:block;font-size:12px;font-weight:500;color:var(--text-secondary);margin-bottom:5px;">Stack 2 - Energy Controller</label>';
+    html += '<label style="display:block;font-size:12px;font-weight:500;color:var(--text-secondary);margin-bottom:5px;">Stack 2 - Inverter/Energy Controller</label>';
     html += '<select id="dualEcSelect2" onchange="changeDualStackEc(2)" style="width:100%;padding:7px 12px;border:1px solid var(--separator-hover);border-radius:8px;font-size:14px;font-family:inherit;font-weight:400;background:var(--bg-input);color:var(--text-primary);height:36px;letter-spacing:-0.01em;margin-bottom:6px;appearance:none;-webkit-appearance:none;background-image:url(&quot;data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2710%27 height=%276%27 viewBox=%270 0 10 6%27%3E%3Cpath d=%27M1 1l4 4 4-4%27 stroke=%27%236e6e73%27 stroke-width=%271.5%27 fill=%27none%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27/%3E%3C/svg%3E&quot;);background-repeat:no-repeat;background-position:right 12px center;padding-right:30px;cursor:pointer;">';
     html += getDualEcOptions(2);
     html += '</select>';
@@ -2337,22 +2464,15 @@ function calculateQuote() {
         updateSystemModeUI();
 
         document.getElementById('panelKwDisplay').textContent = state.sysKw.toFixed(2) + ' kW';
+        syncStepperDisplay();
 
         // Skip battery logic entirely for solar-only
         var solarOnly = isSolarOnly();
         var batteryOnly = isBatteryOnly();
 
-        // Gateway UI: mandatory for Sigenergy with batteries -- auto-select cheapest
-        const sigGwMandatory = currentManufacturer === 'sigenergy' && state.desiredBatteryKwh > 0;
+        // Gateway: always allow None selection
         const gwSel = document.getElementById('gatewaySelect');
-        if (sigGwMandatory) {
-            // If currently set to None, auto-select cheapest (index 1 = first real gateway)
-            if (gwSel.value === 'none' && gwSel.options.length > 1) gwSel.selectedIndex = 1;
-            // Hide the None option so user can't deselect
-            if (gwSel.options[0] && gwSel.options[0].value === 'none') gwSel.options[0].disabled = true;
-        } else {
-            if (gwSel.options[0] && gwSel.options[0].value === 'none') gwSel.options[0].disabled = false;
-        }
+        if (gwSel.options[0] && gwSel.options[0].value === 'none') gwSel.options[0].disabled = false;
         const desired = state.desiredBatteryKwh;
         let actualKwh = 0;
         const isDualStack = currentManufacturer === 'sigenergy' && desired > 48;
@@ -2414,7 +2534,7 @@ function calculateQuote() {
                     const opt = optimizeBattery(desired);
                     batteryQtys = opt.qtys; actualKwh = opt.total;
                     updateBatteryUI();
-                    if (actualKwh > desired) document.getElementById('batteryBreakdown').innerHTML += ' <span style="color:#34d399;">(+' + fmtKwh(actualKwh - desired) + 'kWh, cheaper)</span>';
+                    if (actualKwh > desired) document.getElementById('batteryBreakdown').innerHTML += ' <span style="color:var(--green);">(+' + fmtKwh(actualKwh - desired) + 'kWh, cheaper)</span>';
                 }
             } else {
                 parallelResult = null;
@@ -2422,6 +2542,8 @@ function calculateQuote() {
         }
         state.actualBatteryKwh = actualKwh;
         document.getElementById('batteryConfigPanel').style.display = desired > 0 ? 'block' : 'none';
+        syncBatteryStepperDisplay();
+        renderAutoAccessories();
 
         // Min modules check (skip for parallel -- each system validated independently)
         const rules = getBatteryRules();
@@ -2449,6 +2571,7 @@ function calculateQuote() {
         if (wmWarn && wmWarnGroup) {
             if (currentManufacturer === 'sigenergy' && bat.totalModules > 2 && state.mountingType === 'wall') {
                 document.getElementById('mountingType').value = 'ground';
+                syncSegmentedFromSelect('mountingType');
                 state.mountingType = 'ground';
                 state.wallMountAutoSwitched = true;
                 wmWarnGroup.style.display = '';
@@ -2586,7 +2709,7 @@ function calculateQuote() {
                 const gw = document.getElementById('gatewaySelect');
                 costGateway = parseFloat(gw.options[gw.selectedIndex]?.dataset.price) || 0;
                 costMount = 0;
-                installBat = state.installBatPerStack;
+                installBat = (state.desiredBatteryKwh > 0) ? state.installBatPerStack : 0;
             } else {
                 costInverter = state.invPrice;
                 costBattery = bat.equipmentCost;
@@ -2610,7 +2733,7 @@ function calculateQuote() {
                 costBattery = dualStackResult.totalBatteryCost;
                 costGateway = dualStackResult.gwPrice;
                 costMount = dualStackResult.mountCost;
-                installBat = dualStackResult.labourCost;
+                installBat = (state.desiredBatteryKwh > 0) ? dualStackResult.labourCost : 0;
                 const gw = document.getElementById('gatewaySelect');
                 const userGwPrice = parseFloat(gw.options[gw.selectedIndex]?.dataset.price) || 0;
                 if (userGwPrice > costGateway) costGateway = userGwPrice;
@@ -2620,7 +2743,7 @@ function calculateQuote() {
                 const gw = document.getElementById('gatewaySelect');
                 costGateway = parseFloat(gw.options[gw.selectedIndex]?.dataset.price) || 0;
                 costMount = 0;
-                installBat = state.installBatPerStack;
+                installBat = (state.desiredBatteryKwh > 0) ? state.installBatPerStack : 0;
             } else {
                 costInverter = state.invPrice;
                 costBattery = bat.equipmentCost;
@@ -3152,38 +3275,38 @@ function showBOM() {
     const date = new Date().toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' });
     let addrLine = [addr, suburb, st, pc].filter(Boolean).join(', ');
     let custHtml = '<div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px;">';
-    custHtml += '<div><strong style="color:#f0f0f0; font-size:15px;">' + esc(name) + '</strong>';
-    if (addrLine) custHtml += '<br><span style="color:#9ca3af;">' + esc(addrLine) + '</span>';
+    custHtml += '<div><strong style="color:var(--gray-900); font-size:15px;">' + esc(name) + '</strong>';
+    if (addrLine) custHtml += '<br><span style="color:var(--gray-500);">' + esc(addrLine) + '</span>';
     let contactParts = [];
     if (phone) contactParts.push(esc(phone));
     if (email) contactParts.push(esc(email));
-    if (contactParts.length > 0) custHtml += '<br><span style="color:#9ca3af;">' + contactParts.join(' &nbsp;|&nbsp; ') + '</span>';
+    if (contactParts.length > 0) custHtml += '<br><span style="color:var(--gray-500);">' + contactParts.join(' &nbsp;|&nbsp; ') + '</span>';
     custHtml += '</div>';
-    custHtml += '<div style="text-align:right; white-space:nowrap;"><span style="color:#f0f0f0;">' + esc(date) + '</span></div>';
+    custHtml += '<div style="text-align:right; white-space:nowrap;"><span style="color:var(--gray-900);">' + esc(date) + '</span></div>';
     custHtml += '</div>';
     document.getElementById('bomCustomerHeader').innerHTML = custHtml;
 
     let html = '', grandTotal = 0;
     bom.forEach((group, gi) => {
         const groupTotal = group.items.reduce((s, item) => s + item.total, 0); grandTotal += groupTotal;
-        html += '<div style="background:#141414; border:1px solid #2a2a2a; border-radius:8px; margin-bottom:12px; overflow:hidden;">';
+        html += '<div style="background:var(--white); border:1px solid var(--gray-200); border-radius:var(--radius-sm, 12px); margin-bottom:12px; overflow:hidden; box-shadow:var(--shadow-sm);">';
         html += '<div onclick="toggleBomGroup(' + gi + ')" style="display:flex; justify-content:space-between; align-items:center; padding:14px 20px; cursor:pointer; user-select:none;">';
-        html += '<div style="display:flex; align-items:center; gap:10px;"><span id="bomChevron' + gi + '" style="color:#e000f0; font-size:12px; transition:transform 0.2s; transform:rotate(90deg);">&#9654;</span>';
-        html += '<span style="color:#e000f0; font-size:13px; font-weight:600; text-transform:uppercase; letter-spacing:1px;">' + esc(group.category) + '</span>';
-        html += '<span style="color:#6b7280; font-size:12px;">(' + group.items.length + ' item' + (group.items.length !== 1 ? 's' : '') + ')</span></div>';
-        html += '<span style="color:#f0f0f0; font-weight:600;">' + fmtExGst(groupTotal) + '</span></div>';
-        html += '<div id="bomGroup' + gi + '" style="display:block; border-top:1px solid #2a2a2a;"><table style="width:100%; border-collapse:collapse; font-size:13px;">';
-        html += '<thead><tr style="color:#6b7280; text-transform:uppercase; font-size:11px; letter-spacing:0.5px;"><th style="text-align:left; padding:10px 20px; border-bottom:1px solid #222;">Description</th><th style="text-align:center; padding:10px 12px; border-bottom:1px solid #222; width:60px;">Qty</th><th style="text-align:right; padding:10px 12px; border-bottom:1px solid #222; width:100px;">Unit (ex GST)</th><th style="text-align:right; padding:10px 20px; border-bottom:1px solid #222; width:110px;">Total (ex GST)</th></tr></thead><tbody>';
+        html += '<div style="display:flex; align-items:center; gap:10px;"><span id="bomChevron' + gi + '" style="color:var(--blue); font-size:12px; transition:transform 0.2s; transform:rotate(90deg);">&#9654;</span>';
+        html += '<span style="color:var(--blue); font-size:13px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px;">' + esc(group.category) + '</span>';
+        html += '<span style="color:var(--gray-400); font-size:12px;">(' + group.items.length + ' item' + (group.items.length !== 1 ? 's' : '') + ')</span></div>';
+        html += '<span style="color:var(--gray-900); font-weight:600;">' + fmtExGst(groupTotal) + '</span></div>';
+        html += '<div id="bomGroup' + gi + '" style="display:block; border-top:1px solid var(--gray-200);"><table style="width:100%; border-collapse:collapse; font-size:13px;">';
+        html += '<thead><tr style="color:var(--gray-400); text-transform:uppercase; font-size:11px; letter-spacing:0.5px;"><th style="text-align:left; padding:10px 20px; border-bottom:1px solid var(--gray-200);">Description</th><th style="text-align:center; padding:10px 12px; border-bottom:1px solid var(--gray-200); width:60px;">Qty</th><th style="text-align:right; padding:10px 12px; border-bottom:1px solid var(--gray-200); width:100px;">Unit (ex GST)</th><th style="text-align:right; padding:10px 20px; border-bottom:1px solid var(--gray-200); width:110px;">Total (ex GST)</th></tr></thead><tbody>';
         group.items.forEach((item, ii) => {
-            const bg = ii % 2 === 0 ? '#1a1a1a' : '#141414';
+            const bg = ii % 2 === 0 ? 'var(--gray-50)' : 'var(--white)';
             if (item.isGroup) {
-                html += '<tr style="background:' + bg + '; color:#e0e0e0;"><td style="padding:9px 20px; font-weight:600;">' + esc(item.desc) + (item.sku && item.sku !== 'Custom' && item.sku !== 'Labour' ? ' <span style="color:#6b7280; font-size:11px;">(' + esc(item.sku) + ')</span>' : '') + '</td>';
+                html += '<tr style="background:' + bg + '; color:var(--gray-900);"><td style="padding:9px 20px; font-weight:600;">' + esc(item.desc) + (item.sku && item.sku !== 'Custom' && item.sku !== 'Labour' ? ' <span style="color:var(--gray-400); font-size:11px;">(' + esc(item.sku) + ')</span>' : '') + '</td>';
                 html += '<td style="text-align:center; padding:9px 12px;">' + item.qty + '</td><td style="text-align:right; padding:9px 12px;"></td><td style="text-align:right; padding:9px 20px;"></td></tr>';
             } else {
                 var pad = item.indent ? '9px 20px 9px 40px' : '9px 20px';
-                var clr = item.indent ? '#9ca3af' : '#d1d5db';
-                html += '<tr style="background:' + bg + '; color:' + clr + ';"><td style="padding:' + pad + ';">' + (item.indent ? '- ' : '') + esc(item.desc) + (item.sku && item.sku !== 'Custom' && item.sku !== 'Labour' ? ' <span style="color:#6b7280; font-size:11px;">(' + esc(item.sku) + ')</span>' : '') + '</td>';
-                html += '<td style="text-align:center; padding:9px 12px;">' + item.qty + '</td><td style="text-align:right; padding:9px 12px;">' + fmtExGstDecimal(item.unit) + '</td><td style="text-align:right; padding:9px 20px; color:#f0f0f0; font-weight:500;">' + fmtExGstDecimal(item.total) + '</td></tr>';
+                var clr = item.indent ? 'var(--gray-500)' : 'var(--gray-700)';
+                html += '<tr style="background:' + bg + '; color:' + clr + ';"><td style="padding:' + pad + ';">' + (item.indent ? '- ' : '') + esc(item.desc) + (item.sku && item.sku !== 'Custom' && item.sku !== 'Labour' ? ' <span style="color:var(--gray-400); font-size:11px;">(' + esc(item.sku) + ')</span>' : '') + '</td>';
+                html += '<td style="text-align:center; padding:9px 12px;">' + item.qty + '</td><td style="text-align:right; padding:9px 12px;">' + fmtExGstDecimal(item.unit) + '</td><td style="text-align:right; padding:9px 20px; color:var(--gray-900); font-weight:500;">' + fmtExGstDecimal(item.total) + '</td></tr>';
             }
         });
         html += '</tbody></table></div></div>';
@@ -3197,19 +3320,19 @@ function showBOM() {
     const pvStcCount = zoneRating > 0 ? Math.floor(state.sysKw * zoneRating * state.deemingPeriod) : 0;
     const pvReb = pvStcCount * state.stcPrice, batSummary = getBatterySummary(), batUsable = (parallelResult && parallelResult.isParallel) ? parallelResult.totalUsableKwh : (dualStackResult && dualStackResult.isDualStack) ? dualStackResult.totalUsableKwh : batSummary.usableKwh, batReb = calcBatteryRebate(batUsable, state.batteryRebatePerKwh);
     let totHtml = '<table style="width:100%; font-size:14px; border-collapse:collapse;">';
-    const totRow = (l, v, s) => '<tr style="' + (s || '') + '"><td style="padding:8px 0; color:#9ca3af;">' + l + '</td><td style="padding:8px 0; text-align:right; color:#f0f0f0; font-weight:500;">' + v + '</td></tr>';
+    const totRow = (l, v, s) => '<tr style="' + (s || '') + '"><td style="padding:8px 0; color:var(--gray-500);">' + l + '</td><td style="padding:8px 0; text-align:right; color:var(--gray-900); font-weight:500;">' + v + '</td></tr>';
     const gpAmt = grandTotal * (state.gpMargin / 100);
     totHtml += totRow('Parts & Accessories', fmtExGst(partsTotal));
     totHtml += totRow('Installation (Labour)', fmtExGst(installTotal));
-    totHtml += totRow('Total COG (ex GST)', fmtExGst(grandTotal), 'border-top:1px solid #333; font-weight:700;');
+    totHtml += totRow('Total COG (ex GST)', fmtExGst(grandTotal), 'border-top:1px solid var(--gray-200); font-weight:700;');
     totHtml += totRow('GP (' + state.gpMargin + '%)', fmtExGst(gpAmt));
     const priceBeforeComm = grandTotal + gpAmt;
     const commRate = state.salesCommission / 100;
     const baseIncGst = priceBeforeComm * GST;
     const commAmt = (baseIncGst - pvReb - batReb) * commRate / (1 - commRate * GST) / GST;
     totHtml += totRow('Commission (' + state.salesCommission + '%)', fmtExGst(commAmt));
-    if (pvReb > 0) totHtml += totRow('PV STC Rebate (' + pvStcCount + ' STCs)', '-' + fmtExGst(pvReb), 'color:#34d399;');
-    if (batReb > 0) totHtml += totRow('Battery STC Rebate', '-' + fmtExGst(batReb), 'color:#34d399;');
+    if (pvReb > 0) totHtml += totRow('PV STC Rebate (' + pvStcCount + ' STCs)', '-' + fmtExGst(pvReb), 'color:var(--green);');
+    if (batReb > 0) totHtml += totRow('Battery STC Rebate', '-' + fmtExGst(batReb), 'color:var(--green);');
     totHtml += '</table>';
     document.getElementById('bomTotals').innerHTML = totHtml;
     document.getElementById('bomOverlay').style.display = 'block'; document.body.style.overflow = 'hidden';
@@ -3428,7 +3551,7 @@ async function searchQuotes() {
 
     const resultsEl = document.getElementById('quoteSearchResults');
     resultsEl.style.display = 'block';
-    resultsEl.innerHTML = '<div style="color:#6b7280;padding:8px;">Searching...</div>';
+    resultsEl.innerHTML = '<div style="color:var(--gray-500);padding:8px;">Searching...</div>';
 
     try {
         let builder = supabaseClient.from('quotes')
@@ -3451,7 +3574,7 @@ async function searchQuotes() {
         if (error) throw error;
 
         if (!results || results.length === 0) {
-            resultsEl.innerHTML = '<div style="color:#6b7280;padding:8px;">No quotes found for "' + esc(term) + '"</div>';
+            resultsEl.innerHTML = '<div style="color:var(--gray-500);padding:8px;">No quotes found for "' + esc(term) + '"</div>';
             return;
         }
 
@@ -3460,16 +3583,16 @@ async function searchQuotes() {
             const c = r.customer || {};
             const date = r.updated_at ? new Date(r.updated_at).toLocaleDateString('en-AU') : '';
             const sysInfo = (r.totals?.sysKw ? r.totals.sysKw.toFixed(1) + 'kW' : '') + (r.totals?.batteryKwh ? ' / ' + fmtKwh(r.totals.batteryKwh) + 'kWh' : '');
-            html += '<div onclick="loadQuote(\'' + r.id + '\')" style="padding:10px 16px;background:#141414;border:1px solid #2a2a2a;border-radius:6px;margin-bottom:6px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;" onmouseover="this.style.borderColor=\'#e000f0\'" onmouseout="this.style.borderColor=\'#2a2a2a\'">';
-            html += '<div><span style="color:#f0f0f0;font-weight:500;">' + esc(c.name || 'Unknown') + '</span>';
-            if (c.suburb) html += '<span style="color:#6b7280;font-size:12px;margin-left:8px;">' + esc(c.suburb) + '</span>';
-            if (c.phone) html += '<span style="color:#6b7280;font-size:12px;margin-left:8px;">' + esc(c.phone) + '</span>';
+            html += '<div onclick="loadQuote(\'' + r.id + '\')" style="padding:10px 16px;background:var(--white);border:1px solid var(--gray-200);border-radius:var(--radius-sm, 12px);margin-bottom:6px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;box-shadow:var(--shadow-sm);" onmouseover="this.style.borderColor=\'var(--blue)\'" onmouseout="this.style.borderColor=\'var(--gray-200)\'">';
+            html += '<div><span style="color:var(--gray-900);font-weight:500;">' + esc(c.name || 'Unknown') + '</span>';
+            if (c.suburb) html += '<span style="color:var(--gray-500);font-size:12px;margin-left:8px;">' + esc(c.suburb) + '</span>';
+            if (c.phone) html += '<span style="color:var(--gray-500);font-size:12px;margin-left:8px;">' + esc(c.phone) + '</span>';
             const repName = r.reps?.name;
             if (repName) html += '<span style="color:#a78bfa;font-size:11px;margin-left:8px;">' + esc(repName) + '</span>';
             html += '</div>';
-            html += '<div style="text-align:right;"><span style="color:#e000f0;font-size:13px;">' + esc(r.totals?.customerPrice || '') + '</span>';
-            if (sysInfo) html += '<span style="color:#6b7280;font-size:11px;margin-left:8px;">' + esc(sysInfo) + '</span>';
-            if (date) html += '<span style="color:#6b7280;font-size:11px;margin-left:8px;">' + date + '</span>';
+            html += '<div style="text-align:right;"><span style="color:var(--blue);font-size:13px;font-weight:600;">' + esc(r.totals?.customerPrice || '') + '</span>';
+            if (sysInfo) html += '<span style="color:var(--gray-500);font-size:11px;margin-left:8px;">' + esc(sysInfo) + '</span>';
+            if (date) html += '<span style="color:var(--gray-500);font-size:11px;margin-left:8px;">' + date + '</span>';
             html += '</div></div>';
         });
         resultsEl.innerHTML = html;
@@ -3497,6 +3620,7 @@ async function loadQuote(quoteId) {
         if (data.system?.systemType) {
             currentSystemType = data.system.systemType;
             document.getElementById('systemTypeSelect').value = currentSystemType;
+            document.querySelectorAll('.sys-tab').forEach(function(t) { t.classList.toggle('active', t.dataset.value === currentSystemType); });
             updateManufacturerOptions();
         }
 
@@ -3504,6 +3628,7 @@ async function loadQuote(quoteId) {
         if (data.system?.manufacturer) {
             currentManufacturer = data.system.manufacturer;
             document.getElementById('manufacturerSelect').value = currentManufacturer;
+            syncSegmentedFromSelect('manufacturerSelect');
             currentBatteryTypeIdx = data.system.batteryTypeIdx || 0;
             populateBatteryTypes(); populateInverters(); populateGateways(); buildAccessoriesUI(); updateBatteryMountVisibility(); updateHeaderSubtitle(); updateInverterSectionLabel();
         }
@@ -3522,10 +3647,12 @@ async function loadQuote(quoteId) {
         // Restore system config
         const s = data.system || {};
         document.getElementById('phaseType').value = s.phase || 'single_phase';
+        syncSegmentedFromSelect('phaseType');
         populateInverters(); populateGateways();
 
         if (s.panelSelectIdx != null) document.getElementById('panelSelect').selectedIndex = s.panelSelectIdx;
         document.getElementById('panelCount').value = s.panelCount || CONFIG.default_panel_count;
+        syncStepperDisplay(); updateStepperPanelLabel(); syncBatteryStepperDisplay(); updateStepperBatteryLabel();
 
         document.getElementById('desiredBatteryKwh').value = s.desiredBatteryKwh || 0;
         buildBatteryUI();
@@ -3551,6 +3678,7 @@ async function loadQuote(quoteId) {
         var klpSel = document.getElementById('kliplockProfile');
         if (klpSel) klpSel.value = m.kliplockProfile || 'kliplock_606';
         document.getElementById('mountingType').value = m.mountingType || 'ground';
+        syncSegmentedFromSelect('mountingType');
         updateRoofInfo(); updateMountingKitInfo();
 
         // Restore pricing
@@ -3565,7 +3693,7 @@ async function loadQuote(quoteId) {
 
         // Restore installation / contractor
         const inst = data.installation || {};
-        if (inst.storey) { var se = document.getElementById('storeyCount'); if (se) se.value = inst.storey; }
+        if (inst.storey) { var se = document.getElementById('storeyCount'); if (se) { se.value = inst.storey; syncSegmentedFromSelect('storeyCount'); } }
         if (inst.backupCircuitCount) { var bc = document.getElementById('backupCircuitCount'); if (bc) bc.value = inst.backupCircuitCount; }
         if (inst.travelDistanceKm) { var td = document.getElementById('travelDistanceKm'); if (td) td.value = inst.travelDistanceKm; }
         if (inst.addons) installationAddons = JSON.parse(JSON.stringify(inst.addons));
@@ -3614,6 +3742,7 @@ function clearQuote() {
     document.getElementById('installPostcode').value = '';
     document.getElementById('desiredBatteryKwh').value = CONFIG.default_battery_kwh;
     document.getElementById('panelCount').value = CONFIG.default_panel_count;
+    syncStepperDisplay(); updateStepperPanelLabel(); syncBatteryStepperDisplay(); updateStepperBatteryLabel();
     document.getElementById('gatewaySelect').selectedIndex = 0;
     selectedAccessories = []; renderSelectedAccessories();
     customAddonCount = 0; document.getElementById('customAddons').innerHTML = '';
@@ -3623,6 +3752,9 @@ function clearQuote() {
     installationAddons = { standardItems: {}, checkboxItems: {}, addonItems: {} };
     rateCardResult = null;
     var storeyEl = document.getElementById('storeyCount'); if (storeyEl) storeyEl.value = '1';
+    document.getElementById('phaseType').value = 'single_phase';
+    document.getElementById('mountingType').value = 'ground';
+    syncSegmentedFromSelect('storeyCount'); syncSegmentedFromSelect('phaseType'); syncSegmentedFromSelect('mountingType');
     var bcEl = document.getElementById('backupCircuitCount'); if (bcEl) bcEl.value = '0';
     var tdEl = document.getElementById('travelDistanceKm'); if (tdEl) tdEl.value = '0';
     // Re-init standard items as checked
@@ -4052,7 +4184,7 @@ const DEFAULT_CONFIG = {
     ],
     "manufacturers": {
         "sigenergy": {
-            "label": "Sigenergy", "default_battery_type_idx": 0, "default_inverter_kw": 10, "inverter_label": "Energy Controller", "pv_oversizing": { "single_phase": 2.0, "three_phase": 1.6 },
+            "label": "Sigenergy", "default_battery_type_idx": 0, "default_inverter_kw": 10, "inverter_label": "Inverter/Energy Controller", "pv_oversizing": { "single_phase": 2.0, "three_phase": 1.6 },
             "inverters": { "single_phase": [{ "sku": "SigenStor EC 5.0 SP", "kw": 5, "price": 1343, "max_pv_kw": 10, "supplier_code": "SIG:EC-5.0-SP" },{ "sku": "SigenStor EC 6.0 SP", "kw": 6, "price": 1452, "max_pv_kw": 12, "supplier_code": "SIG:EC-6.0-SP" },{ "sku": "SigenStor EC 8.0 SP", "kw": 8, "price": 2482, "max_pv_kw": 16, "supplier_code": "SIG:EC-8.0-SP" },{ "sku": "SigenStor EC 10.0 SP", "kw": 10, "price": 2675, "max_pv_kw": 20, "supplier_code": "SIG:EC-10.0-SP" },{ "sku": "SigenStor EC 12.0 SP", "kw": 12, "price": 2869, "max_pv_kw": 24, "supplier_code": "SIG:EC-12.0-SP" }], "three_phase": [{ "sku": "SigenStor EC 5.0 TP", "kw": 5, "price": 2300, "max_pv_kw": 8, "supplier_code": "SIG:EC-5.0-TP" },{ "sku": "SigenStor EC 10.0 TP", "kw": 10, "price": 2663, "max_pv_kw": 16, "supplier_code": "SIG:EC-10.0-TP" },{ "sku": "SigenStor EC 15.0 TP", "kw": 15, "price": 3511, "max_pv_kw": 24, "supplier_code": "SIG:EC-15.0-TP" },{ "sku": "SigenStor EC 20.0 TP", "kw": 20, "price": 4007, "max_pv_kw": 32, "supplier_code": "SIG:EC-20.0-TP" },{ "sku": "SigenStor EC 25.0 TP", "kw": 25, "price": 4600, "max_pv_kw": 40, "supplier_code": "SIG:EC-25.0-TP" },{ "sku": "SigenStor EC 30.0 TP", "kw": 30, "price": 5060, "max_pv_kw": 48, "supplier_code": "SIG:EC-30.0-TP" }] },
             "battery_types": [{ "id": "sig_default", "label": "SigenStor (8kWh)", "modules": [{ "kwh": 5, "usable_kwh": 5.2, "price": 2905, "label": "5 kWh", "supplier_code": "SIG:BAT-5.0", "enabled": false },{ "kwh": 8, "usable_kwh": 7.8, "price": 3632, "label": "8 kWh", "supplier_code": "SIG:BAT-8.0" }], "can_mix": true, "bms_cost": 0, "bms_code": "", "series_box_cost": 0, "series_box_code": "", "series_box_threshold": 999, "rules": { "max_modules": 6, "max_kwh": 48, "min_modules_single": 0, "min_modules_three": 0, "max_modules_single": 6, "max_modules_three": 6 } }],
             "gateways": { "single_phase": [{ "sku": "Sigen Gateway Home SP AU (Pro)", "price": 695, "desc": "Pro back entry ($695)", "supplier_code": "SIG:GW-HOME-SP-PRO" },{ "sku": "Sigen Gateway Home SP", "price": 645, "desc": "Standard Single Phase ($645)", "supplier_code": "SIG:GW-HOME-SP" },{ "sku": "Sigen CUST Gateway SP-63", "price": 2200, "desc": "Custom 63A up to 24kW ($2,200)", "supplier_code": "SIG:GW-CUST-SP-63" },{ "sku": "Sigen CUST Gateway SP-63-Hybrid", "price": 3000, "desc": "Custom 63A Hybrid ($3,000)", "supplier_code": "SIG:GW-CUST-SP-63-HYB" },{ "sku": "Sigen CUST Gateway SP-125", "price": 3200, "desc": "Custom 125A up to 24kW ($3,200)", "supplier_code": "SIG:GW-CUST-SP-125" }], "three_phase": [{ "sku": "Sigen Gateway Home TP AU (Pro)", "price": 859, "desc": "Simple 2-inverter ($859)", "supplier_code": "SIG:GW-HOME-TP-PRO" },{ "sku": "Sigen Gateway Home TP", "price": 1575, "desc": "Standard Three Phase ($1,575)", "supplier_code": "SIG:GW-HOME-TP" },{ "sku": "Sigen Gateway C60 AU", "price": 1769, "desc": "C&I 60kW ($1,769)", "supplier_code": "SIG:GW-C60" }] },
@@ -4062,7 +4194,7 @@ const DEFAULT_CONFIG = {
             "cec_approved": { "type": "inverter_battery_combo", "single_phase": { "EC 5.0 SP": [0,5,8,10,13,16,21,24,29,32], "EC 6.0 SP": [0,5,8,10,13,16,21,24,29,32], "EC 8.0 SP": [0,5,8,10,13,16,21,24,29,32,37,40,48], "EC 10.0 SP": [0,5,8,10,13,16,21,24,29,32,37,40,48], "EC 12.0 SP": [0,5,8,10,13,16,21,24,29,32,37,40,48] }, "three_phase": { "EC 5.0 TP": [0,5,8,10,13,16], "EC 10.0 TP": [0,5,8,10,13,16,21,24,29,32,37,40,48], "EC 15.0 TP": [0,5,8,10,13,16,21,24,29,32,37,40,48], "EC 20.0 TP": [0,5,8,10,13,16,21,24,29,32,37,40,48], "EC 25.0 TP": [0,5,8,10,13,16,21,24,29,32,37,40,48], "EC 30.0 TP": [0,5,8,10,13,16,21,24,29,32,37,40,48] } }
         },
         "solax": {
-            "label": "SolaX", "default_battery_type_idx": 1, "default_inverter_kw": 10, "inverter_label": "Hybrid Inverter", "pv_oversizing": { "single_phase": 2.0, "three_phase": 2.0 },
+            "label": "SolaX", "default_battery_type_idx": 1, "default_inverter_kw": 10, "inverter_label": "Inverter/Energy Controller", "pv_oversizing": { "single_phase": 2.0, "three_phase": 2.0 },
             "inverters": { "single_phase": [{ "sku": "X1-HYBRID-5.0D", "kw": 5, "price": 1416, "max_pv_kw": 10, "solar_only": true, "supplier_code": "SOLAX:X1-HYBRID-5.0D" },{ "sku": "X1-HYBRID-6.0D", "kw": 6, "price": 1440, "max_pv_kw": 12, "solar_only": true, "supplier_code": "SOLAX:X1-HYBRID-6.0D" },{ "sku": "X1-HYBRID-7.5D", "kw": 7.5, "price": 1500, "max_pv_kw": 15, "solar_only": true, "supplier_code": "SOLAX:X1-HYBRID-7.5D" },{ "sku": "X1-VAST-5K", "kw": 5, "price": 1738, "max_pv_kw": 10, "supplier_code": "SOLAX:X1-VAST-5K" },{ "sku": "X1-VAST-8K", "kw": 8, "price": 2258, "max_pv_kw": 16, "supplier_code": "SOLAX:X1-VAST-8K" },{ "sku": "X1-VAST-10K", "kw": 10, "price": 2500, "max_pv_kw": 20, "supplier_code": "SOLAX:X1-VAST-10K" }], "three_phase": [{ "sku": "X3-HYBRID-5.0D", "kw": 5, "price": 1810, "max_pv_kw": 10, "supplier_code": "SOLAX:X3-HYB-5D" },{ "sku": "X3-HYBRID-8.0D", "kw": 8, "price": 2100, "max_pv_kw": 16, "supplier_code": "SOLAX:X3-HYB-8D" },{ "sku": "X3-HYBRID-10.0D", "kw": 10, "price": 2450, "max_pv_kw": 20, "supplier_code": "SOLAX:X3-HYB-10D" },{ "sku": "X3-HYBRID-15.0D", "kw": 15, "price": 2688, "max_pv_kw": 30, "supplier_code": "SOLAX:X3-HYB-15D" },{ "sku": "X3-ULT-15KP", "kw": 15, "price": 3655, "max_pv_kw": 30, "supplier_code": "SOLAX:X3-ULT-15KP" },{ "sku": "X3-ULT-20KP", "kw": 20, "price": 3910, "max_pv_kw": 40, "supplier_code": "SOLAX:X3-ULT-20KP" },{ "sku": "X3-ULT-25K", "kw": 25, "price": 4751, "max_pv_kw": 50, "supplier_code": "SOLAX:X3-ULT-25K" },{ "sku": "X3-ULT-30K", "kw": 30, "price": 4900, "max_pv_kw": 60, "supplier_code": "SOLAX:X3-ULT-30K" }] },
             "battery_types": [{ "id": "tp_hs36", "label": "T-BAT TP-HS36 (3.6 kWh modules)", "use_package_pricing": true, "modules": [{ "kwh": 3.6, "usable_kwh": 3.25, "price": 1140, "label": "3.6 kWh", "supplier_code": "SOLAX-BAT-TP-HS36" }], "packages": [{ "modules": 2, "kwh": 7.2, "price": 3130, "sku": "SOLAX-T-BAT-HS7.2", "includes": "2x TP-HS36 + BMS" },{ "modules": 3, "kwh": 10.8, "price": 4270, "sku": "SOLAX-T-BAT-HS10.8", "includes": "3x TP-HS36 + BMS" },{ "modules": 4, "kwh": 14.4, "price": 5410, "sku": "SOLAX-T-BAT-HS14.4", "includes": "4x TP-HS36 + BMS" },{ "modules": 5, "kwh": 18.0, "price": 6550, "sku": "SOLAX-T-BAT-HS18.0", "includes": "5x TP-HS36 + BMS" },{ "modules": 6, "kwh": 21.6, "price": 7690, "sku": "SOLAX-T-BAT-HS21.6", "includes": "6x TP-HS36 + BMS" },{ "modules": 7, "kwh": 25.2, "price": 8830, "sku": "SOLAX-T-BAT-HS25.2", "includes": "7x TP-HS36 + BMS" },{ "modules": 8, "kwh": 28.8, "price": 9970, "sku": "SOLAX-T-BAT-HS28.8", "includes": "8x TP-HS36 + BMS" },{ "modules": 9, "kwh": 32.4, "price": 11110, "sku": "SOLAX-T-BAT-HS32.4", "includes": "9x TP-HS36 + BMS + Series Box" },{ "modules": 10, "kwh": 36.0, "price": 12800, "sku": "SOLAX-T-BAT-HS36", "includes": "10x TP-HS36 + BMS + Series Box" },{ "modules": 11, "kwh": 39.6, "price": 13940, "sku": "SOLAX-T-BAT-HS39.6", "includes": "11x TP-HS36 + BMS + Series Box" },{ "modules": 12, "kwh": 43.2, "price": 15080, "sku": "SOLAX-T-BAT-HS43.2", "includes": "12x TP-HS36 + BMS + Series Box" },{ "modules": 13, "kwh": 46.8, "price": 16220, "sku": "SOLAX-T-BAT-HS46.8", "includes": "13x TP-HS36 + BMS + Series Box" }], "can_mix": false, "bms_cost": 850, "bms_code": "SOLAX-TBMS-MCS0800", "series_box_cost": 550, "series_box_code": "SOLAX-HS36-SERIES-BOX", "series_box_threshold": 9, "rules": { "max_modules": 13, "max_kwh": 46.8, "min_modules_single": 2, "min_modules_three": 3, "max_modules_single": 8, "max_modules_three": 13 } },{ "id": "tb_hs51", "label": "T-BAT TB-HS51 (5.1 kWh modules)", "use_package_pricing": false, "modules": [{ "kwh": 5.1, "usable_kwh": 5.1, "price": 1850, "label": "5.1 kWh", "supplier_code": "SOLAX-BAT-TB-HS510" }], "can_mix": false, "bms_cost": 1100, "bms_code": "SOLAX-TBMS-S51-80", "series_box_cost": 740, "series_box_code": "SOLAX-BAT-TB-HS510-SERIES-BOX", "series_box_threshold": 9, "rules": { "max_modules": 13, "max_kwh": 66.3, "min_modules_single": 2, "min_modules_three": 3, "max_modules_single": 8, "max_modules_three": 13 } }],
             "gateways": { "single_phase": [{ "sku": "SolaX EPS Box SP", "price": 250, "desc": "EPS Box - Single Phase Backup", "supplier_code": "SOLAX-EPS-1P" }], "three_phase": [{ "sku": "SolaX EPS Box TP", "price": 358, "desc": "EPS Box - Three Phase Backup", "supplier_code": "SOLAX-EPS-3P" }] },
@@ -4076,7 +4208,7 @@ const DEFAULT_CONFIG = {
     "rebates": { "stc_price": 37, "stc_deeming_period": 5, "battery_rebate_per_kwh": 311, "stc_zones": [[0,9999,3,1.382]] },
     "gp_margin": 37.5,
     "sales_commission": 8.75,
-    "default_panel_count": 28,
-    "default_battery_kwh": 20,
+    "default_panel_count": 21,
+    "default_battery_kwh": 30,
     "mounting_kits": { "kits": { "tin_2kw": {"label":"Tin Roof 2kW Pack","panels_covered":4,"price":46.50,"supplier_code":"RAY:KIT-TIN-2KW"}, "tin_1_5kw": {"label":"Tin Roof 1.5kW Pack","panels_covered":3,"price":34.90,"supplier_code":"RAY:KIT-TIN-1.5KW"}, "tile_2kw": {"label":"Tile Roof 2kW Pack","panels_covered":4,"price":93.00,"supplier_code":"RAY:KIT-TILE-2KW"}, "tile_1_5kw": {"label":"Tile Roof 1.5kW Pack","panels_covered":3,"price":69.50,"supplier_code":"RAY:KIT-TILE-1.5KW"} }, "tilt_angles": { "10_15": {"label":"10-15 deg","price":11.99,"supplier_code":"RAY:TILT-10/15"} }, "split_array_surcharge": { "parts": [{"desc":"End Clamp","qty":4,"price":1.10,"supplier_code":"RAY:END"}], "labour_surcharge": 100 }, "rails": { "portrait_per_row": 2, "landscape_per_row": 3, "price": 25.50, "length_mm": 4800, "clamp_gap_mm": 25, "splicer_price": 1.60, "supplier_code": "RAY:R-4800-BLK", "splicer_code": "RAY:R-SP" }, "landscape_extras": { "tin_attachment_price": 1.60, "tin_attachment_code": "RAY:TH-L", "tile_attachment_price": 4.90, "tile_attachment_code": "RAY:RH-1#", "attachments_per_row": 4 }, "kliplock": { "clamps_per_panel": 2, "profiles": { "kliplock_406": {"label":"Klip-Lok 406","price":0,"supplier_code":""}, "kliplock_700": {"label":"Klip-Lok 700","price":0,"supplier_code":""}, "kliplock_606": {"label":"Universal 406/700","price":0,"supplier_code":""}, "kliplock_105": {"label":"Klip-Lok 105","price":0,"supplier_code":""} }, "default_profile": "kliplock_606", "mid_clamp": {"label":"Mid Clamp 30/35mm","price":0,"supplier_code":""}, "end_clamp": {"label":"End Clamp 30/35mm","price":0,"supplier_code":""}, "earthing_clip": {"label":"Earthing Clip","price":0,"per_panel":1,"supplier_code":""}, "earthing_lug": {"label":"Earthing Lug","price":0,"per_array":2,"supplier_code":""} } }
 };
