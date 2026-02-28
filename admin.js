@@ -875,7 +875,7 @@ async function saveItemFromModal() {
 // ==============================
 // ADMIN MODE SWITCHING
 // ==============================
-let adminMode = 'contractors'; // 'contractors' or 'pricing'
+let adminMode = 'contractors'; // 'contractors', 'pricing', or 'users'
 
 function switchAdminMode(mode) {
     adminMode = mode;
@@ -883,18 +883,28 @@ function switchAdminMode(mode) {
     var contractorView = document.querySelector('.admin-content');
     var mobileSelect = document.querySelector('.mobile-contractor-select');
     var pricingView = document.getElementById('pricingView');
+    var usersView = document.getElementById('usersView');
     var contractorActions = document.getElementById('contractorToolbarActions');
 
     if (mode === 'pricing') {
         contractorView.style.display = 'none';
         if (mobileSelect) mobileSelect.style.display = 'none';
         pricingView.style.display = '';
+        if (usersView) usersView.style.display = 'none';
         contractorActions.style.display = 'none';
         loadPricingData();
+    } else if (mode === 'users') {
+        contractorView.style.display = 'none';
+        if (mobileSelect) mobileSelect.style.display = 'none';
+        pricingView.style.display = 'none';
+        if (usersView) usersView.style.display = '';
+        contractorActions.style.display = 'none';
+        loadUsers();
     } else {
         contractorView.style.display = '';
         if (mobileSelect) mobileSelect.style.display = '';
         pricingView.style.display = 'none';
+        if (usersView) usersView.style.display = 'none';
         contractorActions.style.display = '';
     }
 }
@@ -937,7 +947,7 @@ async function loadPricingData() {
         var queries = tableNames.map(function(t) { return sb.from(t).select('*').order('sort_order'); });
         queries.push(sb.from('battery_packages').select('*').order('sort_order'));
         queries.push(sb.from('solax_bms_components').select('*'));
-        queries.push(sb.from('business_params').select('*').limit(1).single());
+        queries.push(sb.from('business_params').select('*').limit(1).maybeSingle());
         var results = await Promise.all(queries);
         tableNames.forEach(function(t, i) { allTables[t] = results[i].data || []; });
         allBatteryPackages = results[tableNames.length].data || [];
@@ -1489,6 +1499,117 @@ async function applyBulkImport() {
         showToast(toUpdate.length + ' prices updated.');
     }
     await loadPricingData();
+}
+
+// ==============================
+// USER MANAGEMENT
+// ==============================
+let adminUsers = [];
+
+async function callUserAdmin(action, params = {}) {
+    if (!sb) throw new Error('Database not available');
+    var { data: { session } } = await sb.auth.getSession();
+    if (!session) throw new Error('Not authenticated');
+    var resp = await fetch(SUPABASE_URL + '/functions/v1/admin-users', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + session.access_token,
+            'apikey': SUPABASE_ANON_KEY,
+        },
+        body: JSON.stringify({ action: action, ...params }),
+    });
+    var result = await resp.json();
+    if (!resp.ok) throw new Error(result.error || result.message || 'Request failed');
+    return result;
+}
+
+async function loadUsers() {
+    try {
+        var result = await callUserAdmin('list');
+        adminUsers = result.users || [];
+        renderUsersView();
+    } catch (e) {
+        console.error('loadUsers:', e);
+        showToast('Failed to load users: ' + e.message, 'error');
+    }
+}
+
+function renderUsersView() {
+    var wrap = document.getElementById('usersContent');
+    if (adminUsers.length === 0) {
+        wrap.innerHTML = '<div style="text-align:center;color:var(--text-quaternary);padding:40px;font-size:14px;">No users found</div>';
+        return;
+    }
+    var rows = adminUsers.map(function(u) {
+        var created = u.created_at ? new Date(u.created_at).toLocaleDateString() : '—';
+        var lastSign = u.last_sign_in_at ? new Date(u.last_sign_in_at).toLocaleDateString() : 'Never';
+        return '<tr>' +
+            '<td>' + esc(u.email) + '</td>' +
+            '<td>' + created + '</td>' +
+            '<td>' + lastSign + '</td>' +
+            '<td><button type="button" class="btn-icon danger" onclick="deleteUser(\'' + u.id + '\', \'' + esc(u.email).replace(/'/g, "\\'") + '\')" title="Delete user">&times;</button></td>' +
+            '</tr>';
+    }).join('');
+    wrap.innerHTML =
+        '<table class="product-table">' +
+        '<thead><tr><th>Email</th><th>Created</th><th>Last Sign In</th><th style="width:40px;"></th></tr></thead>' +
+        '<tbody>' + rows + '</tbody>' +
+        '</table>';
+}
+
+async function createUser() {
+    var email = document.getElementById('newUserEmail').value.trim();
+    var password = document.getElementById('newUserPassword').value;
+    var errEl = document.getElementById('addUserError');
+    errEl.style.display = 'none';
+
+    if (!email || !password) {
+        errEl.textContent = 'Email and password are required.';
+        errEl.style.display = 'block';
+        return;
+    }
+    if (password.length < 6) {
+        errEl.textContent = 'Password must be at least 6 characters.';
+        errEl.style.display = 'block';
+        return;
+    }
+
+    try {
+        await callUserAdmin('create', { email: email, password: password });
+        closeModal('addUserModal');
+        document.getElementById('newUserEmail').value = '';
+        document.getElementById('newUserPassword').value = '';
+        showToast('User created: ' + email);
+        await loadUsers();
+    } catch (e) {
+        errEl.textContent = e.message;
+        errEl.style.display = 'block';
+    }
+}
+
+async function deleteUser(userId, email) {
+    // Prevent self-deletion client-side with clear feedback
+    var { data: { session } } = await sb.auth.getSession();
+    if (session && session.user && session.user.id === userId) {
+        showToast('You cannot delete your own account.', 'error');
+        return;
+    }
+    showConfirmModal(
+        'Delete User',
+        'Are you sure you want to delete "' + email + '"? They will no longer be able to log in.',
+        'Delete',
+        async function() {
+            try {
+                await callUserAdmin('delete', { userId: userId });
+                showToast('User deleted: ' + email);
+                await loadUsers();
+            } catch (e) {
+                showToast('Delete failed: ' + e.message, 'error');
+            }
+        },
+        true
+    );
 }
 
 // ==============================
