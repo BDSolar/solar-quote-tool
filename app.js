@@ -365,7 +365,7 @@ function renderInstallationCostsUI() {
         if (!installationAddons.addonItems[item.id]) {
             var o = document.createElement('option');
             o.value = item.id;
-            o.textContent = item.label + (item.rate ? ' ($' + item.rate + ')' : ' (quoted)');
+            o.textContent = item.label;
             addonSelect.appendChild(o);
         }
     });
@@ -1353,6 +1353,10 @@ function applyManufacturerDefaults() {
         currentBatteryTypeIdx = btIdx;
         var btSel = document.getElementById('batteryTypeSelect');
         if (btSel) btSel.value = btIdx;
+        var segGroup = document.getElementById('batteryTypeSegGroup');
+        if (segGroup) {
+            segGroup.querySelectorAll('.seg-btn').forEach(function(b) { b.classList.toggle('active', b.dataset.value == btIdx); });
+        }
     }
     // Set default battery on first load, preserve user value on subsequent switches
     // Don't reset to default when in PV Only mode (battery intentionally 0)
@@ -1387,8 +1391,23 @@ function updateGatewaySectionLabel() { /* label is now static: Gateway/Backup Pr
 
 function populateBatteryTypes() {
     const types = getMfg().battery_types || [], sel = document.getElementById('batteryTypeSelect'), group = document.getElementById('batteryTypeGroup');
+    const segGroup = document.getElementById('batteryTypeSegGroup');
     if (types.length <= 1) { group.style.display = 'none'; currentBatteryTypeIdx = 0; }
-    else { group.style.display = 'block'; sel.innerHTML = ''; types.forEach((bt, idx) => { const o = document.createElement('option'); o.value = idx; o.textContent = bt.label; sel.appendChild(o); }); sel.value = currentBatteryTypeIdx; }
+    else {
+        group.style.display = 'block';
+        sel.innerHTML = ''; segGroup.innerHTML = '';
+        types.forEach((bt, idx) => {
+            const o = document.createElement('option'); o.value = idx; o.textContent = bt.label; sel.appendChild(o);
+            const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'seg-btn' + (idx === currentBatteryTypeIdx ? ' active' : ''); btn.dataset.value = idx; btn.textContent = bt.label;
+            btn.addEventListener('click', function() {
+                segGroup.querySelectorAll('.seg-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                sel.value = idx; sel.dispatchEvent(new Event('change', { bubbles: true }));
+            });
+            segGroup.appendChild(btn);
+        });
+        sel.value = currentBatteryTypeIdx;
+    }
 }
 
 function switchBatteryType() {
@@ -2709,7 +2728,7 @@ function calculateQuote() {
                 const gw = document.getElementById('gatewaySelect');
                 costGateway = parseFloat(gw.options[gw.selectedIndex]?.dataset.price) || 0;
                 costMount = 0;
-                installBat = (state.desiredBatteryKwh > 0) ? state.installBatPerStack : 0;
+                installBat = (state.desiredBatteryKwh > 0) ? 2 * state.installBatPerStack : 0;
             } else {
                 costInverter = state.invPrice;
                 costBattery = bat.equipmentCost;
@@ -2743,7 +2762,7 @@ function calculateQuote() {
                 const gw = document.getElementById('gatewaySelect');
                 costGateway = parseFloat(gw.options[gw.selectedIndex]?.dataset.price) || 0;
                 costMount = 0;
-                installBat = (state.desiredBatteryKwh > 0) ? state.installBatPerStack : 0;
+                installBat = (state.desiredBatteryKwh > 0) ? 2 * state.installBatPerStack : 0;
             } else {
                 costInverter = state.invPrice;
                 costBattery = bat.equipmentCost;
@@ -3253,7 +3272,7 @@ function buildBOM() {
             if (isDualBom) {
                 installItems.push({ desc: 'Battery Installation (2 stacks)', sku: 'Labour', qty: 2, unit: state.installBatPerStack, total: 2 * state.installBatPerStack, supplier_code: 'BDS:LABOUR-BAT' });
             } else if (isParallelBom) {
-                installItems.push({ desc: 'Battery Installation (parallel)', sku: 'Labour', qty: 1, unit: state.installBatPerStack, total: state.installBatPerStack, supplier_code: 'BDS:LABOUR-BAT' });
+                installItems.push({ desc: 'Battery Installation (2 systems)', sku: 'Labour', qty: 2, unit: state.installBatPerStack, total: 2 * state.installBatPerStack, supplier_code: 'BDS:LABOUR-BAT' });
             } else if (bat.totalModules > 0) {
                 installItems.push({ desc: 'Battery Installation', sku: 'Labour', qty: 1, unit: state.installBatPerStack, total: state.installBatPerStack, supplier_code: 'BDS:LABOUR-BAT' });
             }
