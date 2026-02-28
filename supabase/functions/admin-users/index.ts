@@ -25,11 +25,10 @@ Deno.serve(async (req: Request) => {
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
 
-    // Verify the caller's JWT using anon client
-    const anonClient = createClient(supabaseUrl, anonKey, {
-      global: { headers: { Authorization: authHeader } },
-    });
-    const { data: { user: caller }, error: authError } = await anonClient.auth.getUser();
+    // Verify the caller's JWT
+    const jwt = authHeader.replace("Bearer ", "");
+    const anonClient = createClient(supabaseUrl, anonKey);
+    const { data: { user: caller }, error: authError } = await anonClient.auth.getUser(jwt);
     if (authError || !caller) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
