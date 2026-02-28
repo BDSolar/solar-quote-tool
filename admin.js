@@ -1189,23 +1189,23 @@ function renderTypeFields(type, p) {
     if (type === 'panel') {
         html += '<div class="grid-2"><div class="form-group"><label>Mfr</label><input type="text" id="tf_manufacturer" value="' + esc(p && p.manufacturer || '') + '"></div>';
         html += '<div class="form-group"><label>Model</label><input type="text" id="tf_model" value="' + esc(p && p.model || '') + '"></div></div>';
-        html += '<div class="grid-2"><div class="form-group"><label>Wattage (W)</label><input type="number" id="tf_wattage" value="' + (p && p.wattage || '') + '"></div>';
+        html += '<div class="grid-2"><div class="form-group"><label>Wattage (W)</label><input type="number" id="tf_wattage" value="' + (p && p.wattage != null ? p.wattage : '') + '"></div>';
         html += '<div class="form-group"><label>Colour</label><input type="text" id="tf_colour" value="' + esc(p && p.colour || '') + '"></div></div>';
-        html += '<div class="grid-2"><div class="form-group"><label>Width (mm)</label><input type="number" id="tf_width_mm" value="' + (p && p.width_mm || '') + '"></div>';
-        html += '<div class="form-group"><label>Height (mm)</label><input type="number" id="tf_height_mm" value="' + (p && p.height_mm || '') + '"></div></div>';
+        html += '<div class="grid-2"><div class="form-group"><label>Width (mm)</label><input type="number" id="tf_width_mm" value="' + (p && p.width_mm != null ? p.width_mm : '') + '"></div>';
+        html += '<div class="form-group"><label>Height (mm)</label><input type="number" id="tf_height_mm" value="' + (p && p.height_mm != null ? p.height_mm : '') + '"></div></div>';
         html += '<div class="form-group"><label>Price ($)</label><input type="number" id="tf_price" step="0.01" value="' + (p && p.price != null ? p.price : '') + '"></div>';
     } else if (type === 'inverter') {
         html += '<div class="grid-2"><div class="form-group"><label>Mfr</label><select id="tf_manufacturer"><option value="sigenergy"' + (p && p.manufacturer === 'sigenergy' ? ' selected' : '') + '>Sigenergy</option><option value="solax"' + (p && p.manufacturer === 'solax' ? ' selected' : '') + '>SolaX</option></select></div>';
         html += '<div class="form-group"><label>Phase</label><select id="tf_phase"><option value="single_phase"' + (p && p.phase === 'single_phase' ? ' selected' : '') + '>Single Phase</option><option value="three_phase"' + (p && p.phase === 'three_phase' ? ' selected' : '') + '>Three Phase</option></select></div></div>';
-        html += '<div class="grid-2"><div class="form-group"><label>kW</label><input type="number" id="tf_kw" step="0.1" value="' + (p && p.kw || '') + '"></div>';
-        html += '<div class="form-group"><label>Max PV kW</label><input type="number" id="tf_max_pv_kw" step="0.1" value="' + (p && p.max_pv_kw || '') + '"></div></div>';
+        html += '<div class="grid-2"><div class="form-group"><label>kW</label><input type="number" id="tf_kw" step="0.1" value="' + (p && p.kw != null ? p.kw : '') + '"></div>';
+        html += '<div class="form-group"><label>Max PV kW</label><input type="number" id="tf_max_pv_kw" step="0.1" value="' + (p && p.max_pv_kw != null ? p.max_pv_kw : '') + '"></div></div>';
         html += '<div class="grid-2"><div class="form-group"><label>Price ($)</label><input type="number" id="tf_price" step="0.01" value="' + (p && p.price != null ? p.price : '') + '"></div>';
         html += '<div class="form-group" style="display:flex;align-items:center;gap:10px;padding-top:24px;"><label style="margin:0;">Solar Only</label><label class="toggle-switch"><input type="checkbox" id="tf_solar_only" ' + (p && p.solar_only ? 'checked' : '') + '><span class="toggle-slider"></span></label></div></div>';
     } else if (type === 'battery_module') {
         html += '<div class="grid-2"><div class="form-group"><label>Mfr</label><select id="tf_manufacturer"><option value="sigenergy"' + (p && p.manufacturer === 'sigenergy' ? ' selected' : '') + '>Sigenergy</option><option value="solax"' + (p && p.manufacturer === 'solax' ? ' selected' : '') + '>SolaX</option></select></div>';
         html += '<div class="form-group"><label>Battery Type ID</label><input type="text" id="tf_battery_type_id" value="' + esc(p && p.battery_type_id || '') + '" placeholder="e.g. sig_default, tp_hs36"></div></div>';
-        html += '<div class="grid-2"><div class="form-group"><label>kWh</label><input type="number" id="tf_kwh" step="0.1" value="' + (p && p.kwh || '') + '"></div>';
-        html += '<div class="form-group"><label>Usable kWh</label><input type="number" id="tf_usable_kwh" step="0.1" value="' + (p && p.usable_kwh || '') + '"></div></div>';
+        html += '<div class="grid-2"><div class="form-group"><label>kWh</label><input type="number" id="tf_kwh" step="0.1" value="' + (p && p.kwh != null ? p.kwh : '') + '"></div>';
+        html += '<div class="form-group"><label>Usable kWh</label><input type="number" id="tf_usable_kwh" step="0.1" value="' + (p && p.usable_kwh != null ? p.usable_kwh : '') + '"></div></div>';
         html += '<div class="grid-2"><div class="form-group"><label>Price ($)</label><input type="number" id="tf_price" step="0.01" value="' + (p && p.price != null ? p.price : '') + '"></div>';
         html += '<div class="form-group" style="display:flex;align-items:center;gap:10px;padding-top:24px;"><label style="margin:0;">Enabled</label><label class="toggle-switch"><input type="checkbox" id="tf_enabled" ' + (p ? (p.enabled !== false ? 'checked' : '') : 'checked') + '><span class="toggle-slider"></span></label></div></div>';
     } else if (type === 'gateway') {
@@ -1235,7 +1235,7 @@ function renderTypeFields(type, p) {
         html += '<div class="form-group"><label>Price ($)</label><input type="number" id="tf_price" step="0.01" value="' + (p && p.price != null ? p.price : '') + '"></div>';
     } else if (type === 'mounting_kit') {
         html += '<div class="grid-2"><div class="form-group"><label>Kit Family</label><input type="text" id="tf_kit_family" value="' + esc(p && p.kit_family || '') + '" placeholder="e.g. tin_2kw"></div>';
-        html += '<div class="form-group"><label>Panels Covered</label><input type="number" id="tf_panels_covered" value="' + (p && p.panels_covered || '') + '"></div></div>';
+        html += '<div class="form-group"><label>Panels Covered</label><input type="number" id="tf_panels_covered" value="' + (p && p.panels_covered != null ? p.panels_covered : '') + '"></div></div>';
         html += '<div class="form-group"><label>Roof Types (comma-separated)</label><input type="text" id="tf_roof_types" value="' + (p && Array.isArray(p.roof_types) ? p.roof_types.join(', ') : '') + '" placeholder="e.g. metal, flat"></div>';
         html += '<div class="form-group"><label>Price ($)</label><input type="number" id="tf_price" step="0.01" value="' + (p && p.price != null ? p.price : '') + '"></div>';
     } else if (type === 'mounting_part') {
