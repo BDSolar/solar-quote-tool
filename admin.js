@@ -288,7 +288,7 @@ async function deactivateContractor() {
     if (!selectedContractorId) return;
     showConfirmModal(
         'Deactivate Contractor',
-        `Are you sure you want to deactivate "${esc(selectedContractor?.business_name)}"? They will no longer appear in the quote tool.`,
+        `Are you sure you want to deactivate "${selectedContractor?.business_name || ''}"? They will no longer appear in the quote tool.`,
         'Deactivate',
         async () => {
             const { error } = await sb.from('contractors').update({ active: false }).eq('id', selectedContractorId);
@@ -351,7 +351,7 @@ async function executeClone() {
         if (copyErr) { showToast('Rate card copy failed: ' + copyErr.message, 'error'); }
     }
 
-    showToast(`Cloned "${esc(name)}" with rate card.`);
+    showToast(`Cloned "${name}" with rate card.`);
     await loadContractors();
     selectContractor(created.id);
 }
@@ -1182,6 +1182,10 @@ function openProductModal(productId, type) {
     openModal('productEditModal');
 }
 
+function mfrSelect(p) {
+    return '' + mfrSelect(p) + '';
+}
+
 function renderTypeFields(type, p) {
     var container = document.getElementById('prodTypeFields');
     var html = '';
@@ -1195,31 +1199,31 @@ function renderTypeFields(type, p) {
         html += '<div class="form-group"><label>Height (mm)</label><input type="number" id="tf_height_mm" value="' + (p && p.height_mm != null ? p.height_mm : '') + '"></div></div>';
         html += '<div class="form-group"><label>Price ($)</label><input type="number" id="tf_price" step="0.01" value="' + (p && p.price != null ? p.price : '') + '"></div>';
     } else if (type === 'inverter') {
-        html += '<div class="grid-2"><div class="form-group"><label>Mfr</label><select id="tf_manufacturer"><option value="sigenergy"' + (p && p.manufacturer === 'sigenergy' ? ' selected' : '') + '>Sigenergy</option><option value="solax"' + (p && p.manufacturer === 'solax' ? ' selected' : '') + '>SolaX</option></select></div>';
+        html += '<div class="grid-2"><div class="form-group"><label>Mfr</label>' + mfrSelect(p) + '</div>';
         html += '<div class="form-group"><label>Phase</label><select id="tf_phase"><option value="single_phase"' + (p && p.phase === 'single_phase' ? ' selected' : '') + '>Single Phase</option><option value="three_phase"' + (p && p.phase === 'three_phase' ? ' selected' : '') + '>Three Phase</option></select></div></div>';
         html += '<div class="grid-2"><div class="form-group"><label>kW</label><input type="number" id="tf_kw" step="0.1" value="' + (p && p.kw != null ? p.kw : '') + '"></div>';
         html += '<div class="form-group"><label>Max PV kW</label><input type="number" id="tf_max_pv_kw" step="0.1" value="' + (p && p.max_pv_kw != null ? p.max_pv_kw : '') + '"></div></div>';
         html += '<div class="grid-2"><div class="form-group"><label>Price ($)</label><input type="number" id="tf_price" step="0.01" value="' + (p && p.price != null ? p.price : '') + '"></div>';
         html += '<div class="form-group" style="display:flex;align-items:center;gap:10px;padding-top:24px;"><label style="margin:0;">Solar Only</label><label class="toggle-switch"><input type="checkbox" id="tf_solar_only" ' + (p && p.solar_only ? 'checked' : '') + '><span class="toggle-slider"></span></label></div></div>';
     } else if (type === 'battery_module') {
-        html += '<div class="grid-2"><div class="form-group"><label>Mfr</label><select id="tf_manufacturer"><option value="sigenergy"' + (p && p.manufacturer === 'sigenergy' ? ' selected' : '') + '>Sigenergy</option><option value="solax"' + (p && p.manufacturer === 'solax' ? ' selected' : '') + '>SolaX</option></select></div>';
+        html += '<div class="grid-2"><div class="form-group"><label>Mfr</label>' + mfrSelect(p) + '</div>';
         html += '<div class="form-group"><label>Battery Type ID</label><input type="text" id="tf_battery_type_id" value="' + esc(p && p.battery_type_id || '') + '" placeholder="e.g. sig_default, tp_hs36"></div></div>';
         html += '<div class="grid-2"><div class="form-group"><label>kWh</label><input type="number" id="tf_kwh" step="0.1" value="' + (p && p.kwh != null ? p.kwh : '') + '"></div>';
         html += '<div class="form-group"><label>Usable kWh</label><input type="number" id="tf_usable_kwh" step="0.1" value="' + (p && p.usable_kwh != null ? p.usable_kwh : '') + '"></div></div>';
         html += '<div class="grid-2"><div class="form-group"><label>Price ($)</label><input type="number" id="tf_price" step="0.01" value="' + (p && p.price != null ? p.price : '') + '"></div>';
         html += '<div class="form-group" style="display:flex;align-items:center;gap:10px;padding-top:24px;"><label style="margin:0;">Enabled</label><label class="toggle-switch"><input type="checkbox" id="tf_enabled" ' + (p ? (p.enabled !== false ? 'checked' : '') : 'checked') + '><span class="toggle-slider"></span></label></div></div>';
     } else if (type === 'gateway') {
-        html += '<div class="grid-2"><div class="form-group"><label>Mfr</label><select id="tf_manufacturer"><option value="sigenergy"' + (p && p.manufacturer === 'sigenergy' ? ' selected' : '') + '>Sigenergy</option><option value="solax"' + (p && p.manufacturer === 'solax' ? ' selected' : '') + '>SolaX</option></select></div>';
+        html += '<div class="grid-2"><div class="form-group"><label>Mfr</label>' + mfrSelect(p) + '</div>';
         html += '<div class="form-group"><label>Phase</label><select id="tf_phase"><option value="single_phase"' + (p && p.phase === 'single_phase' ? ' selected' : '') + '>Single Phase</option><option value="three_phase"' + (p && p.phase === 'three_phase' ? ' selected' : '') + '>Three Phase</option></select></div></div>';
         html += '<div class="form-group"><label>Description</label><input type="text" id="tf_description" value="' + esc(p && p.description || '') + '"></div>';
         html += '<div class="form-group"><label>Price ($)</label><input type="number" id="tf_price" step="0.01" value="' + (p && p.price != null ? p.price : '') + '"></div>';
     } else if (type === 'ev_charger') {
-        html += '<div class="grid-2"><div class="form-group"><label>Mfr</label><select id="tf_manufacturer"><option value="sigenergy"' + (p && p.manufacturer === 'sigenergy' ? ' selected' : '') + '>Sigenergy</option><option value="solax"' + (p && p.manufacturer === 'solax' ? ' selected' : '') + '>SolaX</option></select></div>';
+        html += '<div class="grid-2"><div class="form-group"><label>Mfr</label>' + mfrSelect(p) + '</div>';
         html += '<div class="form-group"><label>Phase</label><select id="tf_phase"><option value="">None</option><option value="single_phase"' + (p && p.phase === 'single_phase' ? ' selected' : '') + '>Single Phase</option><option value="three_phase"' + (p && p.phase === 'three_phase' ? ' selected' : '') + '>Three Phase</option></select></div></div>';
         html += '<div class="form-group"><label>Description</label><input type="text" id="tf_description" value="' + esc(p && p.description || '') + '"></div>';
         html += '<div class="form-group"><label>Price ($)</label><input type="number" id="tf_price" step="0.01" value="' + (p && p.price != null ? p.price : '') + '"></div>';
     } else if (type === 'accessory') {
-        html += '<div class="grid-2"><div class="form-group"><label>Mfr</label><select id="tf_manufacturer"><option value="sigenergy"' + (p && p.manufacturer === 'sigenergy' ? ' selected' : '') + '>Sigenergy</option><option value="solax"' + (p && p.manufacturer === 'solax' ? ' selected' : '') + '>SolaX</option></select></div>';
+        html += '<div class="grid-2"><div class="form-group"><label>Mfr</label>' + mfrSelect(p) + '</div>';
         html += '<div class="form-group"><label>Accessory ID</label><input type="text" id="tf_accessory_id" value="' + esc(p && p.accessory_id || '') + '" placeholder="e.g. power_sensor"></div></div>';
         html += '<div class="form-group"><label>Description</label><input type="text" id="tf_description" value="' + esc(p && p.description || '') + '"></div>';
         html += '<div class="grid-2"><div class="form-group"><label>Price ($)</label><input type="number" id="tf_price" step="0.01" value="' + (p && p.price != null ? p.price : '') + '"></div>';
@@ -1230,7 +1234,7 @@ function renderTypeFields(type, p) {
         html += '<div class="form-group"><label>Supplier Code (3P)</label><input type="text" id="tf_supplier_code_three" value="' + esc(p && p.supplier_code_three || '') + '"></div></div>';
         html += '<div class="form-group"><label>Note</label><input type="text" id="tf_note" value="' + esc(p && p.note || '') + '"></div>';
     } else if (type === 'battery_mounting') {
-        html += '<div class="grid-2"><div class="form-group"><label>Mfr</label><select id="tf_manufacturer"><option value="sigenergy"' + (p && p.manufacturer === 'sigenergy' ? ' selected' : '') + '>Sigenergy</option><option value="solax"' + (p && p.manufacturer === 'solax' ? ' selected' : '') + '>SolaX</option></select></div>';
+        html += '<div class="grid-2"><div class="form-group"><label>Mfr</label>' + mfrSelect(p) + '</div>';
         html += '<div class="form-group"><label>Mount Key</label><input type="text" id="tf_mount_key" value="' + esc(p && p.mount_key || '') + '" placeholder="e.g. mount_wall"></div></div>';
         html += '<div class="form-group"><label>Price ($)</label><input type="number" id="tf_price" step="0.01" value="' + (p && p.price != null ? p.price : '') + '"></div>';
     } else if (type === 'mounting_kit') {

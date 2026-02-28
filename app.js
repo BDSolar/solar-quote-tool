@@ -526,9 +526,8 @@ function getBmsName(bt) { return bt.id === 'tp_hs36' ? 'TBMS-MCS0800' : bt.id ==
 function getBmsDesc(bt) { var n = getBmsName(bt); return n === 'BMS' ? 'Battery BMS' : 'BMS (' + n + ')'; }
 
 function esc(s) {
-    const d = document.createElement('div');
-    d.textContent = s;
-    return d.innerHTML;
+    if (s == null) return '';
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
 
@@ -2604,7 +2603,7 @@ function calculateQuote() {
         const zoneResult = lookupZone(document.getElementById('installPostcode').value);
         const zoneRating = zoneResult ? zoneResult.rating : 0;
         // PV rebate only if we have panels
-        const pvStcCount = (!solarOnly && !batteryOnly) || !batteryOnly ? (zoneRating > 0 ? Math.floor(state.sysKw * zoneRating * state.deemingPeriod) : 0) : 0;
+        const pvStcCount = !batteryOnly ? (zoneRating > 0 ? Math.floor(state.sysKw * zoneRating * state.deemingPeriod) : 0) : 0;
         const pvReb = pvStcCount * state.stcPrice;
         // Battery rebate only if we have batteries
         const usableKwh = solarOnly ? 0 : ((isDualStack && dualStackResult) ? dualStackResult.totalUsableKwh : (isParallel && parallelResult) ? parallelResult.totalUsableKwh : bat.usableKwh);
@@ -3565,7 +3564,7 @@ function clearQuote() {
     document.getElementById('gatewaySelect').selectedIndex = 0;
     selectedAccessories = []; renderSelectedAccessories();
     customAddonCount = 0; document.getElementById('customAddons').innerHTML = '';
-    userChangedInverter = false; dualStackResult = null; dualStackEcOverride = { stack1: null, stack2: null };
+    userChangedInverter = false; dualStackResult = null; dualStackEcOverride = { stack1: null, stack2: null }; parallelResult = null;
     batteryQtys = {};
     // Reset installation addons but keep contractor selection (sticky like rep)
     installationAddons = { standardItems: {}, checkboxItems: {}, addonItems: {} };
