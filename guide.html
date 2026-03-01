@@ -355,6 +355,7 @@
                     <li><a href="#qt-accessories">Accessories</a></li>
                     <li><a href="#qt-electrical">Electrical Upgrades</a></li>
                     <li><a href="#qt-summary">Price Summary</a></li>
+                    <li><a href="#qt-stc">STC Rebates &amp; May 2026</a></li>
                     <li><a href="#qt-workflows">Workflows</a></li>
                 </ul>
             </div>
@@ -593,19 +594,76 @@
                 <tbody>
                     <tr><td>Customer Price</td><td>The headline price including GST and after all rebates. Updates in real time as you configure the quote.</td></tr>
                     <tr><td>System Summary</td><td>One-line description of the system (e.g. "6.6kW + 10kWh Sigenergy").</td></tr>
-                    <tr><td>Urgency Banner</td><td>Shows the price increase that will apply after the next STC deeming period change (e.g. after 1 May). Helps create urgency for the customer.</td></tr>
+                    <tr><td>Urgency Banner</td><td>Shows the price increase that will apply after the May 1 2026 STC changes. Automatically hidden after that date. See <a href="#qt-stc" style="color:var(--blue);">STC Rebates</a> below.</td></tr>
                     <tr><td>PV Equipment</td><td>Line items for panels and solar-related hardware.</td></tr>
                     <tr><td>Battery &amp; Inverter</td><td>Line items for battery modules, inverter, gateway, and related components.</td></tr>
                     <tr><td>Accessories</td><td>All selected accessories and custom add-ons.</td></tr>
                     <tr><td>Installation</td><td>Installation cost subtotal from the rate card (visible when a contractor is selected).</td></tr>
                     <tr><td>Price Before Rebates</td><td>Total ex-GST price before STC rebate is applied.</td></tr>
                     <tr><td>GST</td><td>10% GST on the total.</td></tr>
-                    <tr><td>STC Rebate</td><td>Government rebate based on system size, STC zone, deeming period, and current STC price. Shown in green.</td></tr>
+                    <tr><td>STC Rebate</td><td>Government rebate based on system size, STC zone, deeming period, and current STC price. Shown in green. Calculation changes automatically on May 1 2026 &mdash; see <a href="#qt-stc" style="color:var(--blue);">STC Rebates</a> below.</td></tr>
                 </tbody>
             </table>
 
             <div class="guide-note">
                 <strong>Mobile:</strong> On narrow screens the summary sidebar moves below the form and a floating price bar appears at the bottom of the screen showing the customer price at a glance.
+            </div>
+
+            <h3 id="qt-stc">STC Rebates &amp; May 2026 Transition</h3>
+            <p>The quote tool calculates government STC (Small-scale Technology Certificate) rebates for both solar panels and batteries. The rebate scheme changes on <strong>May 1, 2026</strong> and the system handles this automatically.</p>
+
+            <h4>How STC Rebates Work</h4>
+            <p>The rebate is calculated from three factors:</p>
+            <ul>
+                <li><strong>System size</strong> &mdash; kW of solar or kWh of battery installed.</li>
+                <li><strong>STC zone</strong> &mdash; determined by postcode (zone 1 gets the most sun, zone 4 the least). The zone rating is a multiplier on the system size.</li>
+                <li><strong>Deeming period</strong> &mdash; the number of years of future generation the system is credited for.</li>
+                <li><strong>STC price</strong> &mdash; the market price per certificate, set in Business Parameters (currently $37).</li>
+            </ul>
+            <p>The PV rebate formula is: <code>floor(kW &times; zone_rating &times; deeming_years) &times; STC_price</code></p>
+
+            <h4>Before May 1, 2026</h4>
+            <table class="field-table">
+                <thead><tr><th>Component</th><th>Calculation</th></tr></thead>
+                <tbody>
+                    <tr><td>PV deeming period</td><td><strong>5 years</strong></td></tr>
+                    <tr><td>PV rebate</td><td><code>floor(kW &times; zone_rating &times; 5) &times; $37</code></td></tr>
+                    <tr><td>Battery rebate</td><td><strong>Flat rate:</strong> <code>kWh &times; $311/kWh</code> (capped at 50 kWh). Rate set in Business Parameters.</td></tr>
+                </tbody>
+            </table>
+
+            <h4>From May 1, 2026</h4>
+            <p>The system automatically switches to the new structure on this date. No admin action is required.</p>
+            <table class="field-table">
+                <thead><tr><th>Component</th><th>Calculation</th></tr></thead>
+                <tbody>
+                    <tr><td>PV deeming period</td><td><strong>4 years</strong> (reduced from 5)</td></tr>
+                    <tr><td>PV rebate</td><td><code>floor(kW &times; zone_rating &times; 4) &times; $37</code></td></tr>
+                    <tr><td>Battery rebate</td><td><strong>Tiered STC structure</strong> (see below), capped at 50 kWh</td></tr>
+                </tbody>
+            </table>
+
+            <h4>Tiered Battery Rebate (May 2026+)</h4>
+            <p>The battery rebate changes from a flat dollar-per-kWh rate to a tiered STC-based structure with a factor of 6.8 STCs per kWh:</p>
+            <table class="field-table">
+                <thead><tr><th>Capacity Tier</th><th>STC Rate</th><th>Example (at $37/STC)</th></tr></thead>
+                <tbody>
+                    <tr><td>0 &ndash; 14 kWh</td><td>6.8 STCs/kWh (100%)</td><td>14 kWh &rarr; 95 STCs &rarr; $3,515</td></tr>
+                    <tr><td>14 &ndash; 28 kWh</td><td>6.8 &times; 0.6 STCs/kWh (60%)</td><td>+14 kWh &rarr; 57 STCs &rarr; $2,109</td></tr>
+                    <tr><td>28 &ndash; 50 kWh</td><td>6.8 &times; 0.15 STCs/kWh (15%)</td><td>+22 kWh &rarr; 22 STCs &rarr; $814</td></tr>
+                </tbody>
+            </table>
+
+            <div class="guide-note">
+                <strong>Example:</strong> A 32 kWh battery post-May: <code>floor(14&times;6.8 + 14&times;6.8&times;0.6 + 4&times;6.8&times;0.15)</code> = floor(95.2 + 57.12 + 4.08) = <strong>156 STCs &times; $37 = $5,772</strong>. Compare to the pre-May flat rate: 32 &times; $311 = $9,952. This is the price increase shown in the urgency banner.
+            </div>
+
+            <h4>Urgency Banner</h4>
+            <p>Before May 1, the price summary shows an orange urgency banner comparing the current customer price to what it would be under the post-May rules. This helps sales reps encourage customers to act before the rebate reduction.</p>
+            <p>After May 1, the banner is automatically hidden &mdash; the current price already reflects the new structure and there is no future change to compare against.</p>
+
+            <div class="guide-warning">
+                <strong>Fully automatic:</strong> The transition is date-driven in the code. There is no need to update Business Parameters or make any manual changes when May 1 arrives. The deeming period, battery rebate calculation, urgency banner visibility, and all downstream calculations (quote, BOM, PDF, battery optimiser) all switch automatically.
             </div>
 
             <h3 id="qt-workflows">Workflows</h3>
