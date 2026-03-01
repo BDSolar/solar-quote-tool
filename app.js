@@ -3176,6 +3176,8 @@ function showBOM() {
     totHtml += totRow('Commission (' + state.salesCommission + '%)', fmtExGst(commAmt));
     if (pvReb > 0) totHtml += totRow('PV STC Rebate (' + pvStcCount + ' STCs)', '-' + fmtExGst(pvReb), 'color:var(--green);');
     if (batReb > 0) totHtml += totRow('Battery STC Rebate', '-' + fmtExGst(batReb), 'color:var(--green);');
+    var bomDiscount = parseFloat(document.getElementById('discountAmount')?.value) || 0;
+    if (bomDiscount > 0) totHtml += totRow('Discount', '-$' + Math.round(bomDiscount).toLocaleString('en-AU'), 'color:var(--green);');
     totHtml += '</table>';
     document.getElementById('bomTotals').innerHTML = totHtml;
     document.getElementById('bomOverlay').style.display = 'block'; document.body.style.overflow = 'hidden';
