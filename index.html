@@ -178,8 +178,6 @@
                 <div class="collapsible-content" style="display:none;">
                 <div id="autoAccessories"></div>
                 <div id="accessoriesContainer"></div>
-                <div id="customAddons"></div>
-                <button class="add-custom-btn" onclick="addCustomAddon()">+ Add Custom Item</button>
                 </div>
             </div>
 
@@ -198,7 +196,7 @@
                 <div id="rcCheckboxItems"></div>
                 <div id="rcAddonSection">
                     <div class="rc-addon-header">
-                        <select id="rcAddonSelect" class="rc-addon-dropdown"><option value="">+ Add item...</option></select>
+                        <select id="rcAddonSelect" class="rc-addon-dropdown"><option value="">Add item...</option></select>
                     </div>
                     <div id="rcAddonRows"></div>
                 </div>
@@ -207,6 +205,8 @@
                     <div class="form-group" id="rcTravelSection" style="display:none;"><label>Travel Distance (km)</label><input type="number" id="travelDistanceKm" min="0" value="0" step="1"></div>
                 </div>
                 <span id="rcSubtotal" style="display:none;">$0</span>
+                <div id="customAddons"></div>
+                <button class="add-custom-btn" onclick="addCustomAddon()">Add Custom Item</button>
                 </div>
             </div>
             </div>
@@ -268,6 +268,16 @@
                         <div id="summaryRebateRows"></div>
                     </div>
                     <div class="pc-inv-footer">All line items ex GST unless stated</div>
+                </div>
+            </div>
+            <div class="pc-discount" id="discountBanner">
+                <div class="pc-disc-left">
+                    <div class="pc-disc-label">Discount</div>
+                    <div class="pc-disc-sub">Deducted from final price</div>
+                </div>
+                <div class="pc-disc-right">
+                    <span class="pc-disc-dollar">$</span>
+                    <input type="number" id="discountAmount" min="0" step="1" value="0" oninput="calculateQuote()">
                 </div>
             </div>
         </div>

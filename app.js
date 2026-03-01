@@ -381,7 +381,7 @@ function renderInstallationCostsUI() {
     checkboxEl.innerHTML = '';
 
     // Addon dropdown: populate with items not yet added
-    addonSelect.innerHTML = '<option value="">+ Add item...</option>';
+    addonSelect.innerHTML = '<option value="">Add item...</option>';
     addonItems.forEach(function(item) {
         if (!installationAddons.addonItems[item.id]) {
             var o = document.createElement('option');
@@ -2643,7 +2643,8 @@ function calculateQuote() {
         const commAmt = (baseIncGst - pvReb - batReb) * commRate / (1 - commRate * GST) / GST; // commission as % of customer price inc GST, stored ex GST
         const priceBeforeRebates = priceBeforeCommission + commAmt;
         const finalPrice = priceBeforeRebates - pvReb - batReb;
-        const customerPriceNum = Math.round(priceBeforeRebates * GST - pvReb - batReb);
+        const discountAmt = parseFloat(document.getElementById('discountAmount')?.value) || 0;
+        const customerPriceNum = Math.round(priceBeforeRebates * GST - pvReb - batReb - discountAmt);
         var customerPriceVal = '$' + customerPriceNum.toLocaleString('en-AU');
 
         document.getElementById('priceBeforeRebates').textContent = fmtIncGst(priceBeforeRebates);
@@ -2686,7 +2687,7 @@ function calculateQuote() {
                 var batRebMay = calcBatteryRebateFuture(usableKwh, state.stcPrice);
                 var commAmtMay = (baseIncGst - pvRebMay - batRebMay) * commRate / (1 - commRate * GST) / GST;
                 var priceBeforeRebatesMay = priceBeforeCommission + commAmtMay;
-                var futurePriceNum = Math.round(priceBeforeRebatesMay * GST - pvRebMay - batRebMay);
+                var futurePriceNum = Math.round(priceBeforeRebatesMay * GST - pvRebMay - batRebMay - discountAmt);
                 var increaseNum = futurePriceNum - customerPriceNum;
                 if (increaseNum > 0) {
                     urgBanner.style.display = 'flex';
@@ -3253,7 +3254,8 @@ function collectQuoteData() {
             customerPrice: document.getElementById('customerPriceDisplay').textContent,
             totalCog: fmtExGst(state.totalCog || 0),
             sysKw: state.sysKw,
-            batteryKwh: bat.totalKwh
+            batteryKwh: bat.totalKwh,
+            discount: parseFloat(document.getElementById('discountAmount')?.value) || 0
         },
         rep_id: currentRepId || null
     };
@@ -3563,6 +3565,10 @@ async function loadQuote(quoteId) {
         document.getElementById('customAddons').innerHTML = '';
         ca.forEach(item => { addCustomAddon(); document.getElementById('customName-' + customAddonCount).value = item.name; document.getElementById('customCost-' + customAddonCount).value = item.cost; });
 
+        // Restore discount
+        var discEl = document.getElementById('discountAmount');
+        if (discEl) discEl.value = (data.totals?.discount) || 0;
+
         // Hide search results
         document.getElementById('quoteSearchResults').style.display = 'none';
         document.getElementById('quoteSearchInput').value = '';
@@ -3591,6 +3597,7 @@ function clearQuote() {
     document.getElementById('gatewaySelect').selectedIndex = 0;
     selectedAccessories = []; renderSelectedAccessories();
     customAddonCount = 0; document.getElementById('customAddons').innerHTML = '';
+    var discEl = document.getElementById('discountAmount'); if (discEl) discEl.value = 0;
     userChangedInverter = false; dualStackResult = null; dualStackEcOverride = { stack1: null, stack2: null }; parallelResult = null;
     batteryQtys = {};
     // Reset installation addons but keep contractor selection (sticky like rep)
@@ -3864,9 +3871,11 @@ function generateQuote() {
     drawTotalRow('Price Before Rebates', fmtPdfInc(priceBeforeRebates), { divider: true });
     if (pvReb > 0) drawTotalRow('PV STC Rebate (' + pvStcCount + ' STCs)', '-' + fmtPdf(pvReb), { valueColor: [52, 211, 153] });
     if (batReb > 0) drawTotalRow('Battery STC Rebate', '-' + fmtPdf(batReb), { valueColor: [52, 211, 153] });
+    var pdfDiscount = parseFloat(document.getElementById('discountAmount')?.value) || 0;
+    if (pdfDiscount > 0) drawTotalRow('Discount', '-$' + Math.round(pdfDiscount).toLocaleString('en-AU'), { valueColor: [52, 211, 153] });
 
     y += 2;
-    var customerPrice = '$' + Math.round(priceBeforeRebates * GST - pvReb - batReb).toLocaleString('en-AU');
+    var customerPrice = '$' + Math.round(priceBeforeRebates * GST - pvReb - batReb - pdfDiscount).toLocaleString('en-AU');
     drawTotalRow('Customer Price (inc GST)', customerPrice, {
         divider: true, dividerColor: magenta, dividerWidth: 0.8,
         fontSize: 12, fontStyle: 'bold', labelColor: magenta, valueColor: magenta, spacing: 8
