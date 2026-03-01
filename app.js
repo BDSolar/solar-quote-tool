@@ -514,26 +514,40 @@ const fmtExGst = v => '$' + Math.round(v).toLocaleString('en-AU');
 const fmtExGstDecimal = v => '$' + v.toFixed(2);
 const fmtKwh = v => (Math.floor(v * 10) / 10);
 
-// Cap usable kWh at 50 for battery STC rebate (federal scheme limit)
-function calcBatteryRebate(usableKwh, ratePerKwh) {
+// STC scheme date boundary: May 1 2026 changes deeming period and battery rebate structure
+const STC_MAY2026 = new Date(2026, 4, 1); // months are 0-indexed
+function isPostMay2026() { return new Date() >= STC_MAY2026; }
+
+// Deeming period: 5 years before May 2026, 4 years from May 2026
+function getDeemingPeriod() { return isPostMay2026() ? 4 : 5; }
+
+// Battery STC rebate — auto-switches between flat rate (pre-May) and tiered (post-May)
+// Pre-May: flat rate from business_params (battery_rebate_per_kwh), capped at 50 kWh
+// Post-May: tiered STC structure — 0-14 kWh @100%, 14-28 kWh @60%, 28-50 kWh @15%, STC factor 6.8
+function calcBatteryRebate(usableKwh, rateOrStcPrice) {
     var capped = Math.min(usableKwh, 50);
-    return capped * ratePerKwh;
+    if (!isPostMay2026()) {
+        return capped * rateOrStcPrice;
+    }
+    return calcBatteryRebateTiered(capped, rateOrStcPrice);
 }
 
-// May 2026 tiered battery STC rebate structure
-// Tiers: 0-14 kWh @ 100%, 14-28 kWh @ 60%, 28-50 kWh @ 15%
-// STC factor 6.8, PV deeming drops to 4 years
-function calcBatteryRebateMay2026(usableKwh, stcPrice) {
-    var capped = Math.min(usableKwh, 50);
+// Tiered battery STC rebate (May 2026+)
+function calcBatteryRebateTiered(cappedKwh, stcPrice) {
     var stcs = 0;
-    if (capped <= 14) {
-        stcs = capped * 6.8;
-    } else if (capped <= 28) {
-        stcs = 14 * 6.8 + (capped - 14) * 6.8 * 0.6;
+    if (cappedKwh <= 14) {
+        stcs = cappedKwh * 6.8;
+    } else if (cappedKwh <= 28) {
+        stcs = 14 * 6.8 + (cappedKwh - 14) * 6.8 * 0.6;
     } else {
-        stcs = 14 * 6.8 + 14 * 6.8 * 0.6 + (capped - 28) * 6.8 * 0.15;
+        stcs = 14 * 6.8 + 14 * 6.8 * 0.6 + (cappedKwh - 28) * 6.8 * 0.15;
     }
     return Math.floor(stcs) * stcPrice;
+}
+
+// Future (post-May) battery rebate — used by urgency banner before May 2026
+function calcBatteryRebateFuture(usableKwh, stcPrice) {
+    return calcBatteryRebateTiered(Math.min(usableKwh, 50), stcPrice);
 }
 
 function getBmsName(bt) { return bt.id === 'tp_hs36' ? 'TBMS-MCS0800' : bt.id === 'tb_hs51' ? 'TBMS-S51-80' : (bt.bms_code || 'BMS'); }
@@ -629,8 +643,8 @@ function syncStateFromDOM() {
     state.gpMargin = parseFloat(document.getElementById('gpMargin').value) || 0;
     state.salesCommission = parseFloat(document.getElementById('salesCommission').value) || 0;
     state.stcPrice = parseFloat(document.getElementById('stcPrice').value) || 0;
-    state.deemingPeriod = parseFloat(document.getElementById('stcDeemingPeriod').value) || 0;
-    state.batteryRebatePerKwh = parseFloat(document.getElementById('batteryRebatePerKwh').value) || 0;
+    state.deemingPeriod = getDeemingPeriod();
+    state.batteryRebatePerKwh = isPostMay2026() ? state.stcPrice : (parseFloat(document.getElementById('batteryRebatePerKwh').value) || 0);
     state.installPvPerKw = parseFloat(document.getElementById('installPerKwPv').value) || 0;
     state.installBatPerStack = parseFloat(document.getElementById('installPerStack').value) || 0;
     state.desiredBatteryKwh = parseFloat(document.getElementById('desiredBatteryKwh').value) || 0;
@@ -1771,7 +1785,7 @@ function optimizeBattery(desired) {
     const bt = getBatteryType(), modules = getBatteryModules(), rules = getBatteryRules();
     if (!modules.length) return { qtys: {}, total: 0, cost: 0 };
     if (desired <= 0 || desired > rules.max_kwh) { const r = {}; modules.forEach(b => r[b.kwh] = 0); return { qtys: r, total: 0, cost: 0 }; }
-    const rebatePerKwh = state.batteryRebatePerKwh, gpMargin = state.gpMargin / 100;
+    const gpMargin = state.gpMargin / 100;
 
     // Package pricing (SolaX TP-HS36)
     if (bt.use_package_pricing && bt.packages && modules.length === 1) {
@@ -1779,7 +1793,7 @@ function optimizeBattery(desired) {
         bt.packages.forEach(pkg => {
             if (pkg.modules > rules.max_modules || pkg.kwh < desired) return;
             const usable = pkg.modules * (mod.usable_kwh || mod.kwh);
-            const cc = (pkg.price * (1 + gpMargin)) - (usable * rebatePerKwh);
+            const cc = (pkg.price * (1 + gpMargin)) - calcBatteryRebate(usable, state.batteryRebatePerKwh);
             if (cc < bestCost || (cc === bestCost && pkg.kwh < (bestPkg?.kwh || Infinity))) { bestPkg = pkg; bestCost = cc; }
         });
         if (!bestPkg) { const sorted = [...bt.packages].filter(p => p.modules <= rules.max_modules).sort((a, b) => a.kwh - b.kwh); bestPkg = sorted.find(p => p.kwh >= desired) || sorted[sorted.length - 1]; }
@@ -1794,7 +1808,7 @@ function optimizeBattery(desired) {
             const kwh = q * mod.kwh; if (kwh < desired) continue;
             const usable = q * (mod.usable_kwh || mod.kwh);
             const ec = q * mod.price + (bt.bms_cost || 0) + (q >= (bt.series_box_threshold || 999) ? (bt.series_box_cost || 0) : 0);
-            const cc = (ec * (1 + gpMargin)) - (usable * rebatePerKwh);
+            const cc = (ec * (1 + gpMargin)) - calcBatteryRebate(usable, state.batteryRebatePerKwh);
             if (cc < bestCost) { bestQty = q; bestCost = cc; bestKwh = kwh; }
         }
         const r = {}; r[mod.kwh] = bestQty; return { qtys: r, total: bestKwh, cost: bestCost };
@@ -1804,7 +1818,7 @@ function optimizeBattery(desired) {
     const maxMod = rules.max_modules, maxKwh = rules.max_kwh;
     const sorted = [...modules].sort((a, b) => (a.price / a.kwh) - (b.price / b.kwh));
     let bestCombo = null, bestCC = Infinity, bestTotal = Infinity;
-    function cc(ec, usable) { return ec * (1 + gpMargin) - usable * rebatePerKwh; }
+    function cc(ec, usable) { return ec * (1 + gpMargin) - calcBatteryRebate(usable, state.batteryRebatePerKwh); }
     function search(idx, qtys, tKwh, tUsable, tCost, tMod) {
         if (tKwh >= desired) { const c = cc(tCost, tUsable); if (c < bestCC || (c === bestCC && tKwh < bestTotal)) { bestCombo = Object.assign({}, qtys); bestCC = c; bestTotal = tKwh; } }
         if (idx >= sorted.length) return;
@@ -1831,7 +1845,7 @@ function optimizeDualStack(desired) {
     const cec = mfg.cec_approved;
     const combos = (cec?.type === 'inverter_battery_combo') ? cec[phase] : {};
     const bt = getBatteryType(), modules = getBatteryModules();
-    const rebatePerKwh = state.batteryRebatePerKwh, gpMargin = state.gpMargin / 100;
+    const gpMargin = state.gpMargin / 100;
     const mountPrice = mfg.battery_mounting?.[state.mountingType === 'wall' ? 'mount_wall' : 'mount_ground'] ?? 202;
     const gateways = mfg.gateways?.[phase] || [];
     const gwPrice = gateways.length ? Math.min(...gateways.map(g => g.price)) : 0;
@@ -1927,7 +1941,7 @@ function optimizeDualStack(desired) {
                 const equipCost = ec1.price + ec2.price + bat1.equipCost + bat2.equipCost
                     + (2 * mountPrice) + gwPrice + (2 * labourPerStack);
                 const totalUsable = bat1.usableKwh + bat2.usableKwh;
-                const netCost = (equipCost * (1 + gpMargin)) - (totalUsable * rebatePerKwh);
+                const netCost = (equipCost * (1 + gpMargin)) - calcBatteryRebate(totalUsable, state.batteryRebatePerKwh);
 
                 if (netCost < bestNetCost) {
                     bestNetCost = netCost;
@@ -2661,16 +2675,15 @@ function calculateQuote() {
         // Update system summary line
         updateSystemSummaryLine();
 
-        // May 2026 urgency comparison
+        // May 2026 urgency comparison — only show before the transition date
         var urgBanner = document.getElementById('urgencyBanner');
         if (urgBanner) {
             var hasPvOrBat = (pvReb > 0 || batReb > 0);
-            if (hasPvOrBat) {
-                // May 2026: PV deeming drops to 4 years, battery gets tiered structure
+            if (hasPvOrBat && !isPostMay2026()) {
+                // Compare current price vs post-May price (4yr deeming + tiered battery)
                 var pvStcCountMay = zoneRating > 0 ? Math.floor(state.sysKw * zoneRating * 4) : 0;
                 var pvRebMay = pvStcCountMay * state.stcPrice;
-                var batRebMay = calcBatteryRebateMay2026(usableKwh, state.stcPrice);
-                // Recalc commission with new rebates (same cost base, different rebate deductions)
+                var batRebMay = calcBatteryRebateFuture(usableKwh, state.stcPrice);
                 var commAmtMay = (baseIncGst - pvRebMay - batRebMay) * commRate / (1 - commRate * GST) / GST;
                 var priceBeforeRebatesMay = priceBeforeCommission + commAmtMay;
                 var futurePriceNum = Math.round(priceBeforeRebatesMay * GST - pvRebMay - batRebMay);

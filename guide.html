@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Black Diamond Solar - User Guide</title>
+    <link rel="stylesheet" href="style.css?v=3">
+    <style>
+        body {
+            background: var(--white);
+        }
+        .guide-layout {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 240px 1fr;
+            min-height: calc(100vh - 60px);
+        }
+
+        /* === TOOLBAR === */
+        .guide-toolbar {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 32px;
+            border-bottom: 1px solid var(--gray-200);
+            background: rgba(255,255,255,0.8);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .guide-toolbar .toolbar-title {
+            font-family: var(--font-display);
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--gray-900);
+            letter-spacing: -0.02em;
+        }
+        .guide-toolbar .toolbar-spacer { flex: 1; }
+        .guide-toolbar .toolbar-link {
+            color: var(--gray-500);
+            font-size: 12px;
+            text-decoration: none;
+            white-space: nowrap;
+            transition: all 0.2s;
+            padding: 6px 14px;
+            border: 1px solid var(--gray-200);
+            border-radius: 17px;
+        }
+        .guide-toolbar .toolbar-link:hover {
+            color: var(--gray-900);
+            background: var(--gray-100);
+            border-color: var(--gray-300);
+        }
+
+        /* === SIDEBAR / TOC === */
+        .guide-toc {
+            position: sticky;
+            top: 60px;
+            height: calc(100vh - 60px);
+            overflow-y: auto;
+            padding: 24px 0 24px 24px;
+            border-right: 1px solid var(--gray-200);
+            background: var(--gray-50);
+        }
+        .guide-toc::-webkit-scrollbar { width: 0; }
+        .toc-label {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--gray-400);
+            margin-bottom: 12px;
+            padding-left: 14px;
+        }
+        .toc-section {
+            margin-bottom: 16px;
+        }
+        .toc-section-title {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--gray-900);
+            padding: 6px 14px;
+            border-radius: 8px;
+            text-decoration: none;
+            transition: all 0.15s;
+        }
+        .toc-section-title:hover {
+            background: var(--gray-200);
+        }
+        .toc-sub {
+            list-style: none;
+            padding: 2px 0 0 0;
+        }
+        .toc-sub a {
+            display: block;
+            font-size: 12px;
+            color: var(--gray-500);
+            padding: 4px 14px 4px 28px;
+            border-radius: 6px;
+            text-decoration: none;
+            transition: all 0.15s;
+        }
+        .toc-sub a:hover {
+            color: var(--gray-900);
+            background: var(--gray-100);
+        }
+
+        /* === CONTENT === */
+        .guide-content {
+            padding: 32px 48px 80px;
+            max-width: 860px;
+        }
+        .guide-content h1 {
+            font-family: var(--font-display);
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--gray-900);
+            letter-spacing: -0.02em;
+            margin-bottom: 8px;
+        }
+        .guide-content .subtitle {
+            font-size: 15px;
+            color: var(--gray-500);
+            margin-bottom: 40px;
+        }
+        .guide-content h2 {
+            font-family: var(--font-display);
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--gray-900);
+            letter-spacing: -0.01em;
+            margin: 48px 0 8px;
+            padding-top: 24px;
+            border-top: 1px solid var(--gray-200);
+        }
+        .guide-content h2:first-of-type {
+            margin-top: 0;
+            border-top: none;
+            padding-top: 0;
+        }
+        .guide-content h3 {
+            font-family: var(--font-display);
+            font-size: 17px;
+            font-weight: 600;
+            color: var(--gray-900);
+            margin: 28px 0 10px;
+        }
+        .guide-content h4 {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--gray-700);
+            margin: 20px 0 8px;
+        }
+        .guide-content p {
+            font-size: 14px;
+            color: var(--gray-600);
+            line-height: 1.7;
+            margin-bottom: 12px;
+        }
+        .guide-content ul, .guide-content ol {
+            font-size: 14px;
+            color: var(--gray-600);
+            line-height: 1.7;
+            margin: 0 0 16px 20px;
+        }
+        .guide-content li {
+            margin-bottom: 4px;
+        }
+        .guide-content code {
+            font-size: 13px;
+            background: var(--gray-100);
+            padding: 2px 6px;
+            border-radius: 5px;
+            color: var(--gray-700);
+            font-family: 'SF Mono', 'Menlo', 'Monaco', monospace;
+        }
+
+        /* Field tables */
+        .field-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 12px 0 20px;
+            font-size: 13px;
+        }
+        .field-table th {
+            text-align: left;
+            font-weight: 600;
+            color: var(--gray-500);
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            padding: 8px 12px;
+            border-bottom: 2px solid var(--gray-200);
+            background: var(--gray-50);
+        }
+        .field-table td {
+            padding: 8px 12px;
+            color: var(--gray-600);
+            border-bottom: 1px solid var(--gray-100);
+            vertical-align: top;
+            line-height: 1.5;
+        }
+        .field-table td:first-child {
+            font-weight: 500;
+            color: var(--gray-900);
+            white-space: nowrap;
+        }
+        .field-table tr:last-child td {
+            border-bottom: none;
+        }
+        .field-table tr:hover td {
+            background: var(--gray-50);
+        }
+
+        /* Info callouts */
+        .guide-note {
+            background: var(--blue-light);
+            border: 1px solid rgba(0, 102, 255, 0.12);
+            border-radius: var(--radius-sm);
+            padding: 12px 16px;
+            font-size: 13px;
+            color: var(--blue);
+            margin: 16px 0;
+            line-height: 1.6;
+        }
+        .guide-note strong {
+            font-weight: 600;
+        }
+        .guide-warning {
+            background: var(--orange-light);
+            border: 1px solid rgba(255, 149, 0, 0.2);
+            border-radius: var(--radius-sm);
+            padding: 12px 16px;
+            font-size: 13px;
+            color: #b36b00;
+            margin: 16px 0;
+            line-height: 1.6;
+        }
+        .guide-step {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        .guide-step-num {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            background: var(--gray-900);
+            color: var(--white);
+            font-size: 13px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+        .guide-step-content {
+            flex: 1;
+            font-size: 14px;
+            color: var(--gray-600);
+            line-height: 1.6;
+        }
+        .guide-step-content strong {
+            color: var(--gray-900);
+        }
+
+        /* Screenshots */
+        .guide-img {
+            width: 100%;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--gray-200);
+            margin: 16px 0 20px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+        }
+        .guide-img-caption {
+            font-size: 12px;
+            color: var(--gray-400);
+            text-align: center;
+            margin: -12px 0 20px;
+            font-style: italic;
+        }
+        .guide-img-pair {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin: 16px 0 20px;
+        }
+        .guide-img-pair .guide-img-wrap .guide-img {
+            margin: 0 0 4px;
+        }
+        .guide-img-pair .guide-img-caption {
+            margin: 0 0 8px;
+        }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            .guide-layout {
+                grid-template-columns: 1fr;
+            }
+            .guide-toc {
+                position: static;
+                height: auto;
+                border-right: none;
+                border-bottom: 1px solid var(--gray-200);
+                padding: 16px;
+            }
+            .toc-sub { display: none; }
+            .toc-section { display: inline-block; margin: 0 4px 8px 0; }
+            .toc-label { display: none; }
+            .guide-content {
+                padding: 24px 16px 60px;
+            }
+            .guide-toolbar { padding: 12px 16px; }
+            .field-table { font-size: 12px; }
+            .field-table td:first-child { white-space: normal; }
+            .guide-img-pair { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="guide-toolbar">
+        <img class="toolbar-logo-left" src="BDSLogoClaer.png" alt="Black Diamond Solar">
+        <span class="guide-toolbar toolbar-title" style="border:none;background:none;padding:0;backdrop-filter:none;">User Guide</span>
+        <span class="toolbar-spacer" style="flex:1;"></span>
+        <a href="index.html" class="toolbar-link">&larr; Quote Tool</a>
+        <a href="admin.html" class="toolbar-link">Admin</a>
+    </div>
+
+    <div class="guide-layout">
+        <!-- Table of Contents -->
+        <nav class="guide-toc">
+            <div class="toc-label">Contents</div>
+
+            <div class="toc-section">
+                <a class="toc-section-title" href="#getting-started">Getting Started</a>
+                <ul class="toc-sub">
+                    <li><a href="#overview">Overview</a></li>
+                    <li><a href="#navigation">Navigation</a></li>
+                </ul>
+            </div>
+
+            <div class="toc-section">
+                <a class="toc-section-title" href="#quote-tool">Quote Tool</a>
+                <ul class="toc-sub">
+                    <li><a href="#qt-toolbar">Toolbar</a></li>
+                    <li><a href="#qt-customer">Customer Info</a></li>
+                    <li><a href="#qt-installation">Installation Details</a></li>
+                    <li><a href="#qt-system">System Configuration</a></li>
+                    <li><a href="#qt-inverter">Inverter &amp; Gateway</a></li>
+                    <li><a href="#qt-accessories">Accessories</a></li>
+                    <li><a href="#qt-electrical">Electrical Upgrades</a></li>
+                    <li><a href="#qt-summary">Price Summary</a></li>
+                    <li><a href="#qt-workflows">Workflows</a></li>
+                </ul>
+            </div>
+
+            <div class="toc-section">
+                <a class="toc-section-title" href="#admin-contractors">Admin &mdash; Contractors</a>
+                <ul class="toc-sub">
+                    <li><a href="#ac-list">Contractor List</a></li>
+                    <li><a href="#ac-details">Details Tab</a></li>
+                    <li><a href="#ac-ratecard">Rate Card Tab</a></li>
+                    <li><a href="#ac-clone">Clone Contractor</a></li>
+                </ul>
+            </div>
+
+            <div class="toc-section">
+                <a class="toc-section-title" href="#admin-pricing">Admin &mdash; Pricing</a>
+                <ul class="toc-sub">
+                    <li><a href="#ap-tables">Product Tables</a></li>
+                    <li><a href="#ap-modal">Product Modal</a></li>
+                    <li><a href="#ap-import">Bulk Import</a></li>
+                    <li><a href="#ap-params">Business Params</a></li>
+                </ul>
+            </div>
+
+            <div class="toc-section">
+                <a class="toc-section-title" href="#admin-users">Admin &mdash; Users</a>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="guide-content">
+            <h1>User Guide</h1>
+            <p class="subtitle">Reference documentation for the Black Diamond Solar quote builder and admin portal.</p>
+
+            <!-- ================================================ -->
+            <!-- GETTING STARTED -->
+            <!-- ================================================ -->
+            <h2 id="getting-started">Getting Started</h2>
+
+            <h3 id="overview">Overview</h3>
+            <p>The system consists of two main pages:</p>
+            <ul>
+                <li><strong>Quote Tool</strong> &mdash; Used by sales reps to build, price, and print solar + battery quotes for customers.</li>
+                <li><strong>Admin Portal</strong> &mdash; Used by administrators to manage contractors, product pricing, and user accounts.</li>
+            </ul>
+            <p>The quote tool is public and does not require login. The admin portal requires a Supabase Auth account.</p>
+
+            <h3 id="navigation">Navigation</h3>
+            <p>Both pages include toolbar links to navigate between them. The admin toolbar also contains a <strong>Logout</strong> button. This guide is accessible from both pages via the <strong>Guide</strong> link in each toolbar.</p>
+
+            <!-- ================================================ -->
+            <!-- QUOTE TOOL -->
+            <!-- ================================================ -->
+            <h2 id="quote-tool">Quote Tool</h2>
+
+            <h3 id="qt-toolbar">Toolbar</h3>
+            <p>The top toolbar provides quick access to all quote actions.</p>
+
+            <img src="screenshots/qt-toolbar.png" alt="Quote tool toolbar" class="guide-img">
+            <p class="guide-img-caption">The toolbar with Rep/Contractor selectors, action buttons, search, Guide link, and Admin gear icon.</p>
+
+            <table class="field-table">
+                <thead><tr><th>Element</th><th>Description</th></tr></thead>
+                <tbody>
+                    <tr><td>Rep</td><td>Select the sales representative for this quote. Saved alongside each quote.</td></tr>
+                    <tr><td>Contractor</td><td>Select the contractor. This determines the rate card used for installation pricing and sets the contractor details on printed quotes.</td></tr>
+                    <tr><td>New</td><td>Clear the form and start a fresh quote.</td></tr>
+                    <tr><td>Save</td><td>Save the current quote to the database. Requires a customer name and postcode.</td></tr>
+                    <tr><td>Print</td><td>Generate a PDF quote document for the customer.</td></tr>
+                    <tr><td>BOM</td><td>Open the Bill of Materials view. Only visible after a quote has been calculated.</td></tr>
+                    <tr><td>Search</td><td>Toggle the search bar to find previously saved quotes by name, address, or phone.</td></tr>
+                    <tr><td>Admin</td><td>Navigate to the contractor admin page (gear icon).</td></tr>
+                </tbody>
+            </table>
+
+            <h3 id="qt-customer">Customer Information</h3>
+            <p>Enter the customer's contact details and installation address. These appear on the printed quote.</p>
+
+            <div class="guide-img-pair">
+                <div class="guide-img-wrap">
+                    <img src="screenshots/qt-customer.png" alt="Customer form empty" class="guide-img">
+                    <p class="guide-img-caption">Empty customer form with placeholder text.</p>
+                </div>
+                <div class="guide-img-wrap">
+                    <img src="screenshots/qt-customer-filled.png" alt="Customer form filled" class="guide-img">
+                    <p class="guide-img-caption">Filled customer form &mdash; postcode triggers STC zone lookup.</p>
+                </div>
+            </div>
+
+            <table class="field-table">
+                <thead><tr><th>Field</th><th>Description</th><th>Notes</th></tr></thead>
+                <tbody>
+                    <tr><td>Customer Name</td><td>Full name of the customer</td><td>Required for saving</td></tr>
+                    <tr><td>Email</td><td>Customer email address</td><td>&mdash;</td></tr>
+                    <tr><td>Street Address</td><td>Installation street address</td><td>&mdash;</td></tr>
+                    <tr><td>Suburb</td><td>Installation suburb</td><td>&mdash;</td></tr>
+                    <tr><td>State</td><td>Australian state/territory</td><td>NSW, VIC, QLD, SA, WA, TAS, NT, ACT</td></tr>
+                    <tr><td>Postcode</td><td>4-digit postcode</td><td><strong>Required.</strong> Triggers automatic STC zone lookup which determines the solar rebate multiplier for this location.</td></tr>
+                    <tr><td>Phone</td><td>Customer phone number</td><td>&mdash;</td></tr>
+                </tbody>
+            </table>
+
+            <div class="guide-note">
+                <strong>STC Zone:</strong> When you enter a valid postcode the system automatically looks up the STC zone (1&ndash;4). Zone 1 receives the highest rebate; zone 4 the lowest. This directly affects the customer price.
+            </div>
+
+            <h3 id="qt-installation">Installation Details</h3>
+            <p>This collapsible section captures the physical installation parameters. Click the section header to expand.</p>
+
+            <img src="screenshots/qt-installation.png" alt="Installation details section" class="guide-img">
+            <p class="guide-img-caption">Installation details expanded &mdash; segmented controls for storeys, mounting, orientation, and phase; dropdown for roof type; steppers for rows and arrays.</p>
+
+            <table class="field-table">
+                <thead><tr><th>Field</th><th>Description</th><th>Values</th></tr></thead>
+                <tbody>
+                    <tr><td>Building Storeys</td><td>Number of storeys at the installation site. Affects installation pricing.</td><td>Single / Double</td></tr>
+                    <tr><td>Battery Mounting</td><td>How the battery will be mounted. Wall mount may incur extra cost for some configurations.</td><td>Wall / Ground</td></tr>
+                    <tr><td>Panel Orientation</td><td>How panels are oriented on the roof. Affects mounting rail calculations.</td><td>Portrait / Landscape</td></tr>
+                    <tr><td>Roof Type</td><td>The roof material/style. Determines which mounting kit is used and may show conditional fields.</td><td>Metal, Tile, Concrete/Terracotta, Klip Lock, Terracotta, Flat</td></tr>
+                    <tr><td>Rows</td><td>Number of panel rows on the roof. Used for mounting rail calculations.</td><td>1&ndash;20 (stepper)</td></tr>
+                    <tr><td>Arrays</td><td>Number of separate panel arrays. Each array needs its own mounting hardware.</td><td>1&ndash;10 (stepper)</td></tr>
+                    <tr><td>Phase</td><td>Electrical phase at the property. Determines which inverters are available and maximum system size.</td><td>Single Phase / Three Phase</td></tr>
+                </tbody>
+            </table>
+
+            <h4>Conditional Fields</h4>
+            <ul>
+                <li><strong>Tilt Angle</strong> &mdash; Appears when roof type is <em>Flat</em>. Select the tilt frame angle: 10&ndash;15&deg;, 15&ndash;30&deg;, or 30&ndash;60&deg;.</li>
+                <li><strong>Kliplock Profile</strong> &mdash; Appears when roof type is <em>Klip Lock</em>. Select the specific profile: Universal 406/700, Klip-Lok 700, 406, or 105.</li>
+                <li><strong>Wall Mount Warning</strong> &mdash; May appear when wall mounting is selected to alert about weight or compatibility constraints.</li>
+            </ul>
+
+            <h3 id="qt-system">System Configuration</h3>
+            <p>The core of the quote. Configure the system type, manufacturer, panels, and battery.</p>
+
+            <img src="screenshots/qt-system-configured.png" alt="System configuration with panels and battery set" class="guide-img">
+            <p class="guide-img-caption">A configured system: Sigenergy manufacturer selected, 37 Longi panels (17.57 kW), and 32 kWh battery capacity.</p>
+
+            <h4>System Type Tabs</h4>
+            <p>Choose one of three configurations:</p>
+            <table class="field-table">
+                <thead><tr><th>Tab</th><th>Description</th></tr></thead>
+                <tbody>
+                    <tr><td>Solar + Battery</td><td>Full hybrid system with panels and battery storage. Default selection.</td></tr>
+                    <tr><td>Solar Only</td><td>PV panels with a string inverter, no battery. Battery controls are hidden.</td></tr>
+                    <tr><td>Battery Only</td><td>Battery retrofit &mdash; no panels. Panel controls are hidden.</td></tr>
+                </tbody>
+            </table>
+
+            <h4>Manufacturer</h4>
+            <p>Select the battery/inverter manufacturer. Currently supported: <strong>Sigenergy</strong> and <strong>SolaX</strong>. Each manufacturer has its own product range for inverters, batteries, gateways, and accessories.</p>
+
+            <h4>Panel Selection</h4>
+            <p>Choose a solar panel model from the dropdown. The dropdown only shows active panels from the pricing database. Use the stepper buttons to set the number of panels. The system size in kW is calculated automatically.</p>
+
+            <h4>Battery Capacity</h4>
+            <p>Use the stepper to select desired battery capacity in kWh. The system will configure the nearest achievable capacity using available battery modules and display the actual capacity. Each manufacturer has different module sizes (e.g. 5 kWh increments).</p>
+
+            <div class="guide-note">
+                <strong>Battery Type:</strong> For manufacturers that offer multiple battery types (e.g. SolaX LV vs HV), a battery type selector will appear allowing you to choose.
+            </div>
+
+            <h3 id="qt-inverter">Inverter &amp; Gateway</h3>
+            <p>The inverter and gateway are selected based on your system configuration.</p>
+
+            <img src="screenshots/qt-inverter-configured.png" alt="Inverter section with CEC status" class="guide-img">
+            <p class="guide-img-caption">Inverter section showing auto-selected energy controller, battery config (4&times; 8kWh = 32 kWh), PV oversizing warning, and CEC Approved status.</p>
+
+            <table class="field-table">
+                <thead><tr><th>Field</th><th>Description</th></tr></thead>
+                <tbody>
+                    <tr><td>Inverter / Energy Controller</td><td>Auto-selected based on system size, phase, and manufacturer. You can override the selection from the dropdown.</td></tr>
+                    <tr><td>Gateway / Backup Protection</td><td>Auto-selected based on manufacturer and system type. Some configurations require a gateway for backup functionality.</td></tr>
+                </tbody>
+            </table>
+
+            <h4>Status Indicators</h4>
+            <ul>
+                <li><strong>Recommended Config</strong> (blue box) &mdash; Shows the battery module breakdown (e.g. "2&times; 5kWh modules").</li>
+                <li><strong>CEC Approved</strong> (green shield) &mdash; The selected inverter + panel combination is listed in the CEC approved combinations table.</li>
+                <li><strong>CEC Warning</strong> (orange shield) &mdash; The combination is <em>not</em> found in the CEC approved list. The system may still be installable but the rep should verify.</li>
+                <li><strong>Oversizing Warning</strong> &mdash; Panel array output exceeds the inverter's maximum input capacity.</li>
+                <li><strong>Min Modules Warning</strong> &mdash; Below the minimum number of panels required for this inverter.</li>
+                <li><strong>Phase Cap Warning</strong> &mdash; System size exceeds the maximum allowed for single-phase connections.</li>
+            </ul>
+
+            <h3 id="qt-accessories">Accessories</h3>
+            <p>This collapsible section manages additional items included in the quote.</p>
+
+            <img src="screenshots/qt-accessories.png" alt="Accessories section" class="guide-img">
+            <p class="guide-img-caption">Accessories section showing an auto-included power sensor (green "Included" badge), the manual accessory dropdown, and the custom item button.</p>
+
+            <h4>Auto-Included Accessories</h4>
+            <p>Some accessories are automatically added based on the system configuration (e.g. mounting hardware, isolators). These appear as green pills with an "Auto" badge. Each has a checkbox to exclude it if not needed.</p>
+
+            <h4>Manual Accessories</h4>
+            <p>Use the accessories dropdown to add optional items. Select an accessory to add it to the quote. Added items appear as blue pills and can be removed with the &times; button.</p>
+
+            <h4>EV Chargers</h4>
+            <p>If available for the selected manufacturer, EV charger options appear as selectable pill buttons. Click to toggle on/off. The price is shown on each option.</p>
+
+            <h4>Custom Add-ons</h4>
+            <p>Click <strong>+ Add Custom Item</strong> to add a free-text line item with a custom price. Use this for anything not in the standard accessory list.</p>
+
+            <h3 id="qt-electrical">Electrical Upgrades</h3>
+            <p>This collapsible section appears when a contractor is selected and has a rate card configured. It shows installation-related cost items from the contractor's rate card.</p>
+
+            <h4>Item Types</h4>
+            <table class="field-table">
+                <thead><tr><th>Type</th><th>Behaviour</th></tr></thead>
+                <tbody>
+                    <tr><td>Auto items</td><td>Automatically included based on the system configuration. Always costed.</td></tr>
+                    <tr><td>Standard items</td><td>Displayed as a label + price. Always included when visible.</td></tr>
+                    <tr><td>Checkbox items</td><td>Displayed as a 3-column grid of checkboxes. Tick to include the cost.</td></tr>
+                    <tr><td>Add-on items</td><td>Select from the dropdown to add. Supports quantity. Remove with the &times; button.</td></tr>
+                </tbody>
+            </table>
+
+            <h4>Additional Fields</h4>
+            <table class="field-table">
+                <thead><tr><th>Field</th><th>Description</th></tr></thead>
+                <tbody>
+                    <tr><td>Backup Circuits</td><td>Number of backup circuits including RCBO. Appears for battery systems. Each circuit adds to the installation cost.</td></tr>
+                    <tr><td>Travel Distance</td><td>Distance in km to the installation site. Used to calculate travel surcharge if applicable.</td></tr>
+                </tbody>
+            </table>
+
+            <h3 id="qt-summary">Price Summary</h3>
+            <p>The sidebar (right column on desktop, below on mobile) shows the live pricing breakdown.</p>
+
+            <img src="screenshots/qt-summary-configured.png" alt="Price summary sidebar" class="guide-img" style="max-width:400px;">
+            <p class="guide-img-caption">Price summary for a 17.6kW + 32kWh system: customer price, urgency banner, line-item breakdown, GST, and STC rebate.</p>
+
+            <table class="field-table">
+                <thead><tr><th>Section</th><th>Description</th></tr></thead>
+                <tbody>
+                    <tr><td>Customer Price</td><td>The headline price including GST and after all rebates. Updates in real time as you configure the quote.</td></tr>
+                    <tr><td>System Summary</td><td>One-line description of the system (e.g. "6.6kW + 10kWh Sigenergy").</td></tr>
+                    <tr><td>Urgency Banner</td><td>Shows the price increase that will apply after the next STC deeming period change (e.g. after 1 May). Helps create urgency for the customer.</td></tr>
+                    <tr><td>PV Equipment</td><td>Line items for panels and solar-related hardware.</td></tr>
+                    <tr><td>Battery &amp; Inverter</td><td>Line items for battery modules, inverter, gateway, and related components.</td></tr>
+                    <tr><td>Accessories</td><td>All selected accessories and custom add-ons.</td></tr>
+                    <tr><td>Installation</td><td>Installation cost subtotal from the rate card (visible when a contractor is selected).</td></tr>
+                    <tr><td>Price Before Rebates</td><td>Total ex-GST price before STC rebate is applied.</td></tr>
+                    <tr><td>GST</td><td>10% GST on the total.</td></tr>
+                    <tr><td>STC Rebate</td><td>Government rebate based on system size, STC zone, deeming period, and current STC price. Shown in green.</td></tr>
+                </tbody>
+            </table>
+
+            <div class="guide-note">
+                <strong>Mobile:</strong> On narrow screens the summary sidebar moves below the form and a floating price bar appears at the bottom of the screen showing the customer price at a glance.
+            </div>
+
+            <h3 id="qt-workflows">Workflows</h3>
+
+            <h4>Creating a New Quote</h4>
+            <div class="guide-step"><span class="guide-step-num">1</span><div class="guide-step-content">Click <strong>New</strong> in the toolbar to clear the form.</div></div>
+            <div class="guide-step"><span class="guide-step-num">2</span><div class="guide-step-content">Select a <strong>Rep</strong> and <strong>Contractor</strong> from the toolbar dropdowns.</div></div>
+            <div class="guide-step"><span class="guide-step-num">3</span><div class="guide-step-content">Enter the customer's name, address, and <strong>postcode</strong> (required for STC zone lookup).</div></div>
+            <div class="guide-step"><span class="guide-step-num">4</span><div class="guide-step-content">Expand <strong>Installation Details</strong> and set the roof type, storeys, phase, and other parameters.</div></div>
+            <div class="guide-step"><span class="guide-step-num">5</span><div class="guide-step-content">Choose a <strong>system type</strong> tab, select the manufacturer and panel, then set panel count and battery capacity.</div></div>
+            <div class="guide-step"><span class="guide-step-num">6</span><div class="guide-step-content">Review the auto-selected inverter and gateway. Check for CEC warnings.</div></div>
+            <div class="guide-step"><span class="guide-step-num">7</span><div class="guide-step-content">Add any <strong>accessories</strong> or <strong>electrical upgrades</strong> as needed.</div></div>
+            <div class="guide-step"><span class="guide-step-num">8</span><div class="guide-step-content">Review the <strong>Price Summary</strong> sidebar to confirm the customer price.</div></div>
+
+            <h4>Saving a Quote</h4>
+            <p>Click <strong>Save</strong> in the toolbar. The quote data is saved to the database and can be retrieved later via search. The customer name and postcode are required to save.</p>
+
+            <h4>Searching &amp; Loading Quotes</h4>
+            <p>Click the search icon in the toolbar to open the search bar. Type a customer name, address, or phone number. Results appear below the toolbar. Click a result to load that quote into the form.</p>
+
+            <h4>Printing a PDF Quote</h4>
+            <p>Click <strong>Print</strong> in the toolbar to generate a formatted PDF document. The PDF includes the customer details, system specification, pricing breakdown, and contractor information.</p>
+
+            <h4>Bill of Materials (BOM)</h4>
+            <p>After configuring a quote, the <strong>BOM</strong> button appears in the toolbar. Click it to open a full-screen overlay listing every component with supplier codes, quantities, and costs. Use <strong>Print / Save PDF</strong> within the BOM view to export it.</p>
+
+            <!-- ================================================ -->
+            <!-- ADMIN — CONTRACTORS -->
+            <!-- ================================================ -->
+            <h2 id="admin-contractors">Admin &mdash; Contractors</h2>
+
+            <p>The admin portal opens to the <strong>Contractors</strong> mode by default. Access it by clicking <strong>Admin</strong> in the quote tool toolbar, or navigate to <code>admin.html</code> directly. You must log in with a valid account.</p>
+
+            <img src="screenshots/admin-login.png" alt="Admin login screen" class="guide-img" style="max-width:500px;">
+            <p class="guide-img-caption">The admin login screen. Enter your email and password to access the admin portal.</p>
+
+            <h3 id="ac-list">Contractor List</h3>
+            <p>The left panel shows all contractors. Use the search input at the top to filter by name. Toggle between <strong>Active</strong> and <strong>All</strong> to show or hide deactivated contractors.</p>
+
+            <table class="field-table">
+                <thead><tr><th>Element</th><th>Description</th></tr></thead>
+                <tbody>
+                    <tr><td>Search</td><td>Filter the contractor list by name. Matches are highlighted in real time.</td></tr>
+                    <tr><td>Active / All</td><td>Filter buttons. "Active" (default) hides deactivated contractors.</td></tr>
+                    <tr><td>Status badge</td><td>Green for active contractors, grey for deactivated.</td></tr>
+                    <tr><td>Compliance dots</td><td>Small coloured indicators showing compliance status (insurance, licence expiry, etc.).</td></tr>
+                </tbody>
+            </table>
+
+            <h3 id="ac-details">Details Tab</h3>
+            <p>Click a contractor to view their details in the right panel. The <strong>Details</strong> tab shows contact information, licence, and compliance fields.</p>
+
+            <table class="field-table">
+                <thead><tr><th>Field</th><th>Description</th></tr></thead>
+                <tbody>
+                    <tr><td>Company Name</td><td>The contractor's registered business name.</td></tr>
+                    <tr><td>Contact Name</td><td>Primary contact person.</td></tr>
+                    <tr><td>Email</td><td>Contact email address.</td></tr>
+                    <tr><td>Phone</td><td>Contact phone number.</td></tr>
+                    <tr><td>Address</td><td>Business address.</td></tr>
+                    <tr><td>ABN</td><td>Australian Business Number.</td></tr>
+                    <tr><td>Licence Number</td><td>Electrical contractor licence number.</td></tr>
+                    <tr><td>Licence Expiry</td><td>Licence expiry date. Generates a compliance warning when approaching expiry.</td></tr>
+                    <tr><td>Insurance Expiry</td><td>Public liability insurance expiry date.</td></tr>
+                    <tr><td>CEC Accreditation</td><td>Clean Energy Council accreditation number.</td></tr>
+                    <tr><td>Active</td><td>Toggle the contractor's active status. Deactivated contractors are hidden from the quote tool dropdown.</td></tr>
+                </tbody>
+            </table>
+
+            <p>Click <strong>Save</strong> to persist changes. Use <strong>Deactivate</strong> to soft-delete the contractor (they remain in the database but are hidden).</p>
+
+            <div class="guide-warning">
+                <strong>Compliance Warnings:</strong> If a contractor's licence or insurance is expired or expiring soon, a warning banner appears at the top of the details panel.
+            </div>
+
+            <h3 id="ac-ratecard">Rate Card Tab</h3>
+            <p>Switch to the <strong>Rate Card</strong> tab to manage the contractor's installation pricing. The rate card defines all the line items that appear in the quote tool's Electrical Upgrades section.</p>
+
+            <h4>Category Groups</h4>
+            <p>Items are organised into categories (e.g. "Electrical", "Structural", "Travel"). Each category is a collapsible group with its own header.</p>
+
+            <h4>Managing Items</h4>
+            <ul>
+                <li><strong>Inline editing</strong> &mdash; Click a price value to edit it directly in the list.</li>
+                <li><strong>Add item</strong> &mdash; Click the <strong>+</strong> button in a category header to add a new rate card item.</li>
+                <li><strong>Edit item</strong> &mdash; Click an item row to open the edit modal with all fields.</li>
+                <li><strong>Delete item</strong> &mdash; Use the delete button in the edit modal to remove an item.</li>
+            </ul>
+
+            <h4>Item Edit Modal Fields</h4>
+            <table class="field-table">
+                <thead><tr><th>Field</th><th>Description</th></tr></thead>
+                <tbody>
+                    <tr><td>Name</td><td>Display name of the rate card item.</td></tr>
+                    <tr><td>Category</td><td>Which group this item belongs to.</td></tr>
+                    <tr><td>Type</td><td>How the item behaves: <em>auto</em> (always included), <em>standard</em> (displayed with price), <em>checkbox</em> (optional tick), or <em>addon</em> (selectable from dropdown).</td></tr>
+                    <tr><td>Price</td><td>Cost in dollars (ex GST).</td></tr>
+                    <tr><td>Condition</td><td>Optional condition expression that controls when this item is visible (e.g. only for battery systems, only for double storey).</td></tr>
+                </tbody>
+            </table>
+
+            <h4>Reset to Defaults</h4>
+            <p>Use the reset button to restore the contractor's rate card to the system default values. This overwrites all custom pricing.</p>
+
+            <h3 id="ac-clone">Clone Contractor</h3>
+            <p>Click <strong>Clone</strong> in the toolbar to duplicate an existing contractor. The clone modal lets you:</p>
+            <ol>
+                <li>Select the source contractor to copy from.</li>
+                <li>Enter a new company name for the clone.</li>
+                <li>Choose whether to copy the rate card.</li>
+            </ol>
+            <p>The cloned contractor is created as a new active entry with all details and (optionally) rate card items copied.</p>
+
+            <!-- ================================================ -->
+            <!-- ADMIN — PRICING -->
+            <!-- ================================================ -->
+            <h2 id="admin-pricing">Admin &mdash; Pricing</h2>
+
+            <p>Switch to <strong>Pricing</strong> mode using the mode switcher in the admin toolbar. This mode manages all product pricing data that feeds into the quote tool.</p>
+
+            <h3 id="ap-tables">Product Tables</h3>
+            <p>Use the <strong>Category</strong> and <strong>Manufacturer</strong> filter dropdowns to narrow the product list. Products are displayed in a table with columns specific to each product type.</p>
+
+            <table class="field-table">
+                <thead><tr><th>Category</th><th>Key Columns</th></tr></thead>
+                <tbody>
+                    <tr><td>Panels</td><td>Model, wattage, supplier code, price, active</td></tr>
+                    <tr><td>Inverters</td><td>Model, capacity (kW), phase, type, supplier code, price, active</td></tr>
+                    <tr><td>Battery Modules</td><td>Model, capacity (kWh), type, supplier code, price, active</td></tr>
+                    <tr><td>Gateways</td><td>Model, type, supplier code, price, active</td></tr>
+                    <tr><td>EV Chargers</td><td>Model, power (kW), supplier code, price, active</td></tr>
+                    <tr><td>Accessories</td><td>Name, type, supplier code, price, active</td></tr>
+                    <tr><td>Add-ons</td><td>Name, description, price, active</td></tr>
+                    <tr><td>Battery Mounting</td><td>Type, model, price, active</td></tr>
+                    <tr><td>Mounting Kits</td><td>Roof type, model, per-panel price, active</td></tr>
+                    <tr><td>Mounting Parts</td><td>Part name, length, price, active</td></tr>
+                </tbody>
+            </table>
+
+            <p>Click the <strong>Active</strong> toggle on any row to enable or disable a product. Disabled products are hidden from the quote tool but remain in the database.</p>
+            <p>Click a price cell to edit it inline.</p>
+
+            <h3 id="ap-modal">Product Modal</h3>
+            <p>Click <strong>New</strong> in the toolbar or click an existing product row to open the product modal. The modal shows common fields plus type-specific fields depending on the product category.</p>
+
+            <h4>Common Fields</h4>
+            <table class="field-table">
+                <thead><tr><th>Field</th><th>Description</th></tr></thead>
+                <tbody>
+                    <tr><td>Name / Model</td><td>Product display name.</td></tr>
+                    <tr><td>Manufacturer</td><td>Sigenergy or SolaX.</td></tr>
+                    <tr><td>Supplier Code</td><td>Unique code from the supplier, used for BOM and bulk import matching.</td></tr>
+                    <tr><td>Price</td><td>Unit cost in dollars (ex GST).</td></tr>
+                    <tr><td>Active</td><td>Whether the product is available in the quote tool.</td></tr>
+                </tbody>
+            </table>
+
+            <h4>Type-Specific Fields</h4>
+            <p>Each product type has additional fields (e.g. wattage for panels, capacity for batteries, phase for inverters). These are displayed dynamically in the modal based on the selected category.</p>
+
+            <h3 id="ap-import">Bulk Import</h3>
+            <p>Use the bulk import feature to update prices from a CSV file.</p>
+            <div class="guide-step"><span class="guide-step-num">1</span><div class="guide-step-content">Click <strong>Import</strong> in the pricing toolbar.</div></div>
+            <div class="guide-step"><span class="guide-step-num">2</span><div class="guide-step-content">Select a CSV file. The file should contain columns for <code>supplier_code</code> and <code>price</code> at minimum.</div></div>
+            <div class="guide-step"><span class="guide-step-num">3</span><div class="guide-step-content">Review the <strong>preview table</strong> showing matched products and proposed price changes.</div></div>
+            <div class="guide-step"><span class="guide-step-num">4</span><div class="guide-step-content">Click <strong>Apply</strong> to update all matched product prices in the database.</div></div>
+
+            <div class="guide-note">
+                <strong>Matching:</strong> Products are matched by <code>supplier_code</code> across all product tables. Unmatched rows are shown but skipped during import.
+            </div>
+
+            <h3 id="ap-params">Business Parameters</h3>
+            <p>The <strong>Business Params</strong> section (accessible from the category filter) controls global pricing variables used in quote calculations.</p>
+
+            <table class="field-table">
+                <thead><tr><th>Parameter</th><th>Description</th></tr></thead>
+                <tbody>
+                    <tr><td>GP Margin</td><td>Gross profit margin percentage applied to equipment costs.</td></tr>
+                    <tr><td>Sales Commission</td><td>Sales rep commission percentage.</td></tr>
+                    <tr><td>STC Price</td><td>Current market price per STC certificate (used in rebate calculation).</td></tr>
+                    <tr><td>STC Deeming Period</td><td>Number of years remaining in the current deeming period. Affects the total STC rebate.</td></tr>
+                    <tr><td>Battery Rebate per kWh</td><td>State battery rebate amount per kWh of installed capacity (if applicable).</td></tr>
+                    <tr><td>Install per kW (PV)</td><td>Base installation cost per kW of solar capacity.</td></tr>
+                    <tr><td>Install per Stack</td><td>Base installation cost per battery stack.</td></tr>
+                </tbody>
+            </table>
+
+            <div class="guide-warning">
+                <strong>Caution:</strong> Changes to business parameters affect all new quotes immediately. Review values carefully before saving.
+            </div>
+
+            <!-- ================================================ -->
+            <!-- ADMIN — USERS -->
+            <!-- ================================================ -->
+            <h2 id="admin-users">Admin &mdash; Users</h2>
+
+            <p>Switch to <strong>Users</strong> mode using the mode switcher in the admin toolbar. This mode manages Supabase Auth accounts that can access the admin portal.</p>
+
+            <h3>User List</h3>
+            <p>The user list table shows all registered admin accounts with their email address and creation date.</p>
+
+            <h3>Adding a User</h3>
+            <div class="guide-step"><span class="guide-step-num">1</span><div class="guide-step-content">Click <strong>New</strong> in the toolbar to open the add user modal.</div></div>
+            <div class="guide-step"><span class="guide-step-num">2</span><div class="guide-step-content">Enter the user's <strong>email address</strong> and a <strong>password</strong> (minimum 6 characters).</div></div>
+            <div class="guide-step"><span class="guide-step-num">3</span><div class="guide-step-content">Click <strong>Create</strong> to create the account. The user can now log in to the admin portal.</div></div>
+
+            <h3>Deleting a User</h3>
+            <p>Click the delete button next to a user to remove their account. You cannot delete your own account (the button is disabled for the currently logged-in user).</p>
+
+            <div class="guide-warning">
+                <strong>Self-deletion prevention:</strong> The system prevents you from deleting the account you are currently logged in with. To delete your own account, another admin must do it.
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Smooth scroll for TOC links
+        document.querySelectorAll('.guide-toc a').forEach(a => {
+            a.addEventListener('click', e => {
+                const href = a.getAttribute('href');
+                if (href && href.startsWith('#')) {
+                    e.preventDefault();
+                    const target = document.getElementById(href.slice(1));
+                    if (target) {
+                        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        history.replaceState(null, '', href);
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>
