@@ -985,7 +985,7 @@ function getMountingKitItems(panelCount, roofType, orientation, numRows, numArra
 // CONFIG LOADING
 // ====================
 
-document.addEventListener('DOMContentLoaded', () => { loadConfig(); loadReps(); loadContractors(); checkAdminSession(); });
+document.addEventListener('DOMContentLoaded', () => { loadConfig(); loadReps(); loadContractors(); });
 
 function validateConfig(cfg) {
     if (!cfg.panels) throw new Error('Config missing: panels');
