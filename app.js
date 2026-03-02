@@ -982,7 +982,7 @@ function getMountingKitItems(panelCount, roofType, orientation, numRows, numArra
 // CONFIG LOADING
 // ====================
 
-document.addEventListener('DOMContentLoaded', () => { loadConfig(); checkAdminSession(); });
+document.addEventListener('DOMContentLoaded', () => { loadConfig(); loadReps(); loadContractors(); checkAdminSession(); });
 
 function validateConfig(cfg) {
     if (!cfg.panels) throw new Error('Config missing: panels');
@@ -1311,8 +1311,6 @@ async function loadConfig() {
     document.getElementById('salesCommission').value = CONFIG.sales_commission;
     populateManufacturers(); populatePanels(); populateBatteryTypes(); populateInverters(); populateGateways(); buildAccessoriesUI(); updateBatteryMountVisibility(); bindSegmentedButtons(); bindEvents(); updateRoofInfo(); updateZoneDisplay(); updateHeaderSubtitle(); updateInverterSectionLabel(); updatePowerSensorModel(); renderAutoAccessories(); applyManufacturerDefaults(); calculateQuote();
     document.querySelectorAll('input, select, textarea').forEach(el => { el.setAttribute('spellcheck', 'false'); el.setAttribute('autocorrect', 'off'); el.setAttribute('autocomplete', 'off'); });
-    loadReps();
-    loadContractors();
 }
 
 // ====================
