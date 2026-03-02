@@ -408,6 +408,7 @@ input[type="number"],
 input[type="tel"],
 input[type="email"],
 input[type="password"],
+input[type="date"],
 select {
     width: 100%;
     padding: 14px 16px;
@@ -425,13 +426,15 @@ select {
 }
 
 input:hover,
-select:hover {
+select:hover,
+input[type="date"]:hover {
     background-color: var(--gray-100);
     border-color: var(--gray-300);
 }
 
 input:focus,
-select:focus {
+select:focus,
+input[type="date"]:focus {
     outline: none;
     background-color: var(--white);
     border-color: var(--blue);

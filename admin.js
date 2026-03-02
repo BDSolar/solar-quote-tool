@@ -1017,20 +1017,41 @@ function switchPricingSection(section) {
 // PRICING CONTENT RENDERING
 // ==============================
 
+// Discount helpers for table rows
+var DISCOUNT_TABLES = ['panels','inverters','battery_modules','gateways','ev_chargers','accessories'];
+function isDiscountActive(p) {
+    if (!p.discount_pct || !p.discount_from || !p.discount_to) return false;
+    var now = new Date(), from = new Date(p.discount_from), to = new Date(p.discount_to);
+    to.setHours(23,59,59);
+    return now >= from && now <= to;
+}
+function fmtDiscountPrice(p, field) {
+    field = field || 'price';
+    var orig = p[field];
+    if (orig == null) return '';
+    if (!isDiscountActive(p)) return orig;
+    var eff = (orig * (1 - p.discount_pct / 100)).toFixed(2);
+    return '<span style="text-decoration:line-through;opacity:.5;">' + orig + '</span> <span style="color:var(--green);font-weight:600;">' + eff + '</span>';
+}
+function discountBadge(p) {
+    if (!isDiscountActive(p)) return '';
+    return ' <span style="background:var(--green);color:#000;padding:1px 5px;border-radius:3px;font-size:10px;font-weight:600;">-' + p.discount_pct + '%</span>';
+}
+
 // Table-specific column definitions
 var TABLE_COLUMNS = {
     panel:            { headers: ['SKU','Mfr','Model','Wattage','Colour','Price','Supplier Code','Active',''],
-                        row: function(p,t) { return '<td class="' + (!p.active?' inactive':'') + '">' + esc(p.sku) + '</td><td>' + esc(p.manufacturer||'') + '</td><td>' + esc(p.model||'') + '</td><td>' + (p.wattage||'') + 'W</td><td>' + esc(p.colour||'') + '</td><td><input type="number" value="' + (p.price!=null?p.price:'') + '" step="0.01" onblur="inlineUpdateProduct(\'' + p.id + '\',\'' + t + '\',\'price\',this.value)"></td><td style="font-size:11px;color:var(--text-tertiary);font-family:monospace;">' + esc(p.supplier_code||'') + '</td>'; } },
+                        row: function(p,t) { return '<td class="' + (!p.active?' inactive':'') + '">' + esc(p.sku) + discountBadge(p) + '</td><td>' + esc(p.manufacturer||'') + '</td><td>' + esc(p.model||'') + '</td><td>' + (p.wattage||'') + 'W</td><td>' + esc(p.colour||'') + '</td><td><input type="number" value="' + (p.price!=null?p.price:'') + '" step="0.01" onblur="inlineUpdateProduct(\'' + p.id + '\',\'' + t + '\',\'price\',this.value)"></td><td style="font-size:11px;color:var(--text-tertiary);font-family:monospace;">' + esc(p.supplier_code||'') + '</td>'; } },
     inverter:         { headers: ['SKU','Mfr','Phase','kW','Max PV','Solar Only','Price','Supplier Code','Active',''],
-                        row: function(p,t) { var mfrC = p.manufacturer==='sigenergy'?'sig':'solax'; var mfrL = p.manufacturer==='sigenergy'?'SIG':'SOLAX'; return '<td class="' + (!p.active?' inactive':'') + '">' + esc(p.sku) + '</td><td><span class="mfr-badge ' + mfrC + '">' + mfrL + '</span></td><td style="font-size:11px;color:var(--text-tertiary);">' + fmtPhase(p.phase) + '</td><td>' + (p.kw||'') + '</td><td>' + (p.max_pv_kw||'') + '</td><td>' + (p.solar_only?'Yes':'\u2014') + '</td><td><input type="number" value="' + (p.price!=null?p.price:'') + '" step="0.01" onblur="inlineUpdateProduct(\'' + p.id + '\',\'' + t + '\',\'price\',this.value)"></td><td style="font-size:11px;color:var(--text-tertiary);font-family:monospace;">' + esc(p.supplier_code||'') + '</td>'; } },
+                        row: function(p,t) { var mfrC = p.manufacturer==='sigenergy'?'sig':'solax'; var mfrL = p.manufacturer==='sigenergy'?'SIG':'SOLAX'; return '<td class="' + (!p.active?' inactive':'') + '">' + esc(p.sku) + discountBadge(p) + '</td><td><span class="mfr-badge ' + mfrC + '">' + mfrL + '</span></td><td style="font-size:11px;color:var(--text-tertiary);">' + fmtPhase(p.phase) + '</td><td>' + (p.kw||'') + '</td><td>' + (p.max_pv_kw||'') + '</td><td>' + (p.solar_only?'Yes':'\u2014') + '</td><td><input type="number" value="' + (p.price!=null?p.price:'') + '" step="0.01" onblur="inlineUpdateProduct(\'' + p.id + '\',\'' + t + '\',\'price\',this.value)"></td><td style="font-size:11px;color:var(--text-tertiary);font-family:monospace;">' + esc(p.supplier_code||'') + '</td>'; } },
     battery_module:   { headers: ['SKU','Mfr','Type','kWh','Usable','Enabled','Price','Supplier Code','Active',''],
-                        row: function(p,t) { var mfrC = p.manufacturer==='sigenergy'?'sig':'solax'; var mfrL = p.manufacturer==='sigenergy'?'SIG':'SOLAX'; return '<td class="' + (!p.active?' inactive':'') + '">' + esc(p.sku) + '</td><td><span class="mfr-badge ' + mfrC + '">' + mfrL + '</span></td><td style="font-size:11px;">' + esc(p.battery_type_id||'') + '</td><td>' + (p.kwh||'') + '</td><td>' + (p.usable_kwh||'') + '</td><td>' + (p.enabled===false?'No':'Yes') + '</td><td><input type="number" value="' + (p.price!=null?p.price:'') + '" step="0.01" onblur="inlineUpdateProduct(\'' + p.id + '\',\'' + t + '\',\'price\',this.value)"></td><td style="font-size:11px;color:var(--text-tertiary);font-family:monospace;">' + esc(p.supplier_code||'') + '</td>'; } },
+                        row: function(p,t) { var mfrC = p.manufacturer==='sigenergy'?'sig':'solax'; var mfrL = p.manufacturer==='sigenergy'?'SIG':'SOLAX'; return '<td class="' + (!p.active?' inactive':'') + '">' + esc(p.sku) + discountBadge(p) + '</td><td><span class="mfr-badge ' + mfrC + '">' + mfrL + '</span></td><td style="font-size:11px;">' + esc(p.battery_type_id||'') + '</td><td>' + (p.kwh||'') + '</td><td>' + (p.usable_kwh||'') + '</td><td>' + (p.enabled===false?'No':'Yes') + '</td><td><input type="number" value="' + (p.price!=null?p.price:'') + '" step="0.01" onblur="inlineUpdateProduct(\'' + p.id + '\',\'' + t + '\',\'price\',this.value)"></td><td style="font-size:11px;color:var(--text-tertiary);font-family:monospace;">' + esc(p.supplier_code||'') + '</td>'; } },
     gateway:          { headers: ['SKU','Mfr','Phase','Description','Price','Supplier Code','Active',''],
-                        row: function(p,t) { var mfrC = p.manufacturer==='sigenergy'?'sig':'solax'; var mfrL = p.manufacturer==='sigenergy'?'SIG':'SOLAX'; return '<td class="' + (!p.active?' inactive':'') + '">' + esc(p.sku) + '</td><td><span class="mfr-badge ' + mfrC + '">' + mfrL + '</span></td><td style="font-size:11px;color:var(--text-tertiary);">' + fmtPhase(p.phase) + '</td><td style="font-size:11px;color:var(--text-tertiary);">' + esc(p.description||'') + '</td><td><input type="number" value="' + (p.price!=null?p.price:'') + '" step="0.01" onblur="inlineUpdateProduct(\'' + p.id + '\',\'' + t + '\',\'price\',this.value)"></td><td style="font-size:11px;color:var(--text-tertiary);font-family:monospace;">' + esc(p.supplier_code||'') + '</td>'; } },
+                        row: function(p,t) { var mfrC = p.manufacturer==='sigenergy'?'sig':'solax'; var mfrL = p.manufacturer==='sigenergy'?'SIG':'SOLAX'; return '<td class="' + (!p.active?' inactive':'') + '">' + esc(p.sku) + discountBadge(p) + '</td><td><span class="mfr-badge ' + mfrC + '">' + mfrL + '</span></td><td style="font-size:11px;color:var(--text-tertiary);">' + fmtPhase(p.phase) + '</td><td style="font-size:11px;color:var(--text-tertiary);">' + esc(p.description||'') + '</td><td><input type="number" value="' + (p.price!=null?p.price:'') + '" step="0.01" onblur="inlineUpdateProduct(\'' + p.id + '\',\'' + t + '\',\'price\',this.value)"></td><td style="font-size:11px;color:var(--text-tertiary);font-family:monospace;">' + esc(p.supplier_code||'') + '</td>'; } },
     ev_charger:       { headers: ['SKU','Mfr','Phase','Description','Price','Supplier Code','Active',''],
-                        row: function(p,t) { var mfrC = p.manufacturer==='sigenergy'?'sig':'solax'; var mfrL = p.manufacturer==='sigenergy'?'SIG':'SOLAX'; return '<td class="' + (!p.active?' inactive':'') + '">' + esc(p.sku) + '</td><td><span class="mfr-badge ' + mfrC + '">' + mfrL + '</span></td><td style="font-size:11px;color:var(--text-tertiary);">' + fmtPhase(p.phase) + '</td><td style="font-size:11px;color:var(--text-tertiary);">' + esc(p.description||'') + '</td><td><input type="number" value="' + (p.price!=null?p.price:'') + '" step="0.01" onblur="inlineUpdateProduct(\'' + p.id + '\',\'' + t + '\',\'price\',this.value)"></td><td style="font-size:11px;color:var(--text-tertiary);font-family:monospace;">' + esc(p.supplier_code||'') + '</td>'; } },
+                        row: function(p,t) { var mfrC = p.manufacturer==='sigenergy'?'sig':'solax'; var mfrL = p.manufacturer==='sigenergy'?'SIG':'SOLAX'; return '<td class="' + (!p.active?' inactive':'') + '">' + esc(p.sku) + discountBadge(p) + '</td><td><span class="mfr-badge ' + mfrC + '">' + mfrL + '</span></td><td style="font-size:11px;color:var(--text-tertiary);">' + fmtPhase(p.phase) + '</td><td style="font-size:11px;color:var(--text-tertiary);">' + esc(p.description||'') + '</td><td><input type="number" value="' + (p.price!=null?p.price:'') + '" step="0.01" onblur="inlineUpdateProduct(\'' + p.id + '\',\'' + t + '\',\'price\',this.value)"></td><td style="font-size:11px;color:var(--text-tertiary);font-family:monospace;">' + esc(p.supplier_code||'') + '</td>'; } },
     accessory:        { headers: ['SKU','Mfr','Accessory ID','Price','Price Alt','Phase Dep.','Default','Supplier Code','Active',''],
-                        row: function(p,t) { var mfrC = p.manufacturer==='sigenergy'?'sig':'solax'; var mfrL = p.manufacturer==='sigenergy'?'SIG':'SOLAX'; return '<td class="' + (!p.active?' inactive':'') + '" title="' + esc(p.description||'') + '">' + esc(p.sku) + '</td><td><span class="mfr-badge ' + mfrC + '">' + mfrL + '</span></td><td style="font-size:11px;">' + esc(p.accessory_id||'') + '</td><td><input type="number" value="' + (p.price!=null?p.price:'') + '" step="0.01" onblur="inlineUpdateProduct(\'' + p.id + '\',\'' + t + '\',\'price\',this.value)"></td><td><input type="number" value="' + (p.price_alt!=null?p.price_alt:'') + '" step="0.01" onblur="inlineUpdateProduct(\'' + p.id + '\',\'' + t + '\',\'price_alt\',this.value)" ' + (p.price_alt==null?'style="opacity:0.3"':'') + '></td><td>' + (p.phase_dependent?'Yes':'\u2014') + '</td><td>' + (p.default_checked?'Yes':'\u2014') + '</td><td style="font-size:11px;color:var(--text-tertiary);font-family:monospace;">' + esc(p.supplier_code||'') + '</td>'; } },
+                        row: function(p,t) { var mfrC = p.manufacturer==='sigenergy'?'sig':'solax'; var mfrL = p.manufacturer==='sigenergy'?'SIG':'SOLAX'; return '<td class="' + (!p.active?' inactive':'') + '" title="' + esc(p.description||'') + '">' + esc(p.sku) + discountBadge(p) + '</td><td><span class="mfr-badge ' + mfrC + '">' + mfrL + '</span></td><td style="font-size:11px;">' + esc(p.accessory_id||'') + '</td><td><input type="number" value="' + (p.price!=null?p.price:'') + '" step="0.01" onblur="inlineUpdateProduct(\'' + p.id + '\',\'' + t + '\',\'price\',this.value)"></td><td><input type="number" value="' + (p.price_alt!=null?p.price_alt:'') + '" step="0.01" onblur="inlineUpdateProduct(\'' + p.id + '\',\'' + t + '\',\'price_alt\',this.value)" ' + (p.price_alt==null?'style="opacity:0.3"':'') + '></td><td>' + (p.phase_dependent?'Yes':'\u2014') + '</td><td>' + (p.default_checked?'Yes':'\u2014') + '</td><td style="font-size:11px;color:var(--text-tertiary);font-family:monospace;">' + esc(p.supplier_code||'') + '</td>'; } },
     mounting_kit:     { headers: ['SKU','Kit Family','Panels','Roof Types','Price','Supplier Code','Active',''],
                         row: function(p,t) { var rt = Array.isArray(p.roof_types) ? p.roof_types.join(', ') : ''; return '<td class="' + (!p.active?' inactive':'') + '">' + esc(p.sku) + '</td><td style="font-size:11px;">' + esc(p.kit_family||'') + '</td><td>' + (p.panels_covered||'') + '</td><td style="font-size:11px;">' + esc(rt) + '</td><td><input type="number" value="' + (p.price!=null?p.price:'') + '" step="0.01" onblur="inlineUpdateProduct(\'' + p.id + '\',\'' + t + '\',\'price\',this.value)"></td><td style="font-size:11px;color:var(--text-tertiary);font-family:monospace;">' + esc(p.supplier_code||'') + '</td>'; } },
     mounting_part:    { headers: ['SKU','Part Type','Tilt Key','Qty','Price','Supplier Code','Active',''],
@@ -1228,7 +1249,11 @@ function openProductModal(productId, type) {
 }
 
 function mfrSelect(p) {
-    return '' + mfrSelect(p) + '';
+    var val = (p && p.manufacturer) || 'sigenergy';
+    return '<select id="tf_manufacturer">' +
+        '<option value="sigenergy"' + (val === 'sigenergy' ? ' selected' : '') + '>Sigenergy</option>' +
+        '<option value="solax"' + (val === 'solax' ? ' selected' : '') + '>SolaX</option>' +
+        '</select>';
 }
 
 function renderTypeFields(type, p) {
@@ -1294,6 +1319,17 @@ function renderTypeFields(type, p) {
         html += '<div class="form-group"><label>Price ($)</label><input type="number" id="tf_price" step="0.01" value="' + (p && p.price != null ? p.price : '') + '"></div></div>';
     }
 
+    // Discount section for applicable types
+    if (DISCOUNT_TABLES.indexOf(TYPE_TO_TABLE[type]) !== -1) {
+        html += '<div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--separator);">';
+        html += '<div style="font-size:12px;font-weight:600;color:var(--green);margin-bottom:8px;">Promotional Discount</div>';
+        html += '<div class="grid-2"><div class="form-group"><label>Discount %</label><input type="number" id="tf_discount_pct" min="0" max="100" step="0.01" value="' + (p && p.discount_pct ? p.discount_pct : '0') + '"></div>';
+        html += '<div></div></div>';
+        html += '<div class="grid-2"><div class="form-group"><label>From</label><input type="date" id="tf_discount_from" value="' + (p && p.discount_from || '') + '"></div>';
+        html += '<div class="form-group"><label>To</label><input type="date" id="tf_discount_to" value="' + (p && p.discount_to || '') + '"></div></div>';
+        html += '</div>';
+    }
+
     container.innerHTML = html;
 }
 
@@ -1329,6 +1365,13 @@ function buildTypeData(type) {
         Object.assign(data, { kit_family: val('tf_kit_family') || null, panels_covered: num('tf_panels_covered'), roof_types: rtArr, price: num('tf_price') });
     } else if (type === 'mounting_part') {
         Object.assign(data, { part_type: val('tf_part_type') || null, tilt_key: val('tf_tilt_key') || null, qty: num('tf_qty'), price: num('tf_price') });
+    }
+
+    // Discount fields for applicable types
+    if (DISCOUNT_TABLES.indexOf(TYPE_TO_TABLE[type]) !== -1) {
+        data.discount_pct = num('tf_discount_pct') || 0;
+        data.discount_from = val('tf_discount_from') || null;
+        data.discount_to = val('tf_discount_to') || null;
     }
 
     return data;
