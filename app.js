@@ -3169,12 +3169,6 @@ function showBOM() {
     totHtml += totRow('Parts & Accessories', fmtExGst(partsTotal));
     totHtml += totRow('Installation (Labour)', fmtExGst(installTotal));
     totHtml += totRow('Total COG (ex GST)', fmtExGst(grandTotal), 'border-top:1px solid var(--gray-200); font-weight:700;');
-    totHtml += totRow('GP (' + state.gpMargin + '%)', fmtExGst(gpAmt));
-    const priceBeforeComm = grandTotal + gpAmt;
-    const commRate = state.salesCommission / 100;
-    const baseIncGst = priceBeforeComm * GST;
-    const commAmt = (baseIncGst - pvReb - batReb) * commRate / (1 - commRate * GST) / GST;
-    totHtml += totRow('Commission (' + state.salesCommission + '%)', fmtExGst(commAmt));
     if (pvReb > 0) totHtml += totRow('PV STC Rebate (' + pvStcCount + ' STCs)', '-' + fmtExGst(pvReb), 'color:var(--green);');
     if (batReb > 0) totHtml += totRow('Battery STC Rebate', '-' + fmtExGst(batReb), 'color:var(--green);');
     var bomDiscount = parseFloat(document.getElementById('discountAmount')?.value) || 0;

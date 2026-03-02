@@ -120,7 +120,7 @@ body {
     -webkit-appearance: none;
     -moz-appearance: none;
     appearance: none;
-    border: 2px solid transparent;
+    border: 2px solid var(--gray-200);
     border-radius: var(--radius-sm);
     color: var(--gray-900);
     font-family: var(--font-body);
@@ -129,10 +129,12 @@ body {
     flex-shrink: 0;
     cursor: pointer;
     transition: all 0.2s ease;
+    background-color: var(--gray-50);
 }
 
 .toolbar-rep-select:hover {
-    background-color: var(--gray-200);
+    background-color: var(--gray-100);
+    border-color: var(--gray-300);
 }
 
 .toolbar-rep-select:focus {
@@ -160,9 +162,9 @@ body {
 .toolbar-pill {
     height: 38px;
     padding: 0 18px;
-    border: none;
-    border-radius: 100px;
-    background: var(--gray-100);
+    border: 2px solid var(--gray-200);
+    border-radius: var(--radius-sm);
+    background: var(--gray-50);
     color: var(--gray-700);
     font-size: 14px;
     font-weight: 500;
@@ -188,7 +190,8 @@ body {
 }
 
 .toolbar-pill:hover {
-    background: var(--gray-200);
+    background: var(--gray-100);
+    border-color: var(--gray-300);
     color: var(--gray-900);
     box-shadow: none;
 }
@@ -201,7 +204,7 @@ body {
 .toolbar-pill.primary {
     background: var(--blue);
     color: white;
-    border: none;
+    border: 2px solid var(--blue);
 }
 
 .toolbar-pill.primary:hover {
