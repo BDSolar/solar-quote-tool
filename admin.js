@@ -664,7 +664,7 @@ function renderRateCardTab() {
 
     let html = `
         <div class="rc-admin-toolbar">
-            <button class="btn-sm primary" onclick="openItemModal()">+ Add Item</button>
+            <button class="btn-sm primary" onclick="openItemModal()">Add Item</button>
             <button class="btn-sm" onclick="resetRateCard()">Reset to Defaults</button>
         </div>
     `;

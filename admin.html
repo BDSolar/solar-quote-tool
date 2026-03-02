@@ -30,18 +30,23 @@
         .admin-toolbar .toolbar-spacer { flex: 1; }
         .admin-toolbar .toolbar-link {
             color: var(--text-secondary);
-            font-size: 12px;
+            font-size: 13px;
+            font-weight: 500;
             text-decoration: none;
             white-space: nowrap;
             transition: all 0.2s;
-            padding: 6px 14px;
-            border: 1px solid rgba(255,255,255,0.08);
-            border-radius: 17px;
+            padding: 0 18px;
+            height: 38px;
+            display: inline-flex;
+            align-items: center;
+            border: 2px solid var(--separator-hover);
+            border-radius: 12px;
+            background: var(--bg-input);
         }
         .admin-toolbar .toolbar-link:hover {
             color: var(--text-primary);
             background: var(--bg-hover);
-            border-color: rgba(255,255,255,0.15);
+            border-color: var(--separator-strong);
         }
 
         .admin-content {
@@ -287,8 +292,8 @@
         }
         .btn-sm {
             padding: 8px 16px;
-            border-radius: 16px;
-            border: 1px solid var(--separator-hover);
+            border-radius: 12px;
+            border: 2px solid var(--separator-hover);
             background: var(--bg-input);
             color: var(--text-secondary);
             font-family: var(--font-display);
@@ -836,7 +841,7 @@
             <button type="submit" class="btn-save" style="width:100%; padding:12px; font-size:14px; border-radius:12px;">Sign In</button>
         </form>
         <div style="text-align:center; margin-top:16px;">
-            <a href="index.html" style="color:var(--text-tertiary); font-size:12px; text-decoration:none;">&larr; Back to Quote Tool</a>
+            <a href="index.html" style="color:var(--text-tertiary); font-size:12px; text-decoration:none;">Back to Quote Tool</a>
         </div>
     </div>
 </div>
@@ -856,8 +861,8 @@
             <button type="button" class="toolbar-pill" onclick="showCloneModal()" title="Clone Contractor">Clone</button>
         </span>
         <a href="guide.html" class="toolbar-link">Guide</a>
-    <a href="index.html" class="toolbar-link">&larr; Quote Tool</a>
-        <button type="button" class="toolbar-link" onclick="handleLogout()" style="cursor:pointer; background:none; font-family:inherit;">Logout</button>
+        <a href="index.html" class="toolbar-link">Quote Tool</a>
+        <button type="button" class="toolbar-link" onclick="handleLogout()" style="cursor:pointer; font-family:inherit;">Logout</button>
     </div>
 
     <!-- MOBILE CONTRACTOR SELECT -->
@@ -901,7 +906,7 @@
         <select id="pricingCategorySelect" class="pricing-category-select" onchange="setPricingCategory(this.value)"></select>
         <select id="pricingMfrSelect" class="pricing-category-select" onchange="setPricingMfr(this.value)"></select>
         <span class="toolbar-spacer"></span>
-        <button type="button" class="btn-sm primary" onclick="openProductModal()">+ Add Product</button>
+        <button type="button" class="btn-sm primary" onclick="openProductModal()">Add Product</button>
         <button type="button" class="btn-sm" onclick="openBulkImportModal()">Bulk Import</button>
         <button type="button" class="btn-sm" onclick="switchPricingSection('params')">Business Params</button>
     </div>
@@ -1093,7 +1098,7 @@
             </div>
             <div class="detail-section-title" style="font-size:14px; margin-top:16px;">Conditions</div>
             <div id="conditionsEditor"></div>
-            <button type="button" class="btn-sm" onclick="addConditionRow()" style="margin-top:6px;">+ Add Condition</button>
+            <button type="button" class="btn-sm" onclick="addConditionRow()" style="margin-top:6px;">Add Condition</button>
         </div>
         <div class="modal-footer">
             <button type="button" class="btn-modal-cancel" onclick="closeModal('itemEditModal')">Cancel</button>
