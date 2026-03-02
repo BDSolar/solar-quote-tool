@@ -79,17 +79,16 @@
         }
         .filter-btn {
             flex: 1;
-            height: 28px;
-            border: 1px solid var(--separator-hover);
-            border-radius: 14px;
-            background: transparent;
-            color: var(--text-tertiary);
-            font-size: 11px;
-            font-weight: 600;
+            height: 38px;
+            border: 2px solid var(--separator-hover);
+            border-radius: 12px;
+            background: var(--bg-input);
+            color: var(--text-secondary);
+            font-size: 13px;
+            font-weight: 500;
             font-family: var(--font-body);
             cursor: pointer;
             transition: all 0.15s;
-            letter-spacing: 0.02em;
         }
         .filter-btn.active {
             background: var(--accent);
@@ -97,8 +96,9 @@
             color: #fff;
         }
         .filter-btn:hover:not(.active) {
+            background: var(--bg-hover);
             border-color: var(--separator-strong);
-            color: var(--text-secondary);
+            color: var(--text-primary);
         }
         .contractor-list {
             flex: 1;
