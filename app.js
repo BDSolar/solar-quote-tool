@@ -3138,41 +3138,42 @@ function showBOM() {
         html += '<div style="display:flex; align-items:center; gap:10px;"><span id="bomChevron' + gi + '" style="color:var(--blue); font-size:12px; transition:transform 0.2s; transform:rotate(90deg);">&#9654;</span>';
         html += '<span style="color:var(--blue); font-size:13px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px;">' + esc(group.category) + '</span>';
         html += '<span style="color:var(--gray-400); font-size:12px;">(' + group.items.length + ' item' + (group.items.length !== 1 ? 's' : '') + ')</span></div>';
-        html += '<span style="color:var(--gray-900); font-weight:600;">' + fmtExGst(groupTotal) + '</span></div>';
+        html += '</div>';
         html += '<div id="bomGroup' + gi + '" style="display:block; border-top:1px solid var(--gray-200);"><table style="width:100%; border-collapse:collapse; font-size:13px;">';
-        html += '<thead><tr style="color:var(--gray-400); text-transform:uppercase; font-size:11px; letter-spacing:0.5px;"><th style="text-align:left; padding:10px 20px; border-bottom:1px solid var(--gray-200);">Description</th><th style="text-align:center; padding:10px 12px; border-bottom:1px solid var(--gray-200); width:60px;">Qty</th><th style="text-align:right; padding:10px 12px; border-bottom:1px solid var(--gray-200); width:100px;">Unit (ex GST)</th><th style="text-align:right; padding:10px 20px; border-bottom:1px solid var(--gray-200); width:110px;">Total (ex GST)</th></tr></thead><tbody>';
+        html += '<thead><tr style="color:var(--gray-400); text-transform:uppercase; font-size:11px; letter-spacing:0.5px;"><th style="text-align:left; padding:10px 20px; border-bottom:1px solid var(--gray-200);">Description</th><th style="text-align:center; padding:10px 12px; border-bottom:1px solid var(--gray-200); width:60px;">Qty</th></tr></thead><tbody>';
         group.items.forEach((item, ii) => {
             const bg = ii % 2 === 0 ? 'var(--gray-50)' : 'var(--white)';
             if (item.isGroup) {
                 html += '<tr style="background:' + bg + '; color:var(--gray-900);"><td style="padding:9px 20px; font-weight:600;">' + esc(item.desc) + (item.sku && item.sku !== 'Custom' && item.sku !== 'Labour' ? ' <span style="color:var(--gray-400); font-size:11px;">(' + esc(item.sku) + ')</span>' : '') + '</td>';
-                html += '<td style="text-align:center; padding:9px 12px;">' + item.qty + '</td><td style="text-align:right; padding:9px 12px;"></td><td style="text-align:right; padding:9px 20px;"></td></tr>';
+                html += '<td style="text-align:center; padding:9px 12px;">' + item.qty + '</td></tr>';
             } else {
                 var pad = item.indent ? '9px 20px 9px 40px' : '9px 20px';
                 var clr = item.indent ? 'var(--gray-500)' : 'var(--gray-700)';
                 html += '<tr style="background:' + bg + '; color:' + clr + ';"><td style="padding:' + pad + ';">' + (item.indent ? '- ' : '') + esc(item.desc) + (item.sku && item.sku !== 'Custom' && item.sku !== 'Labour' ? ' <span style="color:var(--gray-400); font-size:11px;">(' + esc(item.sku) + ')</span>' : '') + '</td>';
-                html += '<td style="text-align:center; padding:9px 12px;">' + item.qty + '</td><td style="text-align:right; padding:9px 12px;">' + fmtExGstDecimal(item.unit) + '</td><td style="text-align:right; padding:9px 20px; color:var(--gray-900); font-weight:500;">' + fmtExGstDecimal(item.total) + '</td></tr>';
+                html += '<td style="text-align:center; padding:9px 12px;">' + item.qty + '</td></tr>';
             }
         });
         html += '</tbody></table></div></div>';
     });
     document.getElementById('bomContent').innerHTML = html;
 
-    const partsTotal = bom.filter(g => !g.category.startsWith('Installation')).reduce((s, g) => s + g.items.reduce((s2, i) => s2 + i.total, 0), 0);
-    const installTotal = bom.filter(g => g.category.startsWith('Installation')).reduce((s, g) => s + g.items.reduce((s2, i) => s2 + i.total, 0), 0);
+    // Full system price in header (before rebates, inc GST)
+    var bomPriceEl = document.getElementById('bomPrice');
+    if (bomPriceEl) bomPriceEl.textContent = document.getElementById('priceBeforeRebates').textContent;
+
+    // STC rebates + discount only
     const zoneResult = lookupZone(document.getElementById('installPostcode').value);
     const zoneRating = zoneResult ? zoneResult.rating : 0;
     const pvStcCount = zoneRating > 0 ? Math.floor(state.sysKw * zoneRating * state.deemingPeriod) : 0;
     const pvReb = pvStcCount * state.stcPrice, batSummary = getBatterySummary(), batUsable = (parallelResult && parallelResult.isParallel) ? parallelResult.totalUsableKwh : (dualStackResult && dualStackResult.isDualStack) ? dualStackResult.totalUsableKwh : batSummary.usableKwh, batReb = calcBatteryRebate(batUsable, state.batteryRebatePerKwh);
     let totHtml = '<table style="width:100%; font-size:14px; border-collapse:collapse;">';
     const totRow = (l, v, s) => '<tr style="' + (s || '') + '"><td style="padding:8px 0; color:var(--gray-500);">' + l + '</td><td style="padding:8px 0; text-align:right; color:var(--gray-900); font-weight:500;">' + v + '</td></tr>';
-    const gpAmt = grandTotal * (state.gpMargin / 100);
-    totHtml += totRow('Parts & Accessories', fmtExGst(partsTotal));
-    totHtml += totRow('Installation (Labour)', fmtExGst(installTotal));
-    totHtml += totRow('Total COG (ex GST)', fmtExGst(grandTotal), 'border-top:1px solid var(--gray-200); font-weight:700;');
     if (pvReb > 0) totHtml += totRow('PV STC Rebate (' + pvStcCount + ' STCs)', '-' + fmtExGst(pvReb), 'color:var(--green);');
     if (batReb > 0) totHtml += totRow('Battery STC Rebate', '-' + fmtExGst(batReb), 'color:var(--green);');
     var bomDiscount = parseFloat(document.getElementById('discountAmount')?.value) || 0;
     if (bomDiscount > 0) totHtml += totRow('Discount', '-$' + Math.round(bomDiscount).toLocaleString('en-AU'), 'color:var(--green);');
+    var custPrice = document.getElementById('customerPriceDisplay').textContent;
+    totHtml += totRow('Customer Price (inc GST)', custPrice, 'border-top:2px solid var(--blue); font-weight:700; font-size:16px; color:var(--blue);');
     totHtml += '</table>';
     document.getElementById('bomTotals').innerHTML = totHtml;
     document.getElementById('bomOverlay').style.display = 'block'; document.body.style.overflow = 'hidden';
