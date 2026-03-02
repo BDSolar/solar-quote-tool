@@ -107,12 +107,15 @@ async function loadContractors() {
             o.textContent = r.business_name;
             sel.appendChild(o);
         });
-        // Restore from localStorage
+        // Restore from localStorage, or default to "Standard Rates"
         const saved = localStorage.getItem('bds_contractor_id');
-        if (saved && data.find(r => r.id === saved)) {
-            sel.value = saved;
-            currentContractorId = saved;
-            loadRateCard(saved);
+        var match = saved && data.find(r => r.id === saved);
+        if (!match) match = data.find(r => r.business_name === 'Standard Rates');
+        if (match) {
+            sel.value = match.id;
+            currentContractorId = match.id;
+            localStorage.setItem('bds_contractor_id', match.id);
+            loadRateCard(match.id);
         }
         sel.addEventListener('change', function() {
             currentContractorId = this.value || null;
