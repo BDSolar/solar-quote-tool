@@ -1666,18 +1666,19 @@ function renderQuotesView() {
         if (batteryKwh) systemDesc += (systemDesc ? ' + ' : '') + Number(batteryKwh).toFixed(2) + ' kWh';
         if (!systemDesc) systemDesc = '—';
 
-        var cog = parseDollar(totals.totalCog);
+        var cogTotal = parseDollar(totals.totalCog);
         var installation = q.installation || {};
         var installTotal = installation.total || 0;
+        var cog = cogTotal - installTotal;
         var gpPct = pricing.gpMargin || 0;
-        var gpAmt = cog * gpPct / 100;
+        var gpAmt = cogTotal * gpPct / 100;
         var commPct = pricing.salesCommission || 0;
         var commRate = commPct / 100;
         var customerPrice = parseDollar(totals.customerPrice);
         var discount = totals.discount || 0;
 
         // Derive Price (inc GST, before rebates) from the commission formula
-        var priceBeforeComm = cog + gpAmt;
+        var priceBeforeComm = cogTotal + gpAmt;
         var baseIncGst = priceBeforeComm * 1.1;
         var priceIncGst = baseIncGst; // fallback if no commission
         if (commRate > 0) {
@@ -1687,6 +1688,9 @@ function renderQuotesView() {
 
         var pvStc = totals.pvStcRebate || 0;
         var batStc = totals.batteryStcRebate || 0;
+        var commAmtIncGst = priceIncGst - baseIncGst;
+        var netGp = priceIncGst - (cog * 1.1) - (installTotal * 1.1) - commAmtIncGst - discount;
+        var netGpPct = priceIncGst > 0 ? (netGp / priceIncGst * 100) : 0;
 
         return '<tr>' +
             '<td>' + esc(date) + '</td>' +
@@ -1699,10 +1703,11 @@ function renderQuotesView() {
             '<td style="text-align:right;">' + fmtDollar(installTotal * 1.1) + '</td>' +
             '<td style="text-align:right;">' + (pvStc > 0 ? '-' + fmtDollar(pvStc) : '—') + '</td>' +
             '<td style="text-align:right;">' + (batStc > 0 ? '-' + fmtDollar(batStc) : '—') + '</td>' +
-            '<td style="text-align:right;">' + gpPct.toFixed(1) + '%</td>' +
-            '<td style="text-align:right;">' + fmtDollar(gpAmt * 1.1) + '</td>' +
             '<td style="text-align:right;">' + commPct.toFixed(1) + '%</td>' +
+            '<td style="text-align:right;">' + fmtDollar(commAmtIncGst) + '</td>' +
             '<td style="text-align:right;">' + (discount ? fmtDollar(discount) : '—') + '</td>' +
+            '<td style="text-align:right;">' + fmtDollar(netGp) + '</td>' +
+            '<td style="text-align:right;">' + netGpPct.toFixed(1) + '%</td>' +
             '</tr>';
     }).join('');
 
@@ -1720,10 +1725,11 @@ function renderQuotesView() {
             '<th style="text-align:right;">Install</th>' +
             '<th style="text-align:right;">PV STC</th>' +
             '<th style="text-align:right;">Bat STC</th>' +
-            '<th style="text-align:right;">GP%</th>' +
-            '<th style="text-align:right;">GP$</th>' +
             '<th style="text-align:right;">Comm%</th>' +
+            '<th style="text-align:right;">Comm$</th>' +
             '<th style="text-align:right;">Discount</th>' +
+            '<th style="text-align:right;">Net GP$</th>' +
+            '<th style="text-align:right;">Net GP%</th>' +
         '</tr></thead>' +
         '<tbody>' + rows + '</tbody>' +
         '</table>' +
