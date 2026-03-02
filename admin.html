@@ -862,6 +862,7 @@
         <div class="toolbar-mode-switcher">
             <button type="button" class="mode-btn active" data-mode="contractors" onclick="switchAdminMode('contractors')">Contractors</button>
             <button type="button" class="mode-btn" data-mode="pricing" onclick="switchAdminMode('pricing')">Pricing</button>
+            <button type="button" class="mode-btn" data-mode="quotes" onclick="switchAdminMode('quotes')">Quotes</button>
             <button type="button" class="mode-btn" data-mode="users" onclick="switchAdminMode('users')">Users</button>
         </div>
         <span class="toolbar-spacer"></span>
@@ -933,6 +934,16 @@
         <button type="button" class="btn-sm primary" onclick="openModal('addUserModal')">Add User</button>
     </div>
     <div id="usersContent" style="padding:20px;max-height:calc(100vh - 150px);overflow-y:auto;"></div>
+</div>
+
+<!-- QUOTES VIEW (hidden by default) -->
+<div id="quotesView" style="display:none;">
+    <div class="pricing-toolbar">
+        <span style="font-family:var(--font-display);font-size:14px;font-weight:700;color:var(--text-primary);letter-spacing:-0.02em;">Saved Quotes</span>
+        <span class="toolbar-spacer"></span>
+        <span id="quotesCount" style="font-size:12px;color:var(--text-tertiary);"></span>
+    </div>
+    <div id="quotesContent" style="padding:20px;max-height:calc(100vh - 150px);overflow:auto;"></div>
 </div>
 
 <!-- ADD USER MODAL -->

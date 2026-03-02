@@ -884,27 +884,28 @@ function switchAdminMode(mode) {
     var mobileSelect = document.querySelector('.mobile-contractor-select');
     var pricingView = document.getElementById('pricingView');
     var usersView = document.getElementById('usersView');
+    var quotesView = document.getElementById('quotesView');
     var contractorActions = document.getElementById('contractorToolbarActions');
 
+    contractorView.style.display = 'none';
+    if (mobileSelect) mobileSelect.style.display = 'none';
+    pricingView.style.display = 'none';
+    if (usersView) usersView.style.display = 'none';
+    if (quotesView) quotesView.style.display = 'none';
+    contractorActions.style.display = 'none';
+
     if (mode === 'pricing') {
-        contractorView.style.display = 'none';
-        if (mobileSelect) mobileSelect.style.display = 'none';
         pricingView.style.display = '';
-        if (usersView) usersView.style.display = 'none';
-        contractorActions.style.display = 'none';
         loadPricingData();
     } else if (mode === 'users') {
-        contractorView.style.display = 'none';
-        if (mobileSelect) mobileSelect.style.display = 'none';
-        pricingView.style.display = 'none';
         if (usersView) usersView.style.display = '';
-        contractorActions.style.display = 'none';
         loadUsers();
+    } else if (mode === 'quotes') {
+        if (quotesView) quotesView.style.display = '';
+        loadQuotes();
     } else {
         contractorView.style.display = '';
         if (mobileSelect) mobileSelect.style.display = '';
-        pricingView.style.display = 'none';
-        if (usersView) usersView.style.display = 'none';
         contractorActions.style.display = '';
     }
 }
@@ -1610,6 +1611,123 @@ async function deleteUser(userId, email) {
         },
         true
     );
+}
+
+// ==============================
+// QUOTES VIEW
+// ==============================
+let adminQuotes = [];
+
+function parseDollar(v) {
+    if (typeof v === 'number') return v;
+    return parseFloat((v || '').toString().replace(/[$,]/g, '')) || 0;
+}
+
+function fmtDollar(n) {
+    if (n == null || isNaN(n)) return '—';
+    return '$' + Math.round(n).toLocaleString();
+}
+
+async function loadQuotes() {
+    var wrap = document.getElementById('quotesContent');
+    wrap.innerHTML = '<div style="text-align:center;color:var(--text-quaternary);padding:40px;font-size:14px;">Loading quotes…</div>';
+    try {
+        var { data, error } = await sb.from('quotes').select('*, reps(name)').order('created_at', { ascending: false });
+        if (error) throw error;
+        adminQuotes = data || [];
+        renderQuotesView();
+    } catch (e) {
+        console.error('loadQuotes:', e);
+        wrap.innerHTML = '<div style="text-align:center;color:var(--red);padding:40px;font-size:14px;">Failed to load quotes: ' + esc(e.message) + '</div>';
+    }
+}
+
+function renderQuotesView() {
+    var wrap = document.getElementById('quotesContent');
+    var countEl = document.getElementById('quotesCount');
+    if (countEl) countEl.textContent = adminQuotes.length + ' quote' + (adminQuotes.length !== 1 ? 's' : '');
+
+    if (adminQuotes.length === 0) {
+        wrap.innerHTML = '<div style="text-align:center;color:var(--text-quaternary);padding:40px;font-size:14px;">No saved quotes found</div>';
+        return;
+    }
+
+    var rows = adminQuotes.map(function(q) {
+        var customer = (q.customer && q.customer.name) || '—';
+        var repName = (q.reps && q.reps.name) || '—';
+        var date = q.created_at ? new Date(q.created_at).toLocaleDateString() : '—';
+        var totals = q.totals || {};
+        var pricing = q.pricing || {};
+
+        var sysKw = totals.sysKw || 0;
+        var batteryKwh = totals.batteryKwh || 0;
+        var systemDesc = '';
+        if (sysKw) systemDesc += Number(sysKw).toFixed(2) + ' kW';
+        if (batteryKwh) systemDesc += (systemDesc ? ' + ' : '') + Number(batteryKwh).toFixed(2) + ' kWh';
+        if (!systemDesc) systemDesc = '—';
+
+        var cog = parseDollar(totals.totalCog);
+        var installation = q.installation || {};
+        var installTotal = installation.total || 0;
+        var gpPct = pricing.gpMargin || 0;
+        var gpAmt = cog * gpPct / 100;
+        var commPct = pricing.salesCommission || 0;
+        var commRate = commPct / 100;
+        var customerPrice = parseDollar(totals.customerPrice);
+        var discount = totals.discount || 0;
+
+        // Derive Price (inc GST, before rebates) from the commission formula
+        var priceBeforeComm = cog + gpAmt;
+        var baseIncGst = priceBeforeComm * 1.1;
+        var priceIncGst = baseIncGst; // fallback if no commission
+        if (commRate > 0) {
+            var m = commRate / (1 - commRate * 1.1);
+            priceIncGst = baseIncGst + (customerPrice + discount) * m / (1 + m);
+        }
+
+        var pvStc = totals.pvStcRebate || 0;
+        var batStc = totals.batteryStcRebate || 0;
+
+        return '<tr>' +
+            '<td>' + esc(date) + '</td>' +
+            '<td>' + esc(customer) + '</td>' +
+            '<td>' + esc(repName) + '</td>' +
+            '<td>' + esc(systemDesc) + '</td>' +
+            '<td style="text-align:right;">' + fmtDollar(priceIncGst) + '</td>' +
+            '<td style="text-align:right;">' + fmtDollar(customerPrice) + '</td>' +
+            '<td style="text-align:right;">' + fmtDollar(cog * 1.1) + '</td>' +
+            '<td style="text-align:right;">' + fmtDollar(installTotal * 1.1) + '</td>' +
+            '<td style="text-align:right;">' + (pvStc > 0 ? '-' + fmtDollar(pvStc) : '—') + '</td>' +
+            '<td style="text-align:right;">' + (batStc > 0 ? '-' + fmtDollar(batStc) : '—') + '</td>' +
+            '<td style="text-align:right;">' + gpPct.toFixed(1) + '%</td>' +
+            '<td style="text-align:right;">' + fmtDollar(gpAmt * 1.1) + '</td>' +
+            '<td style="text-align:right;">' + commPct.toFixed(1) + '%</td>' +
+            '<td style="text-align:right;">' + (discount ? fmtDollar(discount) : '—') + '</td>' +
+            '</tr>';
+    }).join('');
+
+    wrap.innerHTML =
+        '<div style="overflow-x:auto;">' +
+        '<table class="product-table">' +
+        '<thead><tr>' +
+            '<th>Date</th>' +
+            '<th>Customer</th>' +
+            '<th>Rep</th>' +
+            '<th>System</th>' +
+            '<th style="text-align:right;">Price</th>' +
+            '<th style="text-align:right;">Customer Price</th>' +
+            '<th style="text-align:right;">COG</th>' +
+            '<th style="text-align:right;">Install</th>' +
+            '<th style="text-align:right;">PV STC</th>' +
+            '<th style="text-align:right;">Bat STC</th>' +
+            '<th style="text-align:right;">GP%</th>' +
+            '<th style="text-align:right;">GP$</th>' +
+            '<th style="text-align:right;">Comm%</th>' +
+            '<th style="text-align:right;">Discount</th>' +
+        '</tr></thead>' +
+        '<tbody>' + rows + '</tbody>' +
+        '</table>' +
+        '</div>';
 }
 
 // ==============================

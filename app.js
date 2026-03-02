@@ -2637,6 +2637,8 @@ function calculateQuote() {
         // Battery rebate only if we have batteries
         const usableKwh = solarOnly ? 0 : ((isDualStack && dualStackResult) ? dualStackResult.totalUsableKwh : (isParallel && parallelResult) ? parallelResult.totalUsableKwh : bat.usableKwh);
         const batReb = solarOnly ? 0 : calcBatteryRebate(usableKwh, state.batteryRebatePerKwh);
+        state.pvStcRebate = pvReb;
+        state.batteryStcRebate = batReb;
         const gpAmt = totalCog * (state.gpMargin / 100);
         const priceBeforeCommission = totalCog + gpAmt;
         const commRate = state.salesCommission / 100;
@@ -3253,7 +3255,9 @@ function collectQuoteData() {
             totalCog: fmtExGst(state.totalCog || 0),
             sysKw: state.sysKw,
             batteryKwh: bat.totalKwh,
-            discount: parseFloat(document.getElementById('discountAmount')?.value) || 0
+            discount: parseFloat(document.getElementById('discountAmount')?.value) || 0,
+            pvStcRebate: state.pvStcRebate || 0,
+            batteryStcRebate: state.batteryStcRebate || 0
         },
         rep_id: currentRepId || null
     };
