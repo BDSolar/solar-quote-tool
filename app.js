@@ -3292,9 +3292,9 @@ function collectQuoteData() {
             batteryKwh: bat.totalKwh,
             discount: parseFloat(document.getElementById('discountAmount')?.value) || 0,
             pvStcRebate: state.pvStcRebate || 0,
-            batteryStcRebate: state.batteryStcRebate || 0
+            batteryStcRebate: state.batteryStcRebate || 0,
+            productDiscounts: collectActiveDiscounts()
         },
-        discounts: collectActiveDiscounts(),
         rep_id: currentRepId || null
     };
 }
@@ -3657,7 +3657,7 @@ async function loadQuote(quoteId) {
         calculateQuote();
 
         // Check for expired product discounts
-        checkExpiredDiscounts(data.discounts || []);
+        checkExpiredDiscounts(data.totals?.productDiscounts || []);
 
         console.log('[OK] Quote loaded:', quoteId);
     } catch (err) {
