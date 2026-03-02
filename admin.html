@@ -643,31 +643,30 @@
         /* === MODE SWITCHER === */
         .toolbar-mode-switcher {
             display: flex;
-            gap: 2px;
-            background: var(--bg-primary);
-            border-radius: 18px;
-            padding: 3px;
-            border: 1px solid var(--separator);
+            gap: 4px;
         }
         .mode-btn {
-            padding: 6px 16px;
-            border: none;
-            border-radius: 15px;
-            background: transparent;
-            color: var(--text-tertiary);
+            padding: 0 18px;
+            height: 38px;
+            border: 2px solid var(--separator-hover);
+            border-radius: 12px;
+            background: var(--bg-input);
+            color: var(--text-secondary);
             font-family: var(--font-display);
-            font-size: 12px;
-            font-weight: 600;
+            font-size: 13px;
+            font-weight: 500;
             cursor: pointer;
             transition: all 0.15s;
-            letter-spacing: -0.01em;
         }
         .mode-btn.active {
             background: var(--accent);
+            border-color: var(--accent);
             color: #fff;
         }
         .mode-btn:hover:not(.active) {
-            color: var(--text-secondary);
+            background: var(--bg-hover);
+            border-color: var(--separator-strong);
+            color: var(--text-primary);
         }
 
         /* === PRICING VIEW === */
