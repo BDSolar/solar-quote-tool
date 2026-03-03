@@ -167,14 +167,13 @@
             <div class="grid-2 acc-elec-row">
             <!-- Accessories Card -->
             <div class="section">
-                <div class="section-title collapsible" onclick="this.classList.toggle('open');this.nextElementSibling.style.display=this.classList.contains('open')?'block':'none'">
+                <div class="section-title">
                     <span style="display:flex;align-items:center;gap:14px;">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0066ff" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v4m0 14v4m-9-9h4m14 0h4"/></svg>
                         Accessories
                     </span>
-                    <span class="collapse-arrow"></span>
                 </div>
-                <div class="collapsible-content" style="display:none;">
+                <div>
                 <div id="autoAccessories"></div>
                 <div id="accessoriesContainer"></div>
                 </div>
@@ -182,14 +181,13 @@
 
             <!-- Electrical Upgrades Card -->
             <div class="section" id="installCostsSection" style="display:none;">
-                <div class="section-title collapsible" onclick="this.classList.toggle('open');this.nextElementSibling.style.display=this.classList.contains('open')?'block':'none'">
+                <div class="section-title">
                     <span style="display:flex;align-items:center;gap:14px;">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ff9500" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
                         Electrical Upgrades
                     </span>
-                    <span class="collapse-arrow"></span>
                 </div>
-                <div class="collapsible-content" style="display:none;">
+                <div>
                 <div id="rcAutoItems" style="display:none;"></div>
                 <div id="rcStandardItems"></div>
                 <div id="rcCheckboxItems"></div>
