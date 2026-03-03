@@ -164,6 +164,7 @@ async function loadRateCard(contractorId, options) {
         updateInstallCostsVisibility();
         renderInstallationCostsUI();
         if (!skipCalc) calculateQuote();
+        calculateTravelDistance();
         console.log('[OK] Rate card loaded (' + currentRateCardItems.length + ' items)');
     } catch (e) {
         console.warn('[!] Failed to load rate card:', e);
@@ -1424,13 +1425,56 @@ async function initAutocomplete() {
             document.getElementById('installPostcode').value = postcode;
             updateZoneDisplay();
             calculateQuote();
+            calculateTravelDistance();
         });
         // Prevent form submission when pressing Enter to select an autocomplete suggestion
         input.addEventListener('keydown', e => { if (e.key === 'Enter') e.preventDefault(); });
+        googlePlacesReady = true;
         console.log('[OK] Google Places Autocomplete initialized');
     } catch (e) {
         console.warn('[!] Google Places Autocomplete not available:', e.message, '— manual address entry only');
     }
+}
+
+let googlePlacesReady = false;
+
+function getInstallFullAddress() {
+    const street = document.getElementById('installAddress').value || '';
+    const suburb = document.getElementById('installSuburb').value || '';
+    const state = document.getElementById('installState').value || '';
+    const postcode = document.getElementById('installPostcode').value || '';
+    const parts = [street, suburb, state, postcode].filter(Boolean);
+    return parts.length >= 2 ? parts.join(', ') + ', Australia' : '';
+}
+
+function calculateTravelDistance() {
+    if (!googlePlacesReady || !window.google?.maps?.DistanceMatrixService) return;
+    if (!currentContractorRecord?.address) return;
+    const destination = getInstallFullAddress();
+    if (!destination) return;
+    const travelInput = document.getElementById('travelDistanceKm');
+    if (!travelInput) return;
+    const service = new google.maps.DistanceMatrixService();
+    service.getDistanceMatrix({
+        origins: [currentContractorRecord.address],
+        destinations: [destination],
+        travelMode: google.maps.TravelMode.DRIVING,
+        unitSystem: google.maps.UnitSystem.METRIC
+    }, (response, status) => {
+        if (status !== 'OK' || !response.rows?.[0]?.elements?.[0]) {
+            console.warn('[!] Distance Matrix error:', status);
+            return;
+        }
+        const element = response.rows[0].elements[0];
+        if (element.status !== 'OK') {
+            console.warn('[!] Distance Matrix: no route found');
+            return;
+        }
+        const km = Math.round(element.distance.value / 1000);
+        travelInput.value = km;
+        calculateQuote();
+        console.log('[OK] Travel distance: ' + km + ' km (' + element.duration.text + ')');
+    });
 }
 
 // ====================

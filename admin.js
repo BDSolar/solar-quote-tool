@@ -642,6 +642,7 @@ function renderDetailsTab(isNew = false) {
             ${selectedContractorId && c.active !== false ? '<button class="btn-danger" onclick="deactivateContractor()">Deactivate</button>' : ''}
         </div>
     `;
+    attachPlacesAutocomplete('cAddress');
 }
 
 // ==============================
@@ -1900,7 +1901,57 @@ function renderQuotesView() {
 // ==============================
 // INIT
 // ==============================
+// ====================
+// GOOGLE PLACES AUTOCOMPLETE
+// ====================
+let googlePlacesReady = false;
+
+async function loadGooglePlaces() {
+    try {
+        await new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = 'https://maps.googleapis.com/maps/api/js?key=AIzaSyDm3OvAL51st1XlNM8ywzYSAThgyS8SGrA&libraries=places&loading=async';
+            script.async = true;
+            script.onload = resolve;
+            script.onerror = () => reject(new Error('Script failed to load'));
+            document.head.appendChild(script);
+        });
+        let attempts = 0;
+        while (!window.google?.maps?.places?.Autocomplete && attempts < 20) {
+            await new Promise(r => setTimeout(r, 100));
+            attempts++;
+        }
+        if (window.google?.maps?.places?.Autocomplete) {
+            googlePlacesReady = true;
+            attachPlacesAutocomplete('cloneAddress');
+            console.log('[OK] Google Places loaded');
+        } else {
+            console.warn('[!] Google Places API not available');
+        }
+    } catch (e) {
+        console.warn('[!] Google Places not available:', e.message);
+    }
+}
+
+function attachPlacesAutocomplete(inputId) {
+    if (!googlePlacesReady) return;
+    const input = document.getElementById(inputId);
+    if (!input || input._placesAttached) return;
+    const autocomplete = new google.maps.places.Autocomplete(input, {
+        componentRestrictions: { country: 'au' },
+        fields: ['formatted_address'],
+        types: ['address']
+    });
+    autocomplete.addListener('place_changed', () => {
+        const place = autocomplete.getPlace();
+        if (place.formatted_address) input.value = place.formatted_address;
+    });
+    input.addEventListener('keydown', e => { if (e.key === 'Enter') e.preventDefault(); });
+    input._placesAttached = true;
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
+    loadGooglePlaces();
     var authed = await checkAuth();
     if (authed) {
         document.getElementById('loginOverlay').style.display = 'none';
