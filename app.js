@@ -3605,6 +3605,7 @@ async function loadQuote(quoteId) {
         // Restore system config
         const s = data.system || {};
         document.getElementById('phaseType').value = s.phase || 'single_phase';
+        state.phase = s.phase || 'single_phase';
         syncSegmentedFromSelect('phaseType');
         populateInverters(); populateGateways();
 
