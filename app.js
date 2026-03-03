@@ -436,7 +436,7 @@ function renderRcAddonRows() {
         var qtyHtml = '';
         if (item.pricing_type === 'per_panel') {
             var qty = addonData.quantity || 0;
-            qtyHtml = '<div class="addon-stepper" style="margin-left:auto;">' +
+            qtyHtml = '<div class="addon-stepper">' +
                 '<button type="button" class="stepper-btn addon-stepper-btn rc-addon-qty-down" data-id="' + itemId + '">−</button>' +
                 '<div class="addon-stepper-center"><span class="addon-stepper-num rc-addon-qty" data-id="' + itemId + '">' + qty + '</span><span class="addon-stepper-label">panels</span></div>' +
                 '<input type="hidden" class="rc-addon-qty-input" data-id="' + itemId + '" value="' + qty + '">' +
