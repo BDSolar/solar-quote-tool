@@ -900,6 +900,7 @@ function switchAdminMode(mode) {
     } else if (mode === 'users') {
         if (usersView) usersView.style.display = '';
         loadUsers();
+        loadAdminReps();
     } else if (mode === 'quotes') {
         if (quotesView) quotesView.style.display = '';
         loadQuotes();
@@ -1663,6 +1664,114 @@ async function deleteUser(userId, email) {
         },
         true
     );
+}
+
+// ==============================
+// SALES REPS MANAGEMENT
+// ==============================
+let adminReps = [];
+
+async function loadAdminReps() {
+    try {
+        var { data, error } = await sb.from('reps').select('*').order('name');
+        if (error) throw error;
+        adminReps = data || [];
+        renderRepsView();
+    } catch (e) {
+        console.error('loadAdminReps:', e);
+        showToast('Failed to load reps: ' + e.message, 'error');
+    }
+}
+
+function renderRepsView() {
+    var wrap = document.getElementById('repsContent');
+    if (!wrap) return;
+    if (adminReps.length === 0) {
+        wrap.innerHTML = '<div style="text-align:center;color:var(--text-quaternary);padding:40px;font-size:14px;">No sales reps found</div>';
+        return;
+    }
+    var rows = adminReps.map(function(r) {
+        var status = r.active ? '<span style="color:var(--green);font-weight:600;">Active</span>' : '<span style="color:var(--text-quaternary);">Inactive</span>';
+        return '<tr>' +
+            '<td>' + esc(r.name) + '</td>' +
+            '<td>' + esc(r.phone || '') + '</td>' +
+            '<td>' + esc(r.email || '') + '</td>' +
+            '<td>' + status + '</td>' +
+            '<td style="white-space:nowrap;">' +
+                '<button type="button" class="btn-icon" onclick="openRepModal(\'' + r.id + '\')" title="Edit">&#9998;</button>' +
+                '<button type="button" class="btn-icon" onclick="toggleRepActive(\'' + r.id + '\', ' + (r.active ? 'false' : 'true') + ')" title="' + (r.active ? 'Deactivate' : 'Activate') + '">' + (r.active ? '&#10005;' : '&#10003;') + '</button>' +
+            '</td>' +
+            '</tr>';
+    }).join('');
+    wrap.innerHTML =
+        '<table class="product-table">' +
+        '<thead><tr><th>Name</th><th>Phone</th><th>Email</th><th>Status</th><th style="width:70px;"></th></tr></thead>' +
+        '<tbody>' + rows + '</tbody>' +
+        '</table>';
+}
+
+function openRepModal(repId) {
+    var errEl = document.getElementById('repEditError');
+    errEl.style.display = 'none';
+    if (repId) {
+        var rep = adminReps.find(function(r) { return r.id === repId; });
+        if (!rep) return;
+        document.getElementById('repModalTitle').textContent = 'Edit Sales Rep';
+        document.getElementById('repEditId').value = rep.id;
+        document.getElementById('repEditName').value = rep.name || '';
+        document.getElementById('repEditPhone').value = rep.phone || '';
+        document.getElementById('repEditEmail').value = rep.email || '';
+    } else {
+        document.getElementById('repModalTitle').textContent = 'Add Sales Rep';
+        document.getElementById('repEditId').value = '';
+        document.getElementById('repEditName').value = '';
+        document.getElementById('repEditPhone').value = '';
+        document.getElementById('repEditEmail').value = '';
+    }
+    openModal('repEditModal');
+}
+
+async function saveRep() {
+    var id = document.getElementById('repEditId').value;
+    var name = document.getElementById('repEditName').value.trim();
+    var phone = document.getElementById('repEditPhone').value.trim();
+    var email = document.getElementById('repEditEmail').value.trim();
+    var errEl = document.getElementById('repEditError');
+    errEl.style.display = 'none';
+
+    if (!name) {
+        errEl.textContent = 'Name is required.';
+        errEl.style.display = 'block';
+        return;
+    }
+
+    try {
+        if (id) {
+            var { error } = await sb.from('reps').update({ name: name, phone: phone, email: email }).eq('id', id);
+            if (error) throw error;
+            showToast('Rep updated: ' + name);
+        } else {
+            var { error } = await sb.from('reps').insert({ name: name, phone: phone, email: email, active: true });
+            if (error) throw error;
+            showToast('Rep created: ' + name);
+        }
+        closeModal('repEditModal');
+        await loadAdminReps();
+    } catch (e) {
+        errEl.textContent = e.message;
+        errEl.style.display = 'block';
+    }
+}
+
+async function toggleRepActive(repId, active) {
+    try {
+        var { error } = await sb.from('reps').update({ active: active }).eq('id', repId);
+        if (error) throw error;
+        showToast(active ? 'Rep activated' : 'Rep deactivated');
+        await loadAdminReps();
+    } catch (e) {
+        showToast('Failed: ' + e.message, 'error');
+    }
 }
 
 // ==============================
