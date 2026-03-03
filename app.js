@@ -1829,7 +1829,10 @@ function populateInverters() {
     const sel = document.getElementById('inverterSelect'); sel.innerHTML = '';
     // Battery-only: add None option (customer may already have an inverter)
     if (isBatteryOnly()) {
-        var none = document.createElement('option'); none.value = 'none'; none.textContent = 'None'; none.dataset.kw = '0'; none.dataset.price = '0'; none.dataset.originalPrice = '0'; none.dataset.maxPv = '0'; none.dataset.supplierCode = ''; none.dataset.solarOnly = 'false'; none.dataset.discountPct = '0'; none.dataset.discountFrom = ''; none.dataset.discountTo = '';
+        var none = document.createElement('option'); none.value = 'none'; none.textContent = 'None';
+        none.dataset.kw = '0'; none.dataset.price = '0'; none.dataset.originalPrice = '0';
+        none.dataset.maxPv = '0'; none.dataset.supplierCode = ''; none.dataset.solarOnly = 'false';
+        none.dataset.discountPct = '0'; none.dataset.discountFrom = ''; none.dataset.discountTo = '';
         sel.appendChild(none);
     }
     // Filter inverters based on system mode
