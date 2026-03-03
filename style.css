@@ -1480,6 +1480,9 @@ select option {
     margin-bottom: 6px;
     box-sizing: border-box;
 }
+#rcAddonRows .auto-acc-label {
+    flex: 1;
+}
 
 .rc-addon-header {
     margin: 12px 0 10px 0;
