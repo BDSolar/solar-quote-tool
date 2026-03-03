@@ -1827,6 +1827,11 @@ function populatePanels() {
 
 function populateInverters() {
     const sel = document.getElementById('inverterSelect'); sel.innerHTML = '';
+    // Battery-only: add None option (customer may already have an inverter)
+    if (isBatteryOnly()) {
+        var none = document.createElement('option'); none.value = 'none'; none.textContent = 'None'; none.dataset.kw = '0'; none.dataset.price = '0'; none.dataset.originalPrice = '0'; none.dataset.maxPv = '0'; none.dataset.supplierCode = ''; none.dataset.solarOnly = 'false'; none.dataset.discountPct = '0'; none.dataset.discountFrom = ''; none.dataset.discountTo = '';
+        sel.appendChild(none);
+    }
     // Filter inverters based on system mode
     var solarOnly = isSolarOnly();
     var filterMode = solarOnly ? true : (currentSystemType === 'battery_only' || state.desiredBatteryKwh > 0 ? false : null);
@@ -2585,7 +2590,7 @@ function calculateQuote() {
                 if (!cecB.ok) parWarnDetail += 'System B - ' + cecB.msg.replace(/^\[!?\]?\s*/, '');
                 document.getElementById('cecWarning').innerHTML = cecShieldHtml(false, parWarnDetail.trim());
             }
-        } else {
+        } else if (state.invSku && state.invSku !== 'none') {
             const cec = checkCec(state.invSku, actualKwh, bat.totalModules, state.phase);
             if (actualKwh > 0 || bat.totalModules > 0) {
                 var cecDetail = cec.msg.replace(/^\[OK\]\s*CEC approved:\s*/, '').replace(/^\[!?\]?\s*/, '');
@@ -2594,6 +2599,8 @@ function calculateQuote() {
                 document.getElementById('cecWarning').style.display = !cec.ok ? 'flex' : 'none';
                 document.getElementById('cecWarning').innerHTML = !cec.ok ? cecShieldHtml(false, cecDetail) : '';
             } else { document.getElementById('cecWarning').style.display = 'none'; document.getElementById('cecApproved').style.display = 'none'; }
+        } else {
+            document.getElementById('cecWarning').style.display = 'none'; document.getElementById('cecApproved').style.display = 'none';
         }
 
         // --- COST CALCULATIONS ---
@@ -2865,7 +2872,7 @@ function updateSummaryComponents(isDualStack, isParallel, bat, costRoofKit, cost
         }
     } else if (isParallel && parallelResult) {
         // Inverter (single -- parallel doesn't need 2nd inverter)
-        if (state.invSku) {
+        if (state.invSku && state.invSku !== 'none') {
             batHtml += summaryRow(state.invSku + ' (' + state.invKw + 'kW)', 1);
         }
         var mod = modules[0];
@@ -2897,7 +2904,7 @@ function updateSummaryComponents(isDualStack, isParallel, bat, costRoofKit, cost
         batHtml += summaryRow('BMS Parallel Box II G1', 1);
     } else {
         // Single stack
-        if (state.invSku) {
+        if (state.invSku && state.invSku !== 'none') {
             batHtml += summaryRow(state.invSku + ' (' + state.invKw + 'kW)', 1);
         }
         // Battery modules
@@ -3054,7 +3061,7 @@ function buildBOM() {
         var modP = modules[0];
 
         // Inverter
-        batItems.push({ desc: state.invSku + ' (' + state.invKw + 'kW ' + (state.phase === 'single_phase' ? 'Single' : 'Three') + ' Phase)', sku: state.invSku, qty: 1, unit: state.invPrice, total: state.invPrice, supplier_code: state.invSupplierCode });
+        if (state.invSku && state.invSku !== 'none') batItems.push({ desc: state.invSku + ' (' + state.invKw + 'kW ' + (state.phase === 'single_phase' ? 'Single' : 'Three') + ' Phase)', sku: state.invSku, qty: 1, unit: state.invPrice, total: state.invPrice, supplier_code: state.invSupplierCode });
 
         // System A
         if (pr.systemA.pkg) {
@@ -3098,7 +3105,7 @@ function buildBOM() {
 
     } else {
         // Single-stack BOM
-        batItems.push({ desc: state.invSku + ' (' + state.invKw + 'kW ' + (state.phase === 'single_phase' ? 'Single' : 'Three') + ' Phase)', sku: state.invSku, qty: 1, unit: state.invPrice, total: state.invPrice, supplier_code: state.invSupplierCode });
+        if (state.invSku && state.invSku !== 'none') batItems.push({ desc: state.invSku + ' (' + state.invKw + 'kW ' + (state.phase === 'single_phase' ? 'Single' : 'Three') + ' Phase)', sku: state.invSku, qty: 1, unit: state.invPrice, total: state.invPrice, supplier_code: state.invSupplierCode });
 
         if (bt.use_package_pricing && bat.totalModules > 0) {
             const pkg = bt.packages?.find(p => p.modules === bat.totalModules);
