@@ -16,7 +16,7 @@
         <div class="toolbar-actions" id="toolbarActions">
             <button type="button" class="toolbar-pill toolbar-pill-uniform" onclick="clearQuote()">New</button>
             <button type="button" class="toolbar-pill toolbar-pill-uniform primary" onclick="saveQuote()">Save</button>
-            <button type="button" class="toolbar-pill toolbar-pill-uniform" onclick="generateQuote()">Print</button>
+            <button type="button" class="toolbar-pill toolbar-pill-uniform" onclick="showBOM(); setTimeout(function(){ window.print(); }, 300);">Print</button>
             <button type="button" class="toolbar-pill toolbar-pill-uniform" id="bomBtn" onclick="showBOM()">BOM</button>
             <span class="toolbar-divider"></span>
             <button type="button" class="toolbar-pill toolbar-pill-uniform" onclick="toggleSearch()">Search</button>
