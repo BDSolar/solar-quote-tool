@@ -573,32 +573,34 @@ select option {
     background: var(--gray-300);
 }
 
-/* Addon Stepper (circular buttons, compact) */
+/* Addon Stepper (matches system config panel stepper, scaled down) */
 .addon-stepper {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 12px;
 }
 .addon-stepper-btn {
-    width: 30px;
-    height: 30px;
+    width: 32px;
+    height: 32px;
     font-size: 16px;
     padding: 0;
 }
-.addon-stepper-val {
-    width: 40px;
-    text-align: center;
-    font-size: 15px;
-    font-weight: 600;
-    border: none;
-    background: transparent;
-    color: var(--gray-900);
-    -moz-appearance: textfield;
+.addon-stepper-center {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 40px;
 }
-.addon-stepper-val::-webkit-inner-spin-button,
-.addon-stepper-val::-webkit-outer-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
+.addon-stepper-num {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--gray-900);
+    line-height: 1;
+}
+.addon-stepper-label {
+    font-size: 11px;
+    color: var(--gray-500);
+    margin-top: 2px;
 }
 
 /* Panel Stepper */

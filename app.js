@@ -436,8 +436,11 @@ function renderRcAddonRows() {
         var qtyHtml = '';
         if (item.pricing_type === 'per_panel') {
             var qty = addonData.quantity || 0;
-            qtyHtml = '<div class="addon-stepper" style="margin-left:auto;"><button type="button" class="stepper-btn addon-stepper-btn rc-addon-qty-down" data-id="' + itemId + '">−</button><input type="number" class="rc-addon-qty addon-stepper-val" data-id="' + itemId + '" value="' + qty + '" min="0" max="99" step="1" readonly><button type="button" class="stepper-btn addon-stepper-btn rc-addon-qty-up" data-id="' + itemId + '">+</button></div>' +
-                '<span style="font-size:11px;color:var(--text-tertiary);white-space:nowrap;margin-left:4px;">panels</span>';
+            qtyHtml = '<div class="addon-stepper" style="margin-left:auto;">' +
+                '<button type="button" class="stepper-btn addon-stepper-btn rc-addon-qty-down" data-id="' + itemId + '">−</button>' +
+                '<div class="addon-stepper-center"><span class="addon-stepper-num rc-addon-qty" data-id="' + itemId + '">' + qty + '</span><span class="addon-stepper-label">panels</span></div>' +
+                '<input type="hidden" class="rc-addon-qty-input" data-id="' + itemId + '" value="' + qty + '">' +
+                '<button type="button" class="stepper-btn addon-stepper-btn rc-addon-qty-up" data-id="' + itemId + '">+</button></div>';
         }
         div.innerHTML = '<svg class="auto-acc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' +
             '<span class="auto-acc-label">' + esc(item.label) + '</span>' +
@@ -447,17 +450,20 @@ function renderRcAddonRows() {
             div.querySelector('.btn-remove-acc').addEventListener('click', function() { removeRcAddon(id); });
             var downBtn = div.querySelector('.rc-addon-qty-down');
             var upBtn = div.querySelector('.rc-addon-qty-up');
-            var qtyInput = div.querySelector('.rc-addon-qty');
-            if (downBtn && upBtn && qtyInput) {
+            var qtyDisplay = div.querySelector('.addon-stepper-num');
+            var qtyHidden = div.querySelector('.rc-addon-qty-input');
+            if (downBtn && upBtn && qtyDisplay && qtyHidden) {
                 downBtn.addEventListener('click', function() {
-                    var v = Math.max(0, (parseInt(qtyInput.value) || 0) - 1);
-                    qtyInput.value = v;
+                    var v = Math.max(0, (parseInt(qtyHidden.value) || 0) - 1);
+                    qtyHidden.value = v;
+                    qtyDisplay.textContent = v;
                     installationAddons.addonItems[id].quantity = v;
                     calculateQuote();
                 });
                 upBtn.addEventListener('click', function() {
-                    var v = Math.min(99, (parseInt(qtyInput.value) || 0) + 1);
-                    qtyInput.value = v;
+                    var v = Math.min(99, (parseInt(qtyHidden.value) || 0) + 1);
+                    qtyHidden.value = v;
+                    qtyDisplay.textContent = v;
                     installationAddons.addonItems[id].quantity = v;
                     calculateQuote();
                 });
