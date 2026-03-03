@@ -436,7 +436,7 @@ function renderRcAddonRows() {
         var qtyHtml = '';
         if (item.pricing_type === 'per_panel') {
             var qty = addonData.quantity || 0;
-            qtyHtml = '<div class="mini-stepper" style="margin-left:auto;"><button type="button" class="mini-stepper-btn rc-addon-qty-down" data-id="' + itemId + '">−</button><input type="number" class="rc-addon-qty" data-id="' + itemId + '" value="' + qty + '" min="0" max="99" step="1" readonly style="width:36px;text-align:center;font-size:13px;padding:2px;height:28px;"><button type="button" class="mini-stepper-btn rc-addon-qty-up" data-id="' + itemId + '">+</button></div>' +
+            qtyHtml = '<div class="mini-stepper" style="margin-left:auto;"><button type="button" class="mini-stepper-btn rc-addon-qty-down" data-id="' + itemId + '">−</button><input type="number" class="rc-addon-qty" data-id="' + itemId + '" value="' + qty + '" min="0" max="99" step="1" readonly><button type="button" class="mini-stepper-btn rc-addon-qty-up" data-id="' + itemId + '">+</button></div>' +
                 '<span style="font-size:11px;color:var(--text-tertiary);white-space:nowrap;margin-left:4px;">panels</span>';
         }
         div.innerHTML = '<svg class="auto-acc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' +
