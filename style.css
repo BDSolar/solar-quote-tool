@@ -580,9 +580,9 @@ select option {
     gap: 8px;
 }
 .addon-stepper-btn {
-    width: 22px;
-    height: 22px;
-    font-size: 13px;
+    width: 18px;
+    height: 18px;
+    font-size: 11px;
     padding: 0;
 }
 .addon-stepper-center {
@@ -1470,6 +1470,15 @@ select option {
     white-space: nowrap;
     font-weight: 500;
     font-variant-numeric: tabular-nums;
+}
+
+#rcAddonRows .auto-accessory {
+    display: flex;
+    width: 100%;
+    border-radius: var(--radius);
+    margin-right: 0;
+    margin-bottom: 6px;
+    box-sizing: border-box;
 }
 
 .rc-addon-header {
