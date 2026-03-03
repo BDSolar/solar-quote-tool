@@ -1020,7 +1020,7 @@ function getMountingKitItems(panelCount, roofType, orientation, numRows, numArra
 // CONFIG LOADING
 // ====================
 
-document.addEventListener('DOMContentLoaded', () => { loadConfig(); loadReps(); loadContractors(); });
+document.addEventListener('DOMContentLoaded', () => { loadConfig(); loadReps(); loadContractors(); initAutocomplete(); });
 
 function validateConfig(cfg) {
     if (!cfg.panels) throw new Error('Config missing: panels');
@@ -1373,6 +1373,64 @@ async function loadConfig() {
     document.getElementById('salesCommission').value = CONFIG.sales_commission;
     populateManufacturers(); populatePanels(); populateBatteryTypes(); populateInverters(); populateGateways(); buildAccessoriesUI(); updateBatteryMountVisibility(); bindSegmentedButtons(); bindEvents(); updateRoofInfo(); updateZoneDisplay(); updateHeaderSubtitle(); updateInverterSectionLabel(); updatePowerSensorModel(); renderAutoAccessories(); applyManufacturerDefaults(); calculateQuote();
     document.querySelectorAll('input, select, textarea').forEach(el => { el.setAttribute('spellcheck', 'false'); el.setAttribute('autocorrect', 'off'); el.setAttribute('autocomplete', 'off'); });
+}
+
+// ====================
+// GOOGLE PLACES AUTOCOMPLETE
+// ====================
+async function initAutocomplete() {
+    const input = document.getElementById('installAddress');
+    if (!input) return;
+    try {
+        // Dynamically load Google Maps JS API
+        await new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = 'https://maps.googleapis.com/maps/api/js?key=AIzaSyDm3OvAL51st1XlNM8ywzYSAThgyS8SGrA&libraries=places&loading=async';
+            script.async = true;
+            script.onload = resolve;
+            script.onerror = () => reject(new Error('Script failed to load'));
+            document.head.appendChild(script);
+        });
+        // Wait for API to fully initialize
+        let attempts = 0;
+        while (!window.google?.maps?.places?.Autocomplete && attempts < 20) {
+            await new Promise(r => setTimeout(r, 100));
+            attempts++;
+        }
+        if (!window.google?.maps?.places?.Autocomplete) {
+            console.warn('[!] Google Places API not available — manual address entry only');
+            return;
+        }
+        const autocomplete = new google.maps.places.Autocomplete(input, {
+            componentRestrictions: { country: 'au' },
+            fields: ['address_components'],
+            types: ['address']
+        });
+        autocomplete.addListener('place_changed', () => {
+            const place = autocomplete.getPlace();
+            if (!place.address_components) return;
+            let streetNumber = '', route = '', locality = '', state = '', postcode = '';
+            for (const c of place.address_components) {
+                const t = c.types[0];
+                if (t === 'street_number') streetNumber = c.long_name;
+                else if (t === 'route') route = c.long_name;
+                else if (t === 'locality') locality = c.long_name;
+                else if (t === 'administrative_area_level_1') state = c.short_name;
+                else if (t === 'postal_code') postcode = c.long_name;
+            }
+            input.value = (streetNumber ? streetNumber + ' ' : '') + route;
+            document.getElementById('installSuburb').value = locality;
+            document.getElementById('installState').value = state;
+            document.getElementById('installPostcode').value = postcode;
+            updateZoneDisplay();
+            calculateQuote();
+        });
+        // Prevent form submission when pressing Enter to select an autocomplete suggestion
+        input.addEventListener('keydown', e => { if (e.key === 'Enter') e.preventDefault(); });
+        console.log('[OK] Google Places Autocomplete initialized');
+    } catch (e) {
+        console.warn('[!] Google Places Autocomplete not available:', e.message, '— manual address entry only');
+    }
 }
 
 // ====================

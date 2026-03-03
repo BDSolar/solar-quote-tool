@@ -1646,3 +1646,6 @@ select option {
     #bomTotals td { color: #000 !important; }
     .toolbar, .content, .search-results-bar, .mobile-price-bar { display: none !important; }
 }
+
+/* Google Places Autocomplete dropdown */
+.pac-container { z-index: 10000 !important; }
