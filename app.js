@@ -1473,8 +1473,22 @@ function calculateTravelDistance() {
         const km = Math.round(element.distance.value / 1000);
         travelInput.value = km;
         calculateQuote();
+        updateServiceRegionWarning(km);
         console.log('[OK] Travel distance: ' + km + ' km (' + element.duration.text + ')');
     });
+}
+
+function updateServiceRegionWarning(km) {
+    const el = document.getElementById('serviceRegionWarning');
+    if (!el) return;
+    const limit = currentContractorRecord?.service_region_km;
+    if (limit && km > limit) {
+        const name = currentContractorRecord.business_name || 'This contractor';
+        el.textContent = '\u26A0 ' + name + '\u2019s service region is ' + limit + ' km \u2014 this address is ' + km + ' km away';
+        el.style.display = '';
+    } else {
+        el.style.display = 'none';
+    }
 }
 
 // ====================
@@ -3891,6 +3905,7 @@ function clearQuote() {
     syncSegmentedFromSelect('storeyCount'); syncSegmentedFromSelect('phaseType'); syncSegmentedFromSelect('mountingType');
     var bcEl = document.getElementById('backupCircuitCount'); if (bcEl) bcEl.value = '0';
     var tdEl = document.getElementById('travelDistanceKm'); if (tdEl) tdEl.value = '0';
+    var srwEl = document.getElementById('serviceRegionWarning'); if (srwEl) srwEl.style.display = 'none';
     // Re-init standard items as checked
     if (currentRateCardItems.length > 0) {
         currentRateCardItems.forEach(function(item) {
