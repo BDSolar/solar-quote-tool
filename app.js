@@ -430,14 +430,38 @@ function renderRcAddonRows() {
         if (!installationAddons.addonItems.hasOwnProperty(itemId)) continue;
         var item = currentRateCardItems.find(function(i) { return i.id === itemId; });
         if (!item) continue;
+        var addonData = installationAddons.addonItems[itemId];
         var div = document.createElement('div');
         div.className = 'auto-accessory added-accessory';
+        var qtyHtml = '';
+        if (item.pricing_type === 'per_panel') {
+            var qty = addonData.quantity || 0;
+            qtyHtml = '<div class="mini-stepper" style="margin-left:auto;"><button type="button" class="mini-stepper-btn rc-addon-qty-down" data-id="' + itemId + '">−</button><input type="number" class="rc-addon-qty" data-id="' + itemId + '" value="' + qty + '" min="0" max="99" step="1" readonly style="width:36px;text-align:center;font-size:13px;padding:2px;height:28px;"><button type="button" class="mini-stepper-btn rc-addon-qty-up" data-id="' + itemId + '">+</button></div>' +
+                '<span style="font-size:11px;color:var(--text-tertiary);white-space:nowrap;margin-left:4px;">panels</span>';
+        }
         div.innerHTML = '<svg class="auto-acc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' +
             '<span class="auto-acc-label">' + esc(item.label) + '</span>' +
-            '<span class="auto-acc-badge">Added</span>' +
+            (qtyHtml || '<span class="auto-acc-badge">Added</span>') +
             '<button class="btn-remove-acc" title="Remove">&times;</button>';
         (function(id) {
             div.querySelector('.btn-remove-acc').addEventListener('click', function() { removeRcAddon(id); });
+            var downBtn = div.querySelector('.rc-addon-qty-down');
+            var upBtn = div.querySelector('.rc-addon-qty-up');
+            var qtyInput = div.querySelector('.rc-addon-qty');
+            if (downBtn && upBtn && qtyInput) {
+                downBtn.addEventListener('click', function() {
+                    var v = Math.max(0, (parseInt(qtyInput.value) || 0) - 1);
+                    qtyInput.value = v;
+                    installationAddons.addonItems[id].quantity = v;
+                    calculateQuote();
+                });
+                upBtn.addEventListener('click', function() {
+                    var v = Math.min(99, (parseInt(qtyInput.value) || 0) + 1);
+                    qtyInput.value = v;
+                    installationAddons.addonItems[id].quantity = v;
+                    calculateQuote();
+                });
+            }
         })(itemId);
         container.appendChild(div);
     }
