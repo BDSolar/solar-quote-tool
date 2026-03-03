@@ -2352,6 +2352,14 @@ function updateInverterOptions(sysKw, battKwh, phase) {
     if (validModels.length === 0) validModels = allModels;
     // Rebuild dropdown
     sel.innerHTML = '';
+    // Re-add None option for battery-only
+    if (isBatteryOnly()) {
+        var none = document.createElement('option'); none.value = 'none'; none.textContent = 'None';
+        none.dataset.kw = '0'; none.dataset.price = '0'; none.dataset.originalPrice = '0';
+        none.dataset.maxPv = '0'; none.dataset.supplierCode = ''; none.dataset.solarOnly = 'false';
+        none.dataset.discountPct = '0'; none.dataset.discountFrom = ''; none.dataset.discountTo = '';
+        sel.appendChild(none);
+    }
     var currentStillValid = false;
     for (var j = 0; j < validModels.length; j++) {
         var mv = validModels[j];
@@ -2363,10 +2371,12 @@ function updateInverterOptions(sysKw, battKwh, phase) {
         if (mv.sku === currentSku) currentStillValid = true;
     }
     // Restore selection or pick first valid
-    if (currentStillValid) {
+    if (currentSku === 'none' && isBatteryOnly()) {
+        sel.value = 'none';
+    } else if (currentStillValid) {
         sel.value = currentSku;
     } else {
-        sel.selectedIndex = 0;
+        sel.selectedIndex = isBatteryOnly() ? 0 : 0;
     }
     syncStateFromDOM();
 }
@@ -2525,7 +2535,7 @@ function calculateQuote() {
             }
         }
 
-        if (!userChangedInverter) {
+        if (!userChangedInverter && !(isBatteryOnly() && document.getElementById('inverterSelect').value === 'none')) {
             if (isDualStack && dualStackResult) {
                 // Show "Set Below per Stack" in main dropdown
                 const sel = document.getElementById('inverterSelect');
