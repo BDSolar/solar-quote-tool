@@ -717,6 +717,12 @@ function isSolarOnly() {
 function isBatteryOnly() {
     return currentSystemType === 'battery_only';
 }
+function includeBms() {
+    return !isBatteryOnly() || (document.getElementById('battOnlyBms')?.checked ?? false);
+}
+function includeSensor() {
+    return !isBatteryOnly() || (document.getElementById('battOnlySensor')?.checked ?? false);
+}
 
 function onSystemTypeChange() {
     var sel = document.getElementById('systemTypeSelect');
@@ -855,10 +861,10 @@ function updateSystemModeUI() {
         btGroup.style.display = solarOnly ? 'none' : (currentManufacturer === 'solax' ? 'block' : 'none');
     }
 
-    // --- Inverter visibility (hide for battery-only: customer already has one) ---
+    // --- Inverter visibility ---
     var invGroup = document.getElementById('inverterGroup');
     if (invGroup) {
-        invGroup.style.display = batteryOnly ? 'none' : '';
+        invGroup.style.display = '';
     }
 
     // Hide battery config panel for solar-only
@@ -1617,25 +1623,39 @@ function renderAutoAccessories() {
     var batteryOnly = isBatteryOnly();
     var items = [];
 
-    // Power Sensor / BMS (not shown for solar-only or battery-only)
-    if (!solarOnly && !batteryOnly) {
+    // Power Sensor / BMS
+    if (!solarOnly) {
         if (currentManufacturer === 'solax') {
             var bt = getBatteryType();
             if (bt && bt.bms_code) {
-                items.push({ label: 'BMS: ' + getBmsName(bt), badge: bt.bms_cost > 0 ? '$' + bt.bms_cost.toLocaleString() : 'Included' });
+                items.push({ label: 'BMS: ' + getBmsName(bt), badge: bt.bms_cost > 0 ? '$' + bt.bms_cost.toLocaleString() : 'Included', toggleId: batteryOnly ? 'battOnlyBms' : null });
             }
         } else {
             var sensorModel = state.phase === 'single_phase' ? 'Sigen Sensor SP-CT100' : 'Sigen Sensor TP-CT100';
-            items.push({ label: 'Power Sensor: ' + sensorModel, badge: 'Included' });
+            items.push({ label: 'Power Sensor: ' + sensorModel, badge: 'Included', toggleId: batteryOnly ? 'battOnlySensor' : null });
         }
     }
 
     items.forEach(function(item) {
         var div = document.createElement('div');
-        div.className = 'auto-accessory';
-        div.innerHTML = '<svg class="auto-acc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' +
-            '<span class="auto-acc-label">' + item.label + '</span>' +
-            '<span class="auto-acc-badge">' + item.badge + '</span>';
+        if (item.toggleId) {
+            // Battery-only: show as toggleable checkbox (unchecked by default)
+            var wasChecked = document.getElementById(item.toggleId)?.checked || false;
+            div.className = 'auto-accessory' + (wasChecked ? '' : ' acc-excluded');
+            div.innerHTML = '<input type="checkbox" class="acc-pill-check" id="' + item.toggleId + '" ' + (wasChecked ? 'checked' : '') + '>' +
+                '<span class="auto-acc-label">' + item.label + '</span>' +
+                '<span class="auto-acc-badge">' + (wasChecked ? item.badge : 'Excluded') + '</span>';
+            div.querySelector('input').addEventListener('change', function() {
+                div.classList.toggle('acc-excluded', !this.checked);
+                div.querySelector('.auto-acc-badge').textContent = this.checked ? item.badge : 'Excluded';
+                calculateQuote();
+            });
+        } else {
+            div.className = 'auto-accessory';
+            div.innerHTML = '<svg class="auto-acc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' +
+                '<span class="auto-acc-label">' + item.label + '</span>' +
+                '<span class="auto-acc-badge">' + item.badge + '</span>';
+        }
         container.appendChild(div);
     });
 }
@@ -1648,7 +1668,7 @@ function getAccessoryCost() {
 }
 
 function getPowerSensorCost() {
-    if (isBatteryOnly()) return 0;
+    if (!includeSensor()) return 0;
     var acc = (getMfg().accessories || []).find(function(a) { return a.id === 'power_sensor'; });
     if (!acc) return 0;
     var basePrice = state.phase === 'single_phase' ? acc.price_single : acc.price_three;
@@ -2598,15 +2618,15 @@ function calculateQuote() {
             costMount = 0;
             installBat = 0;
         } else if (batteryOnly) {
-            // Battery-only mode: no PV costs, no inverter/BMS/power sensor (customer already has these)
+            // Battery-only mode: no PV costs; inverter/BMS/sensor optional
             costPanels = 0;
             costRoofKit = 0;
             costRoofSurcharge = 0;
             installPv = 0;
-            costInverter = 0;
+            costInverter = state.invPrice;
 
-            // Battery costs (excluding BMS — customer already has one)
-            var bmsCostDeduct = bt.bms_cost || 0;
+            // Battery costs — deduct BMS if excluded via toggle
+            var bmsCostDeduct = includeBms() ? 0 : (bt.bms_cost || 0);
             if (isDualStack && dualStackResult) {
                 costBattery = dualStackResult.totalBatteryCost - bmsCostDeduct;
                 costGateway = dualStackResult.gwPrice;
@@ -2617,12 +2637,14 @@ function calculateQuote() {
                 if (userGwPrice > costGateway) costGateway = userGwPrice;
             } else if (isParallel && parallelResult) {
                 costBattery = parallelResult.totalBatteryCost - bmsCostDeduct;
+                costInverter = state.invPrice;
                 const gw = document.getElementById('gatewaySelect');
                 costGateway = parseFloat(gw.options[gw.selectedIndex]?.dataset.price) || 0;
                 costMount = 0;
                 installBat = (state.desiredBatteryKwh > 0) ? 2 * state.installBatPerStack : 0;
             } else {
                 costBattery = bat.equipmentCost - bmsCostDeduct;
+                costInverter = state.invPrice;
                 const gw = document.getElementById('gatewaySelect');
                 costGateway = parseFloat(gw.options[gw.selectedIndex]?.dataset.price) || 0;
                 const mfgMount = getMfg().battery_mounting || {};
@@ -2842,8 +2864,8 @@ function updateSummaryComponents(isDualStack, isParallel, bat, costRoofKit, cost
             batHtml += summaryRow((state.mountingType === 'wall' ? 'Wall' : 'Ground') + ' Mount Kit', 2);
         }
     } else if (isParallel && parallelResult) {
-        // Inverter (single -- parallel doesn't need 2nd inverter; skip for battery-only)
-        if (!batteryOnly && state.invSku) {
+        // Inverter (single -- parallel doesn't need 2nd inverter)
+        if (state.invSku) {
             batHtml += summaryRow(state.invSku + ' (' + state.invKw + 'kW)', 1);
         }
         var mod = modules[0];
@@ -2851,31 +2873,31 @@ function updateSummaryComponents(isDualStack, isParallel, bat, costRoofKit, cost
         if (parallelResult.systemA.pkg) {
             batHtml += summaryRow(parallelResult.systemA.pkg.sku + ' (' + fmtKwh(parallelResult.systemA.kwh) + 'kWh)', 1);
             batHtml += summarySubRow((mod.label || mod.kwh + 'kWh') + ' Module', parallelResult.systemA.modules);
-            if (!batteryOnly) { var bmsNameA = getBmsName(bt); batHtml += summarySubRow(bmsNameA, 1); }
+            if (includeBms()) { var bmsNameA = getBmsName(bt); batHtml += summarySubRow(bmsNameA, 1); }
             if (parallelResult.systemA.needsSeriesBox) batHtml += summarySubRow('Series Box', 1);
         } else {
             batHtml += summaryRow('System A: ' + parallelResult.systemA.modules + 'x ' + mod.kwh + 'kWh', 1);
             batHtml += summarySubRow((mod.label || mod.kwh + 'kWh') + ' Module', parallelResult.systemA.modules);
-            if (!batteryOnly) { var bmsNameA2 = getBmsName(bt); batHtml += summarySubRow(bmsNameA2, 1); }
+            if (includeBms()) { var bmsNameA2 = getBmsName(bt); batHtml += summarySubRow(bmsNameA2, 1); }
             if (parallelResult.systemA.needsSeriesBox) batHtml += summarySubRow('Series Box', 1);
         }
         // System B
         if (parallelResult.systemB.pkg) {
             batHtml += summaryRow(parallelResult.systemB.pkg.sku + ' (' + fmtKwh(parallelResult.systemB.kwh) + 'kWh)', 1);
             batHtml += summarySubRow((mod.label || mod.kwh + 'kWh') + ' Module', parallelResult.systemB.modules);
-            if (!batteryOnly) { var bmsNameB = getBmsName(bt); batHtml += summarySubRow(bmsNameB, 1); }
+            if (includeBms()) { var bmsNameB = getBmsName(bt); batHtml += summarySubRow(bmsNameB, 1); }
             if (parallelResult.systemB.needsSeriesBox) batHtml += summarySubRow('Series Box', 1);
         } else {
             batHtml += summaryRow('System B: ' + parallelResult.systemB.modules + 'x ' + mod.kwh + 'kWh', 1);
             batHtml += summarySubRow((mod.label || mod.kwh + 'kWh') + ' Module', parallelResult.systemB.modules);
-            if (!batteryOnly) { var bmsNameB2 = getBmsName(bt); batHtml += summarySubRow(bmsNameB2, 1); }
+            if (includeBms()) { var bmsNameB2 = getBmsName(bt); batHtml += summarySubRow(bmsNameB2, 1); }
             if (parallelResult.systemB.needsSeriesBox) batHtml += summarySubRow('Series Box', 1);
         }
         // Parallel Box
         batHtml += summaryRow('BMS Parallel Box II G1', 1);
     } else {
-        // Single stack (skip inverter for battery-only)
-        if (!batteryOnly && state.invSku) {
+        // Single stack
+        if (state.invSku) {
             batHtml += summaryRow(state.invSku + ' (' + state.invKw + 'kW)', 1);
         }
         // Battery modules
@@ -3001,13 +3023,13 @@ function buildBOM() {
             const phaseLabel = state.phase === 'single_phase' ? 'Single' : 'Three';
             const ec1Key = getCecKey(ds.stack1.ec.sku), ec2Key = getCecKey(ds.stack2.ec.sku);
 
-            // Stack 1 EC (skip for battery-only)
-            if (!batteryOnly) batItems.push({ desc: 'Stack 1: ' + ds.stack1.ec.sku + ' (' + ds.stack1.ec.kw + 'kW ' + phaseLabel + ' Phase, ' + ds.stack1.panels + ' panels)', sku: ds.stack1.ec.sku, qty: 1, unit: ds.stack1.ec.price, total: ds.stack1.ec.price, supplier_code: ds.stack1.ec.supplier_code || '' });
+            // Stack 1 EC
+            batItems.push({ desc: 'Stack 1: ' + ds.stack1.ec.sku + ' (' + ds.stack1.ec.kw + 'kW ' + phaseLabel + ' Phase, ' + ds.stack1.panels + ' panels)', sku: ds.stack1.ec.sku, qty: 1, unit: ds.stack1.ec.price, total: ds.stack1.ec.price, supplier_code: ds.stack1.ec.supplier_code || '' });
             // Stack 1 batteries
             modules.forEach(b => { const q = ds.stack1.batteryQtys[b.kwh] || 0; var ep = getEffectivePrice(b); if (q > 0) batItems.push({ desc: 'Stack 1: ' + (b.label || b.kwh + 'kWh') + ' Battery', sku: '', qty: q, unit: ep, total: q * ep, supplier_code: b.supplier_code || '' }); });
 
-            // Stack 2 EC (skip for battery-only)
-            if (!batteryOnly) batItems.push({ desc: 'Stack 2: ' + ds.stack2.ec.sku + ' (' + ds.stack2.ec.kw + 'kW ' + phaseLabel + ' Phase, ' + ds.stack2.panels + ' panels)', sku: ds.stack2.ec.sku, qty: 1, unit: ds.stack2.ec.price, total: ds.stack2.ec.price, supplier_code: ds.stack2.ec.supplier_code || '' });
+            // Stack 2 EC
+            batItems.push({ desc: 'Stack 2: ' + ds.stack2.ec.sku + ' (' + ds.stack2.ec.kw + 'kW ' + phaseLabel + ' Phase, ' + ds.stack2.panels + ' panels)', sku: ds.stack2.ec.sku, qty: 1, unit: ds.stack2.ec.price, total: ds.stack2.ec.price, supplier_code: ds.stack2.ec.supplier_code || '' });
             // Stack 2 batteries
             modules.forEach(b => { const q = ds.stack2.batteryQtys[b.kwh] || 0; var ep = getEffectivePrice(b); if (q > 0) batItems.push({ desc: 'Stack 2: ' + (b.label || b.kwh + 'kWh') + ' Battery', sku: '', qty: q, unit: ep, total: q * ep, supplier_code: b.supplier_code || '' }); });
 
@@ -3020,8 +3042,8 @@ function buildBOM() {
             const mc = mfgMount2[mt === 'wall' ? 'mount_wall_code' : 'mount_ground_code'] || '';
             if (mp > 0) batItems.push({ desc: (mt === 'wall' ? 'Wall' : 'Ground') + ' Mount Kit', sku: '', qty: 2, unit: mp, total: 2 * mp, supplier_code: mc });
 
-            // Power Sensor (skip for battery-only)
-            if (!batteryOnly) {
+            // Power Sensor
+            if (includeSensor()) {
             var psAcc = (getMfg().accessories || []).find(function(a) { return a.id === 'power_sensor'; });
             if (psAcc) { var psBp = state.phase === 'single_phase' ? psAcc.price_single : psAcc.price_three; var psPrice = psAcc.discount_pct ? getEffectivePrice({ price: psBp, discount_pct: psAcc.discount_pct, discount_from: psAcc.discount_from, discount_to: psAcc.discount_to }) : psBp; var psCode = state.phase === 'single_phase' ? (psAcc.supplier_code_single || '') : (psAcc.supplier_code_three || ''); batItems.push({ desc: psAcc.label, sku: '', qty: 1, unit: psPrice, total: psPrice, supplier_code: psCode }); }
             }
@@ -3031,21 +3053,21 @@ function buildBOM() {
         var pr = parallelResult;
         var modP = modules[0];
 
-        // Inverter (skip for battery-only)
-        if (!batteryOnly) batItems.push({ desc: state.invSku + ' (' + state.invKw + 'kW ' + (state.phase === 'single_phase' ? 'Single' : 'Three') + ' Phase)', sku: state.invSku, qty: 1, unit: state.invPrice, total: state.invPrice, supplier_code: state.invSupplierCode });
+        // Inverter
+        batItems.push({ desc: state.invSku + ' (' + state.invKw + 'kW ' + (state.phase === 'single_phase' ? 'Single' : 'Three') + ' Phase)', sku: state.invSku, qty: 1, unit: state.invPrice, total: state.invPrice, supplier_code: state.invSupplierCode });
 
         // System A
         if (pr.systemA.pkg) {
             batItems.push({ desc: 'System A: ' + pr.systemA.pkg.sku + ' (' + fmtKwh(pr.systemA.kwh) + 'kWh)', sku: pr.systemA.pkg.sku, qty: 1, unit: 0, total: 0, supplier_code: '', isGroup: true });
             var epA = getEffectivePrice(modP);
             batItems.push({ desc: (modP.label || modP.kwh + 'kWh') + ' Battery Module', sku: '', qty: pr.systemA.modules, unit: epA, total: pr.systemA.modules * epA, supplier_code: modP.supplier_code || '', indent: true });
-            if (!batteryOnly) { var bmsDescA = getBmsDesc(bt); batItems.push({ desc: bmsDescA, sku: '', qty: 1, unit: bt.bms_cost, total: bt.bms_cost, supplier_code: bt.bms_code || '', indent: true }); }
+            if (includeBms()) { var bmsDescA = getBmsDesc(bt); batItems.push({ desc: bmsDescA, sku: '', qty: 1, unit: bt.bms_cost, total: bt.bms_cost, supplier_code: bt.bms_code || '', indent: true }); }
             if (pr.systemA.needsSeriesBox) batItems.push({ desc: 'Series Box', sku: '', qty: 1, unit: bt.series_box_cost, total: bt.series_box_cost, supplier_code: bt.series_box_code || '', indent: true });
         } else {
             batItems.push({ desc: 'System A: ' + pr.systemA.modules + 'x ' + modP.kwh + 'kWh (' + fmtKwh(pr.systemA.kwh) + 'kWh)', sku: '', qty: 1, unit: 0, total: 0, supplier_code: '', isGroup: true });
             var epA2 = getEffectivePrice(modP);
             batItems.push({ desc: (modP.label || modP.kwh + 'kWh') + ' Battery Module', sku: '', qty: pr.systemA.modules, unit: epA2, total: pr.systemA.modules * epA2, supplier_code: modP.supplier_code || '', indent: true });
-            if (!batteryOnly) { var bmsDescA2 = getBmsDesc(bt); batItems.push({ desc: bmsDescA2, sku: '', qty: 1, unit: bt.bms_cost, total: bt.bms_cost, supplier_code: bt.bms_code || '', indent: true }); }
+            if (includeBms()) { var bmsDescA2 = getBmsDesc(bt); batItems.push({ desc: bmsDescA2, sku: '', qty: 1, unit: bt.bms_cost, total: bt.bms_cost, supplier_code: bt.bms_code || '', indent: true }); }
             if (pr.systemA.needsSeriesBox) batItems.push({ desc: 'Series Box', sku: '', qty: 1, unit: bt.series_box_cost, total: bt.series_box_cost, supplier_code: bt.series_box_code || '', indent: true });
         }
 
@@ -3054,13 +3076,13 @@ function buildBOM() {
             batItems.push({ desc: 'System B: ' + pr.systemB.pkg.sku + ' (' + fmtKwh(pr.systemB.kwh) + 'kWh)', sku: pr.systemB.pkg.sku, qty: 1, unit: 0, total: 0, supplier_code: '', isGroup: true });
             var epB = getEffectivePrice(modP);
             batItems.push({ desc: (modP.label || modP.kwh + 'kWh') + ' Battery Module', sku: '', qty: pr.systemB.modules, unit: epB, total: pr.systemB.modules * epB, supplier_code: modP.supplier_code || '', indent: true });
-            if (!batteryOnly) { var bmsDescB = getBmsDesc(bt); batItems.push({ desc: bmsDescB, sku: '', qty: 1, unit: bt.bms_cost, total: bt.bms_cost, supplier_code: bt.bms_code || '', indent: true }); }
+            if (includeBms()) { var bmsDescB = getBmsDesc(bt); batItems.push({ desc: bmsDescB, sku: '', qty: 1, unit: bt.bms_cost, total: bt.bms_cost, supplier_code: bt.bms_code || '', indent: true }); }
             if (pr.systemB.needsSeriesBox) batItems.push({ desc: 'Series Box', sku: '', qty: 1, unit: bt.series_box_cost, total: bt.series_box_cost, supplier_code: bt.series_box_code || '', indent: true });
         } else {
             batItems.push({ desc: 'System B: ' + pr.systemB.modules + 'x ' + modP.kwh + 'kWh (' + fmtKwh(pr.systemB.kwh) + 'kWh)', sku: '', qty: 1, unit: 0, total: 0, supplier_code: '', isGroup: true });
             var epB2 = getEffectivePrice(modP);
             batItems.push({ desc: (modP.label || modP.kwh + 'kWh') + ' Battery Module', sku: '', qty: pr.systemB.modules, unit: epB2, total: pr.systemB.modules * epB2, supplier_code: modP.supplier_code || '', indent: true });
-            if (!batteryOnly) { var bmsDescB2 = getBmsDesc(bt); batItems.push({ desc: bmsDescB2, sku: '', qty: 1, unit: bt.bms_cost, total: bt.bms_cost, supplier_code: bt.bms_code || '', indent: true }); }
+            if (includeBms()) { var bmsDescB2 = getBmsDesc(bt); batItems.push({ desc: bmsDescB2, sku: '', qty: 1, unit: bt.bms_cost, total: bt.bms_cost, supplier_code: bt.bms_code || '', indent: true }); }
             if (pr.systemB.needsSeriesBox) batItems.push({ desc: 'Series Box', sku: '', qty: 1, unit: bt.series_box_cost, total: bt.series_box_cost, supplier_code: bt.series_box_code || '', indent: true });
         }
 
@@ -3075,8 +3097,8 @@ function buildBOM() {
         }
 
     } else {
-        // Single-stack BOM — skip inverter for battery-only
-        if (!batteryOnly) batItems.push({ desc: state.invSku + ' (' + state.invKw + 'kW ' + (state.phase === 'single_phase' ? 'Single' : 'Three') + ' Phase)', sku: state.invSku, qty: 1, unit: state.invPrice, total: state.invPrice, supplier_code: state.invSupplierCode });
+        // Single-stack BOM
+        batItems.push({ desc: state.invSku + ' (' + state.invKw + 'kW ' + (state.phase === 'single_phase' ? 'Single' : 'Three') + ' Phase)', sku: state.invSku, qty: 1, unit: state.invPrice, total: state.invPrice, supplier_code: state.invSupplierCode });
 
         if (bt.use_package_pricing && bat.totalModules > 0) {
             const pkg = bt.packages?.find(p => p.modules === bat.totalModules);
@@ -3086,13 +3108,13 @@ function buildBOM() {
             }
             // Individual components as indented children
             modules.forEach(b => { const q = batteryQtys[b.kwh] || 0; var ep = getEffectivePrice(b); if (q > 0) batItems.push({ desc: (b.label || b.kwh + 'kWh') + ' Battery Module', sku: '', qty: q, unit: ep, total: q * ep, supplier_code: b.supplier_code || '', indent: true }); });
-            if (!batteryOnly && bt.bms_cost >= 0 && bt.bms_code) {
+            if (includeBms() && bt.bms_cost >= 0 && bt.bms_code) {
                 batItems.push({ desc: getBmsDesc(bt), sku: '', qty: 1, unit: bt.bms_cost, total: bt.bms_cost, supplier_code: bt.bms_code || '', indent: true });
             }
             if (bat.totalModules >= (bt.series_box_threshold || 999)) batItems.push({ desc: 'Series Box', sku: '', qty: 1, unit: bt.series_box_cost, total: bt.series_box_cost, supplier_code: bt.series_box_code || '', indent: true });
         } else {
             modules.forEach(b => { const q = batteryQtys[b.kwh] || 0; var ep = getEffectivePrice(b); if (q > 0) batItems.push({ desc: (b.label || b.kwh + 'kWh') + ' Battery Module', sku: '', qty: q, unit: ep, total: q * ep, supplier_code: b.supplier_code || '' }); });
-            if (!batteryOnly && bat.totalModules > 0 && bt.bms_cost > 0) batItems.push({ desc: 'Battery BMS', sku: '', qty: 1, unit: bt.bms_cost, total: bt.bms_cost, supplier_code: bt.bms_code || '' });
+            if (includeBms() && bat.totalModules > 0 && bt.bms_cost > 0) batItems.push({ desc: 'Battery BMS', sku: '', qty: 1, unit: bt.bms_cost, total: bt.bms_cost, supplier_code: bt.bms_code || '' });
             if (bat.totalModules >= (bt.series_box_threshold || 999)) batItems.push({ desc: 'Series Box', sku: '', qty: 1, unit: bt.series_box_cost, total: bt.series_box_cost, supplier_code: bt.series_box_code || '' });
         }
 
@@ -3114,8 +3136,8 @@ function buildBOM() {
             if (mp > 0) batItems.push({ desc: (mt === 'wall' ? 'Wall' : 'Ground') + ' Mount Kit', sku: '', qty: 1, unit: mp, total: mp, supplier_code: mc });
         }
 
-        // Power Sensor (skip for battery-only)
-        if (!batteryOnly) {
+        // Power Sensor
+        if (includeSensor()) {
         var psAcc2 = (getMfg().accessories || []).find(function(a) { return a.id === 'power_sensor'; });
         if (psAcc2) { var psBp2 = state.phase === 'single_phase' ? psAcc2.price_single : psAcc2.price_three; var psPrice2 = psAcc2.discount_pct ? getEffectivePrice({ price: psBp2, discount_pct: psAcc2.discount_pct, discount_from: psAcc2.discount_from, discount_to: psAcc2.discount_to }) : psBp2; var psCode2 = state.phase === 'single_phase' ? (psAcc2.supplier_code_single || '') : (psAcc2.supplier_code_three || ''); batItems.push({ desc: psAcc2.label, sku: '', qty: 1, unit: psPrice2, total: psPrice2, supplier_code: psCode2 }); }
         }
