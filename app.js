@@ -1432,9 +1432,9 @@ function applyManufacturerDefaults() {
     curBat = parseFloat(batEl.value) || 0;
     var maxBat = getMaxBatteryKwh();
     if (curBat > maxBat) batEl.value = maxBat;
-    // Inverter default by kW
+    // Inverter default by kW (skip for battery-only — default to None)
     var targetKw = mfg.default_inverter_kw || 0;
-    if (targetKw > 0) {
+    if (targetKw > 0 && !isBatteryOnly()) {
         var invSel = document.getElementById('inverterSelect');
         for (var i = 0; i < invSel.options.length; i++) {
             if (parseFloat(invSel.options[i].dataset.kw) === targetKw) {
