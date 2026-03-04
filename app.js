@@ -1134,6 +1134,7 @@ function reconstructConfig(baseConfig, tables, batteryPackages, bmsParts, busine
     cfg.rebates.stc_price = Number(businessParams.stc_price);
     cfg.rebates.stc_deeming_period = Number(businessParams.stc_deeming_period);
     cfg.rebates.battery_rebate_per_kwh = Number(businessParams.battery_rebate_per_kwh);
+    cfg.fixed_overhead = Number(businessParams.fixed_overhead) || 0;
     var surcharges = businessParams.roof_surcharges || {};
     Object.keys(cfg.installation.roof_types).forEach(function(rt) {
         if (surcharges[rt] !== undefined) cfg.installation.roof_types[rt].surcharge = Number(surcharges[rt]);
@@ -2677,7 +2678,7 @@ function calculateQuote() {
                 parallelResult = null;
             }
         }
-        state.actualBatteryKwh = actualKwh;
+        state.actualBatteryKwh = getBatterySummary().usableKwh;
         document.getElementById('batteryConfigPanel').style.display = desired > 0 ? 'block' : 'none';
         syncBatteryStepperDisplay();
         renderAutoAccessories();
@@ -2924,7 +2925,7 @@ function calculateQuote() {
             updateGatewayBackupUI();
         }
 
-        const totalCog = totalPv + totalBattery + totalInstall;
+        const totalCog = totalPv + totalBattery + totalInstall + (CONFIG.fixed_overhead || 0);
         state.totalCog = totalCog;
 
         const zoneResult = lookupZone(document.getElementById('installPostcode').value);
@@ -4056,7 +4057,7 @@ function generateQuote() {
     const date = new Date().toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' });
 
     // Pricing (same logic as calculateQuote / showBOM)
-    const grandTotal = bom.reduce((s, g) => s + g.items.reduce((s2, i) => s2 + i.total, 0), 0);
+    const grandTotal = bom.reduce((s, g) => s + g.items.reduce((s2, i) => s2 + i.total, 0), 0) + (CONFIG.fixed_overhead || 0);
     const gp = state.gpMargin, gpAmt = grandTotal * (gp / 100);
     const priceBeforeComm = grandTotal + gpAmt;
     const zoneResult = lookupZone(pc);

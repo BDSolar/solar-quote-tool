@@ -1435,6 +1435,7 @@ function renderBusinessParams() {
         '<div class="form-group"><label>Default Panel Count</label><input type="number" id="bpDefPanels" value="' + bp.default_panel_count + '"></div>' +
         '<div class="form-group"><label>Default Battery kWh</label><input type="number" id="bpDefBattery" value="' + bp.default_battery_kwh + '"></div>' +
         '<div class="form-group"><label>Split Array Labour ($)</label><input type="number" id="bpSplitLabour" value="' + bp.split_array_labour + '" step="0.01"></div>' +
+        '<div class="form-group"><label>Fixed Overhead ($)</label><input type="number" id="bpFixedOverhead" value="' + (bp.fixed_overhead || 0) + '" step="1"></div>' +
         '</div>' +
         '<div class="detail-section-title">Roof Surcharges</div>' +
         '<div class="params-grid">' +
@@ -1464,6 +1465,7 @@ async function saveBusinessParams() {
         default_panel_count: val('bpDefPanels'),
         default_battery_kwh: val('bpDefBattery'),
         split_array_labour: val('bpSplitLabour'),
+        fixed_overhead: val('bpFixedOverhead'),
         roof_surcharges: {
             metal: val('bpRsMetal'),
             tile: val('bpRsTile'),
