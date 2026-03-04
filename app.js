@@ -2683,6 +2683,7 @@ function calculateQuote() {
         renderAutoAccessories();
 
         // Min modules check (skip for parallel -- each system validated independently)
+        const bt = getBatteryType();
         const rules = getBatteryRules();
         const bat = getBatterySummary();
         const minWarn = document.getElementById('minModulesWarning');
