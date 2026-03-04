@@ -532,7 +532,8 @@
                 <thead><tr><th>Field</th><th>Description</th></tr></thead>
                 <tbody>
                     <tr><td>Inverter / Energy Controller</td><td>Auto-selected based on system size, phase, and manufacturer. You can override the selection from the dropdown.</td></tr>
-                    <tr><td>Gateway / Backup Protection</td><td>Auto-selected based on manufacturer and system type. Some configurations require a gateway for backup functionality.</td></tr>
+                    <tr><td>Gateway / Backup Protection</td><td><strong>Sigenergy only.</strong> Select gateway for backup protection from the dropdown. Hidden when SolaX is selected.</td></tr>
+                    <tr><td>Backup Type</td><td><strong>SolaX only.</strong> Appears when batteries are configured. Choose <em>Partial Backup</em> (default) or <em>Whole Home</em>. Whole Home automatically adds an EPS Box for X3-Hybrid inverters. X1-VAST and X3-Ultra inverters have built-in whole-home backup, so no EPS Box is needed.</td></tr>
                 </tbody>
             </table>
 
@@ -579,7 +580,7 @@
             <table class="field-table">
                 <thead><tr><th>Field</th><th>Description</th></tr></thead>
                 <tbody>
-                    <tr><td>Backup Circuits</td><td>Number of backup circuits including RCBO. Appears for battery systems. Each circuit adds to the installation cost.</td></tr>
+                    <tr><td>Backup Circuits</td><td>Number of backup circuits including RCBO. For <strong>SolaX</strong>, appears when batteries are configured (both Partial and Whole Home backup types require circuit wiring). For <strong>Sigenergy</strong>, appears when a gateway is selected. Each circuit adds to the installation cost.</td></tr>
                     <tr><td>Travel Distance</td><td>Driving distance in km from the contractor's address to the installation site. <strong>Auto-calculated</strong> via Google Distance Matrix API when an address is selected or the contractor changes. Can be manually overridden. Charges apply per km beyond the contractor's travel threshold (default 80 km). A yellow warning appears if the distance exceeds the contractor's service region.</td></tr>
                 </tbody>
             </table>
@@ -679,7 +680,7 @@
             <div class="guide-step"><span class="guide-step-num">3</span><div class="guide-step-content">Enter the customer's name and start typing the <strong>address</strong> &mdash; select from autocomplete suggestions to auto-fill suburb, state, postcode, STC zone, and travel distance.</div></div>
             <div class="guide-step"><span class="guide-step-num">4</span><div class="guide-step-content">Expand <strong>Installation Details</strong> and set the roof type, storeys, phase, and other parameters.</div></div>
             <div class="guide-step"><span class="guide-step-num">5</span><div class="guide-step-content">Choose a <strong>system type</strong> tab, select the manufacturer and panel, then set panel count and battery capacity.</div></div>
-            <div class="guide-step"><span class="guide-step-num">6</span><div class="guide-step-content">Review the auto-selected inverter and gateway. Check for CEC warnings.</div></div>
+            <div class="guide-step"><span class="guide-step-num">6</span><div class="guide-step-content">Review the auto-selected inverter. For Sigenergy, select a gateway; for SolaX with batteries, choose the backup type (Partial or Whole Home). Check for CEC warnings.</div></div>
             <div class="guide-step"><span class="guide-step-num">7</span><div class="guide-step-content">Add any <strong>accessories</strong> or <strong>electrical upgrades</strong> as needed.</div></div>
             <div class="guide-step"><span class="guide-step-num">8</span><div class="guide-step-content">Review the <strong>Price Summary</strong> sidebar to confirm the customer price.</div></div>
 

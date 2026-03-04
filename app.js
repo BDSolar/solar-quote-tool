@@ -194,6 +194,12 @@ function buildQuoteContext() {
     var gwSel = document.getElementById('gatewaySelect');
     var gwIdx = gwSel ? gwSel.selectedIndex : 0;
     var gwVal = gwSel ? gwSel.value : 'none';
+    var hasBattery = (state.desiredBatteryKwh || 0) > 0;
+    // SolaX: has_backup when battery is configured (backup type always selected)
+    // Sigenergy: has_backup when gateway is selected from dropdown
+    var hasBackup = currentManufacturer === 'solax'
+        ? hasBattery && !isSolarOnly()
+        : gwIdx > 0 && gwVal !== 'none';
     return {
         sysKw: state.sysKw || 0,
         panelCount: state.panelCount || 0,
@@ -202,9 +208,9 @@ function buildQuoteContext() {
         storey: parseInt(document.getElementById('storeyCount')?.value) || 1,
         arrays: state.numArrays || 1,
         has_pv: (state.sysKw || 0) > 0,
-        has_battery: (state.desiredBatteryKwh || 0) > 0,
+        has_battery: hasBattery,
         dual_stack: dualStackResult !== null,
-        has_backup: gwIdx > 0 && gwVal !== 'none',
+        has_backup: hasBackup,
         backupCircuitCount: parseInt(document.getElementById('backupCircuitCount')?.value) || 0,
         travelDistanceKm: parseInt(document.getElementById('travelDistanceKm')?.value) || 0
     };
@@ -524,11 +530,71 @@ function updateInstallationCostsDisplay() {
 function updateBackupCircuitsVisibility() {
     var el = document.getElementById('rcBackupCircuits');
     if (!el) return;
-    var gwSel = document.getElementById('gatewaySelect');
-    var hasBackup = gwSel && gwSel.selectedIndex > 0 && gwSel.value !== 'none';
+    var hasBackup = false;
+    if (currentManufacturer === 'solax') {
+        // SolaX: backup circuits visible when battery is configured (both partial and whole home need circuit wiring)
+        hasBackup = (state.desiredBatteryKwh || 0) > 0 && !isSolarOnly();
+    } else {
+        // Sigenergy: backup when gateway is selected
+        var gwSel = document.getElementById('gatewaySelect');
+        hasBackup = gwSel && gwSel.selectedIndex > 0 && gwSel.value !== 'none';
+    }
     // Also check if backup circuit item exists in rate card
     var hasItem = currentRateCardItems.some(function(i) { return i.conditions && i.conditions.has_backup === true; });
     el.style.display = (hasBackup && hasItem && currentContractorId) ? '' : 'none';
+    // Set min to 1 when visible
+    var bcInput = document.getElementById('backupCircuitCount');
+    if (bcInput && hasBackup && hasItem && currentContractorId) {
+        if (parseInt(bcInput.value) < 1) bcInput.value = 1;
+    }
+}
+
+function updateGatewayBackupUI() {
+    var gwGroup = document.getElementById('gatewayGroup');
+    var solaxGroup = document.getElementById('solaxBackupGroup');
+    if (!gwGroup || !solaxGroup) return;
+    var solarOnly = isSolarOnly();
+    var hasBattery = (state.desiredBatteryKwh || 0) > 0 && !solarOnly;
+    if (currentManufacturer === 'solax') {
+        gwGroup.style.display = 'none';
+        if (hasBattery) {
+            solaxGroup.style.display = '';
+            solaxGroup.classList.remove('disabled');
+        } else {
+            solaxGroup.style.display = 'none';
+        }
+    } else {
+        // Sigenergy — show gateway dropdown, hide solax backup
+        solaxGroup.style.display = 'none';
+        gwGroup.style.display = '';
+        if (solarOnly) {
+            gwGroup.classList.add('disabled');
+        } else {
+            gwGroup.classList.remove('disabled');
+        }
+    }
+}
+
+function getSolaxEpsBoxCost() {
+    var backupType = document.getElementById('solaxBackupType')?.value || 'partial';
+    if (backupType !== 'whole_home') return null;
+    var invSku = state.invSku || '';
+    // X1-VAST and X3-ULT have built-in whole-home backup
+    if (invSku.startsWith('X1-VAST')) return null;
+    if (invSku.startsWith('X3-ULT')) return null;
+    // X3-HYBRID needs EPS Box (three phase)
+    if (invSku.startsWith('X3-HYBRID')) {
+        var gateways = getMfg().gateways?.three_phase || [];
+        var eps = gateways.find(function(g) { return g.supplier_code === 'SOLAX-EPS-3P'; });
+        if (eps) return { price: getEffectivePrice(eps), supplierCode: eps.supplier_code, desc: eps.desc, sku: eps.sku, originalPrice: eps.price, discount_pct: eps.discount_pct || 0, discount_from: eps.discount_from || '', discount_to: eps.discount_to || '' };
+    }
+    // X1-HYBRID is solar_only so won't reach here with battery, but handle gracefully
+    if (invSku.startsWith('X1-HYBRID')) {
+        var gwSp = getMfg().gateways?.single_phase || [];
+        var epsSp = gwSp.find(function(g) { return g.supplier_code === 'SOLAX-EPS-1P'; });
+        if (epsSp) return { price: getEffectivePrice(epsSp), supplierCode: epsSp.supplier_code, desc: epsSp.desc, sku: epsSp.sku, originalPrice: epsSp.price, discount_pct: epsSp.discount_pct || 0, discount_from: epsSp.discount_from || '', discount_to: epsSp.discount_to || '' };
+    }
+    return null;
 }
 
 function updateTravelVisibility() {
@@ -798,6 +864,7 @@ function updateManufacturerOptions() {
     updateHeaderSubtitle();
     updateInverterSectionLabel();
        updatePowerSensorModel();
+    updateGatewayBackupUI();
     applyManufacturerDefaults();
 }
 
@@ -851,7 +918,7 @@ function updateSystemModeUI() {
     }
 
     // --- Battery-related fields (disable/hide when solar-only) ---
-    setFieldDisabled('gatewayGroup', solarOnly);
+    updateGatewayBackupUI();
     setFieldDisabled('powerSensorGroup', solarOnly);
     setFieldDisabled('mountingTypeGroup', solarOnly);
     setFieldDisabled('installBatGroup', solarOnly);
@@ -1521,6 +1588,7 @@ function switchManufacturer() {
     currentBatteryTypeIdx = 0; userChangedInverter = false; dualStackResult = null; dualStackEcOverride = { stack1: null, stack2: null }; parallelResult = null;
     selectedAccessories = selectedAccessories.filter(function(a) { return a.type === 'addon'; });
     batteryQtys = {}; populateBatteryTypes(); populateInverters(); populateGateways(); buildAccessoriesUI(); updateBatteryMountVisibility(); updateHeaderSubtitle(); updateInverterSectionLabel(); updatePowerSensorModel();
+    updateGatewayBackupUI();
     applyManufacturerDefaults();
     calculateQuote();
 }
@@ -1884,7 +1952,7 @@ function updateStepperBatteryLabel() {
 // ====================
 
 function bindEvents() {
-    const dedicatedIds = ['inverterSelect','phaseType','desiredBatteryKwh','manufacturerSelect','batteryTypeSelect','roofType','panelOrientation','numRows','numArrays','tiltAngle','gatewaySelect','installPostcode','systemTypeSelect'];
+    const dedicatedIds = ['inverterSelect','phaseType','desiredBatteryKwh','manufacturerSelect','batteryTypeSelect','roofType','panelOrientation','numRows','numArrays','tiltAngle','gatewaySelect','solaxBackupType','installPostcode','systemTypeSelect'];
     document.querySelectorAll('input, select').forEach(el => { if (!dedicatedIds.includes(el.id)) { el.addEventListener('input', debouncedCalculateQuote); el.addEventListener('change', calculateQuote); } });
     document.getElementById('installPostcode').addEventListener('input', function() { this.value = this.value.replace(/\D/g, '').slice(0, 4); updateZoneDisplay(); calculateQuote(); });
     document.getElementById('systemTypeSelect').addEventListener('change', onSystemTypeChange);
@@ -1916,6 +1984,7 @@ function bindEvents() {
     document.getElementById('numArrays').addEventListener('input', () => { calculateQuote(); });
     document.getElementById('tiltAngle').addEventListener('change', () => { calculateQuote(); });
     document.getElementById('gatewaySelect').addEventListener('change', function() { updateBackupCircuitsVisibility(); calculateQuote(); });
+    document.getElementById('solaxBackupType').addEventListener('change', function() { updateBackupCircuitsVisibility(); calculateQuote(); });
     document.querySelectorAll('input[type="number"]').forEach(el => {
         el.addEventListener('click', function(e) { const rect = this.getBoundingClientRect(); if (e.clientX > rect.right - 30) { const mid = rect.top + rect.height / 2; if (e.clientY < mid) this.stepUp(); else this.stepDown(); this.dispatchEvent(new Event('input', { bubbles: true })); } });
         el.addEventListener('mousemove', function(e) { const rect = this.getBoundingClientRect(); this.style.cursor = (e.clientX > rect.right - 30) ? 'pointer' : 'text'; });
@@ -2774,15 +2843,18 @@ function calculateQuote() {
             } else if (isParallel && parallelResult) {
                 costBattery = parallelResult.totalBatteryCost - bmsCostDeduct;
                 costInverter = state.invPrice;
-                const gw = document.getElementById('gatewaySelect');
-                costGateway = parseFloat(gw.options[gw.selectedIndex]?.dataset.price) || 0;
+                costGateway = getSolaxEpsBoxCost()?.price || 0;
                 costMount = 0;
                 installBat = (state.desiredBatteryKwh > 0) ? 2 * state.installBatPerStack : 0;
             } else {
                 costBattery = bat.equipmentCost - bmsCostDeduct;
                 costInverter = state.invPrice;
-                const gw = document.getElementById('gatewaySelect');
-                costGateway = parseFloat(gw.options[gw.selectedIndex]?.dataset.price) || 0;
+                if (currentManufacturer === 'solax') {
+                    costGateway = getSolaxEpsBoxCost()?.price || 0;
+                } else {
+                    const gw = document.getElementById('gatewaySelect');
+                    costGateway = parseFloat(gw.options[gw.selectedIndex]?.dataset.price) || 0;
+                }
                 const mfgMount = getMfg().battery_mounting || {};
                 costMount = (bat.totalModules > 0 && mfgMount.show !== false) ? (mfgMount[state.mountingType === 'wall' ? 'mount_wall' : 'mount_ground'] ?? 0) : 0;
                 installBat = (bat.totalModules > 0) ? state.installBatPerStack : 0;
@@ -2808,15 +2880,18 @@ function calculateQuote() {
             } else if (isParallel && parallelResult) {
                 costInverter = state.invPrice;
                 costBattery = parallelResult.totalBatteryCost;
-                const gw = document.getElementById('gatewaySelect');
-                costGateway = parseFloat(gw.options[gw.selectedIndex]?.dataset.price) || 0;
+                costGateway = getSolaxEpsBoxCost()?.price || 0;
                 costMount = 0;
                 installBat = (state.desiredBatteryKwh > 0) ? 2 * state.installBatPerStack : 0;
             } else {
                 costInverter = state.invPrice;
                 costBattery = bat.equipmentCost;
-                const gw = document.getElementById('gatewaySelect');
-                costGateway = parseFloat(gw.options[gw.selectedIndex]?.dataset.price) || 0;
+                if (currentManufacturer === 'solax') {
+                    costGateway = getSolaxEpsBoxCost()?.price || 0;
+                } else {
+                    const gw = document.getElementById('gatewaySelect');
+                    costGateway = parseFloat(gw.options[gw.selectedIndex]?.dataset.price) || 0;
+                }
                 const mfgMount = getMfg().battery_mounting || {};
                 costMount = (bat.totalModules > 0 && mfgMount.show !== false) ? (mfgMount[state.mountingType === 'wall' ? 'mount_wall' : 'mount_ground'] ?? 0) : 0;
                 installBat = (bat.totalModules > 0) ? state.installBatPerStack : 0;
@@ -2838,10 +2913,12 @@ function calculateQuote() {
             rateCardResult = calculateInstallationCosts(ctx, currentContractorRecord, currentRateCardItems, installationAddons);
             totalInstall = rateCardResult.total + costAcc; // rate card replaces installPv + installBat
             updateInstallationCostsDisplay();
+            updateGatewayBackupUI();
             updateBackupCircuitsVisibility();
         } else {
             rateCardResult = null;
             totalInstall = installPv + installBat + costAcc;
+            updateGatewayBackupUI();
         }
 
         const totalCog = totalPv + totalBattery + totalInstall;
@@ -3068,11 +3145,18 @@ function updateSummaryComponents(isDualStack, isParallel, bat, costRoofKit, cost
                 batHtml += summaryRow('Series Box', 1);
             }
         }
-        // Gateway
-        var gwSel = document.getElementById('gatewaySelect');
-        var gwOpt = gwSel.options[gwSel.selectedIndex];
-        if (gwOpt && gwOpt.value !== 'none') {
-            batHtml += summaryRow(gwOpt.value, 1);
+        // Gateway / Backup Type
+        if (currentManufacturer === 'solax') {
+            var backupVal = document.getElementById('solaxBackupType')?.value || 'partial';
+            batHtml += summaryRow(backupVal === 'whole_home' ? 'Whole Home Backup' : 'Partial Backup', 1);
+            var epsInfo = getSolaxEpsBoxCost();
+            if (epsInfo) batHtml += summaryRow(epsInfo.desc, 1);
+        } else {
+            var gwSel = document.getElementById('gatewaySelect');
+            var gwOpt = gwSel.options[gwSel.selectedIndex];
+            if (gwOpt && gwOpt.value !== 'none') {
+                batHtml += summaryRow(gwOpt.value, 1);
+            }
         }
         // Mounting
         var mfgMount2 = getMfg().battery_mounting || {};
@@ -3225,12 +3309,9 @@ function buildBOM() {
         // BMS Parallel Box
         batItems.push({ desc: 'BMS Parallel Box II G1', sku: '', qty: 1, unit: pr.parallelBoxPrice, total: pr.parallelBoxPrice, supplier_code: pr.parallelBoxCode });
 
-        // Gateway / EPS Box (optional, from dropdown)
-        if (document.getElementById('gatewaySelect').value !== 'none') {
-            var gwP = document.getElementById('gatewaySelect'), gwOptP = gwP.options[gwP.selectedIndex];
-            var gwPriceP = parseFloat(gwOptP?.dataset.price) || 0;
-            if (gwPriceP > 0) batItems.push({ desc: 'EPS Box: ' + (gwOptP?.textContent || ''), sku: gwOptP?.value || '', qty: 1, unit: gwPriceP, total: gwPriceP, supplier_code: gwOptP?.dataset.supplierCode || '' });
-        }
+        // EPS Box (auto-add based on backup type + inverter)
+        var epsParallel = getSolaxEpsBoxCost();
+        if (epsParallel) batItems.push({ desc: epsParallel.desc, sku: epsParallel.sku, qty: 1, unit: epsParallel.price, total: epsParallel.price, supplier_code: epsParallel.supplierCode });
 
     } else {
         // Single-stack BOM
@@ -3260,10 +3341,14 @@ function buildBOM() {
             const gwPrice = parseFloat(gwOpt?.dataset.price) || 0;
             const gwCode = gwOpt?.dataset.supplierCode || '';
             if (gwPrice > 0) batItems.push({ desc: 'Gateway: ' + (gwOpt?.textContent || ''), sku: gwOpt?.value || '', qty: 1, unit: gwPrice, total: gwPrice, supplier_code: gwCode });
+        } else if (currentManufacturer === 'solax') {
+            // SolaX: EPS Box auto-add based on backup type + inverter
+            var epsSingle = getSolaxEpsBoxCost();
+            if (epsSingle) batItems.push({ desc: epsSingle.desc, sku: epsSingle.sku, qty: 1, unit: epsSingle.price, total: epsSingle.price, supplier_code: epsSingle.supplierCode });
         } else if (document.getElementById('gatewaySelect').value !== 'none') {
             const gw = document.getElementById('gatewaySelect'), gwOpt = gw.options[gw.selectedIndex];
             const gwPrice = parseFloat(gwOpt?.dataset.price) || 0;
-            if (gwPrice > 0) batItems.push({ desc: (currentManufacturer === 'sigenergy' ? 'Gateway' : 'EPS Box') + ': ' + (gwOpt?.textContent || ''), sku: gwOpt?.value || '', qty: 1, unit: gwPrice, total: gwPrice, supplier_code: gwOpt?.dataset.supplierCode || '' });
+            if (gwPrice > 0) batItems.push({ desc: 'Gateway: ' + (gwOpt?.textContent || ''), sku: gwOpt?.value || '', qty: 1, unit: gwPrice, total: gwPrice, supplier_code: gwOpt?.dataset.supplierCode || '' });
         }
         const mfgMount = getMfg().battery_mounting || {};
         if (bat.totalModules > 0 && mfgMount.show !== false) {
@@ -3434,6 +3519,7 @@ function collectQuoteData() {
             userChangedInverter: userChangedInverter,
             gatewaySelectIdx: document.getElementById('gatewaySelect').selectedIndex,
             gatewayValue: document.getElementById('gatewaySelect').value,
+            solaxBackupType: document.getElementById('solaxBackupType')?.value || 'partial',
             selectedAccessories: selectedAccessories.map(function(a) {
                 var copy = { id: a.id, label: a.label, price: a.price, type: a.type, supplier_code: a.supplier_code || '' };
                 if (a.type === 'ev_charger') { copy.evModel = a.evModel; copy.evDesc = a.evDesc || ''; copy.evSupplierCode = a.evSupplierCode || ''; }
@@ -3500,13 +3586,20 @@ function collectActiveDiscounts() {
         var effI = parseFloat(invOpt.dataset.price) || origI;
         if (effI < origI) discounts.push({ table: 'inverters', sku: invOpt.value, original_price: origI, discount_pct: parseFloat(invOpt.dataset.discountPct), effective_price: effI });
     }
-    // Gateway
-    var gwSel = document.getElementById('gatewaySelect');
-    var gwOpt = gwSel.options[gwSel.selectedIndex];
-    if (gwOpt && gwOpt.value !== 'none' && parseFloat(gwOpt.dataset.discountPct) > 0) {
-        var origG = parseFloat(gwOpt.dataset.originalPrice) || 0;
-        var effG = parseFloat(gwOpt.dataset.price) || origG;
-        if (effG < origG) discounts.push({ table: 'gateways', sku: gwOpt.value, original_price: origG, discount_pct: parseFloat(gwOpt.dataset.discountPct), effective_price: effG });
+    // Gateway / EPS Box
+    if (currentManufacturer === 'solax') {
+        var epsDisc = getSolaxEpsBoxCost();
+        if (epsDisc && epsDisc.discount_pct > 0) {
+            if (epsDisc.price < epsDisc.originalPrice) discounts.push({ table: 'gateways', sku: epsDisc.sku, original_price: epsDisc.originalPrice, discount_pct: epsDisc.discount_pct, effective_price: epsDisc.price });
+        }
+    } else {
+        var gwSel = document.getElementById('gatewaySelect');
+        var gwOpt = gwSel.options[gwSel.selectedIndex];
+        if (gwOpt && gwOpt.value !== 'none' && parseFloat(gwOpt.dataset.discountPct) > 0) {
+            var origG = parseFloat(gwOpt.dataset.originalPrice) || 0;
+            var effG = parseFloat(gwOpt.dataset.price) || origG;
+            if (effG < origG) discounts.push({ table: 'gateways', sku: gwOpt.value, original_price: origG, discount_pct: parseFloat(gwOpt.dataset.discountPct), effective_price: effG });
+        }
     }
     // Battery modules
     var modules = getBatteryModules();
@@ -3777,6 +3870,10 @@ async function loadQuote(quoteId) {
         else if (s.gatewaySelectIdx != null) document.getElementById('gatewaySelect').selectedIndex = s.gatewaySelectIdx;
         else if (s.addGateway && document.getElementById('gatewaySelect').options.length > 1) document.getElementById('gatewaySelect').selectedIndex = 1;
 
+        // Restore SolaX backup type
+        if (s.solaxBackupType) { var sbt = document.getElementById('solaxBackupType'); if (sbt) sbt.value = s.solaxBackupType; }
+        updateGatewayBackupUI();
+
         // Restore accessories
         var loadedAccs = (s.selectedAccessories || []).filter(function(a) { return a.id !== 'power_sensor'; });
         selectedAccessories = loadedAccs;
@@ -3891,6 +3988,7 @@ function clearQuote() {
     document.getElementById('panelCount').value = CONFIG.default_panel_count;
     syncStepperDisplay(); updateStepperPanelLabel(); syncBatteryStepperDisplay(); updateStepperBatteryLabel();
     document.getElementById('gatewaySelect').selectedIndex = 0;
+    var sbtClear = document.getElementById('solaxBackupType'); if (sbtClear) sbtClear.value = 'partial';
     selectedAccessories = []; renderSelectedAccessories();
     customAddonCount = 0; document.getElementById('customAddons').innerHTML = '';
     var discEl = document.getElementById('discountAmount'); if (discEl) discEl.value = 0;
@@ -4051,6 +4149,11 @@ function generateQuote() {
         { label: 'Battery', value: totalKwh > 0 ? fmtKwh(totalKwh) + ' kWh' : 'None' },
         { label: invLabel, value: invSku }
     ];
+    // Add backup type for SolaX when battery is present
+    if (currentManufacturer === 'solax' && totalKwh > 0) {
+        var pdfBackupType = document.getElementById('solaxBackupType')?.value || 'partial';
+        summaryItems.push({ label: 'Backup', value: pdfBackupType === 'whole_home' ? 'Whole Home' : 'Partial' });
+    }
     const colW = contentW / summaryItems.length;
     summaryItems.forEach((item, i) => {
         const cx = margin + colW * i + colW / 2;
