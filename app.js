@@ -195,10 +195,10 @@ function buildQuoteContext() {
     var gwIdx = gwSel ? gwSel.selectedIndex : 0;
     var gwVal = gwSel ? gwSel.value : 'none';
     var hasBattery = (state.desiredBatteryKwh || 0) > 0;
-    // SolaX: has_backup when battery is configured (backup type always selected)
+    // SolaX: has_backup when battery is configured in hybrid mode (not battery-only, since existing inverter handles backup)
     // Sigenergy: has_backup when gateway is selected from dropdown
     var hasBackup = currentManufacturer === 'solax'
-        ? hasBattery && !isSolarOnly()
+        ? hasBattery && !isSolarOnly() && !isBatteryOnly()
         : gwIdx > 0 && gwVal !== 'none';
     return {
         sysKw: state.sysKw || 0,
@@ -532,8 +532,8 @@ function updateBackupCircuitsVisibility() {
     if (!el) return;
     var hasBackup = false;
     if (currentManufacturer === 'solax') {
-        // SolaX: backup circuits visible when battery is configured (both partial and whole home need circuit wiring)
-        hasBackup = (state.desiredBatteryKwh || 0) > 0 && !isSolarOnly();
+        // SolaX: backup circuits visible when battery is configured in hybrid mode (not battery-only)
+        hasBackup = (state.desiredBatteryKwh || 0) > 0 && !isSolarOnly() && !isBatteryOnly();
     } else {
         // Sigenergy: backup when gateway is selected
         var gwSel = document.getElementById('gatewaySelect');
@@ -554,7 +554,8 @@ function updateGatewayBackupUI() {
     var solaxGroup = document.getElementById('solaxBackupGroup');
     if (!gwGroup || !solaxGroup) return;
     var solarOnly = isSolarOnly();
-    var hasBattery = (state.desiredBatteryKwh || 0) > 0 && !solarOnly;
+    var batteryOnly = isBatteryOnly();
+    var hasBattery = (state.desiredBatteryKwh || 0) > 0 && !solarOnly && !batteryOnly;
     if (currentManufacturer === 'solax') {
         gwGroup.style.display = 'none';
         if (hasBattery) {
@@ -576,6 +577,7 @@ function updateGatewayBackupUI() {
 }
 
 function getSolaxEpsBoxCost() {
+    if (isBatteryOnly()) return null;
     var backupType = document.getElementById('solaxBackupType')?.value || 'partial';
     if (backupType !== 'whole_home') return null;
     var invSku = state.invSku || '';
@@ -3145,13 +3147,13 @@ function updateSummaryComponents(isDualStack, isParallel, bat, costRoofKit, cost
                 batHtml += summaryRow('Series Box', 1);
             }
         }
-        // Gateway / Backup Type
-        if (currentManufacturer === 'solax') {
+        // Gateway / Backup Type (skip for battery-only — customer's existing inverter handles backup)
+        if (currentManufacturer === 'solax' && !isBatteryOnly()) {
             var backupVal = document.getElementById('solaxBackupType')?.value || 'partial';
             batHtml += summaryRow(backupVal === 'whole_home' ? 'Whole Home Backup' : 'Partial Backup', 1);
             var epsInfo = getSolaxEpsBoxCost();
             if (epsInfo) batHtml += summaryRow(epsInfo.desc, 1);
-        } else {
+        } else if (currentManufacturer !== 'solax') {
             var gwSel = document.getElementById('gatewaySelect');
             var gwOpt = gwSel.options[gwSel.selectedIndex];
             if (gwOpt && gwOpt.value !== 'none') {
