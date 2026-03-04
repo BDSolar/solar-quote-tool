@@ -450,16 +450,20 @@
                 <tbody>
                     <tr><td>Customer Name</td><td>Full name of the customer</td><td>Required for saving</td></tr>
                     <tr><td>Email</td><td>Customer email address</td><td>&mdash;</td></tr>
-                    <tr><td>Street Address</td><td>Installation street address</td><td>&mdash;</td></tr>
-                    <tr><td>Suburb</td><td>Installation suburb</td><td>&mdash;</td></tr>
-                    <tr><td>State</td><td>Australian state/territory</td><td>NSW, VIC, QLD, SA, WA, TAS, NT, ACT</td></tr>
-                    <tr><td>Postcode</td><td>4-digit postcode</td><td><strong>Required.</strong> Triggers automatic STC zone lookup which determines the solar rebate multiplier for this location.</td></tr>
+                    <tr><td>Street Address</td><td>Installation street address</td><td>Google Places autocomplete &mdash; start typing and select a suggestion to auto-fill Suburb, State, and Postcode. Manual entry still works.</td></tr>
+                    <tr><td>Suburb</td><td>Installation suburb</td><td>Auto-filled by address autocomplete</td></tr>
+                    <tr><td>State</td><td>Australian state/territory</td><td>Auto-filled by address autocomplete. NSW, VIC, QLD, SA, WA, TAS, NT, ACT</td></tr>
+                    <tr><td>Postcode</td><td>4-digit postcode</td><td><strong>Required.</strong> Auto-filled by address autocomplete. Triggers automatic STC zone lookup which determines the solar rebate multiplier for this location.</td></tr>
                     <tr><td>Phone</td><td>Customer phone number</td><td>&mdash;</td></tr>
                 </tbody>
             </table>
 
             <div class="guide-note">
                 <strong>STC Zone:</strong> When you enter a valid postcode the system automatically looks up the STC zone (1&ndash;4). Zone 1 receives the highest rebate; zone 4 the lowest. This directly affects the customer price.
+            </div>
+
+            <div class="guide-note">
+                <strong>Address Autocomplete:</strong> The Street Address field uses Google Places to suggest Australian addresses as you type. Selecting a suggestion auto-fills Suburb, State, Postcode, triggers the STC zone lookup, and calculates the driving distance from the contractor to the install site. The Distance Matrix API requires the Maps JavaScript API, Places API, and Distance Matrix API to be enabled in Google Cloud Console.
             </div>
 
             <h3 id="qt-installation">Installation Details</h3>
@@ -576,7 +580,7 @@
                 <thead><tr><th>Field</th><th>Description</th></tr></thead>
                 <tbody>
                     <tr><td>Backup Circuits</td><td>Number of backup circuits including RCBO. Appears for battery systems. Each circuit adds to the installation cost.</td></tr>
-                    <tr><td>Travel Distance</td><td>Distance in km to the installation site. Used to calculate travel surcharge if applicable.</td></tr>
+                    <tr><td>Travel Distance</td><td>Driving distance in km from the contractor's address to the installation site. <strong>Auto-calculated</strong> via Google Distance Matrix API when an address is selected or the contractor changes. Can be manually overridden. Charges apply per km beyond the contractor's travel threshold (default 80 km). A yellow warning appears if the distance exceeds the contractor's service region.</td></tr>
                 </tbody>
             </table>
 
@@ -672,7 +676,7 @@
             <h4>Creating a New Quote</h4>
             <div class="guide-step"><span class="guide-step-num">1</span><div class="guide-step-content">Click <strong>New</strong> in the toolbar to clear the form.</div></div>
             <div class="guide-step"><span class="guide-step-num">2</span><div class="guide-step-content">Select a <strong>Rep</strong> and <strong>Contractor</strong> from the toolbar dropdowns.</div></div>
-            <div class="guide-step"><span class="guide-step-num">3</span><div class="guide-step-content">Enter the customer's name, address, and <strong>postcode</strong> (required for STC zone lookup).</div></div>
+            <div class="guide-step"><span class="guide-step-num">3</span><div class="guide-step-content">Enter the customer's name and start typing the <strong>address</strong> &mdash; select from autocomplete suggestions to auto-fill suburb, state, postcode, STC zone, and travel distance.</div></div>
             <div class="guide-step"><span class="guide-step-num">4</span><div class="guide-step-content">Expand <strong>Installation Details</strong> and set the roof type, storeys, phase, and other parameters.</div></div>
             <div class="guide-step"><span class="guide-step-num">5</span><div class="guide-step-content">Choose a <strong>system type</strong> tab, select the manufacturer and panel, then set panel count and battery capacity.</div></div>
             <div class="guide-step"><span class="guide-step-num">6</span><div class="guide-step-content">Review the auto-selected inverter and gateway. Check for CEC warnings.</div></div>
@@ -726,12 +730,14 @@
                     <tr><td>Contact Name</td><td>Primary contact person.</td></tr>
                     <tr><td>Email</td><td>Contact email address.</td></tr>
                     <tr><td>Phone</td><td>Contact phone number.</td></tr>
-                    <tr><td>Address</td><td>Business address.</td></tr>
+                    <tr><td>Address</td><td>Business address. Google Places autocomplete enabled &mdash; used as the origin for travel distance calculations.</td></tr>
                     <tr><td>ABN</td><td>Australian Business Number.</td></tr>
                     <tr><td>Licence Number</td><td>Electrical contractor licence number.</td></tr>
                     <tr><td>Licence Expiry</td><td>Licence expiry date. Generates a compliance warning when approaching expiry.</td></tr>
                     <tr><td>Insurance Expiry</td><td>Public liability insurance expiry date.</td></tr>
                     <tr><td>CEC Accreditation</td><td>Clean Energy Council accreditation number.</td></tr>
+                    <tr><td>Service Region (km)</td><td>Maximum service distance in km. If the install address exceeds this distance, a yellow warning appears in the quote tool.</td></tr>
+                    <tr><td>Travel Threshold (km)</td><td>Free travel distance in km (default 80). Travel charges only apply for km beyond this threshold.</td></tr>
                     <tr><td>Active</td><td>Toggle the contractor's active status. Deactivated contractors are hidden from the quote tool dropdown.</td></tr>
                 </tbody>
             </table>
