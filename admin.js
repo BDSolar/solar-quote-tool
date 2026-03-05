@@ -1853,7 +1853,8 @@ function renderQuotesView() {
         var pvStc = totals.pvStcRebate || 0;
         var batStc = totals.batteryStcRebate || 0;
         var commAmtIncGst = priceIncGst - baseIncGst;
-        var netGp = priceIncGst - (cog * 1.1) - (installTotal * 1.1) - commAmtIncGst - discount;
+        var fixedOverhead = (businessParamsRow && businessParamsRow.fixed_overhead) ? Number(businessParamsRow.fixed_overhead) : 0;
+        var netGp = priceIncGst - (cog * 1.1) - (installTotal * 1.1) - commAmtIncGst - discount + fixedOverhead;
         var netGpPct = priceIncGst > 0 ? (netGp / priceIncGst * 100) : 0;
 
         return '<tr>' +
