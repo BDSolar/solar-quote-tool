@@ -381,6 +381,10 @@
             </div>
 
             <div class="toc-section">
+                <a class="toc-section-title" href="#admin-quotes">Admin &mdash; Quotes</a>
+            </div>
+
+            <div class="toc-section">
                 <a class="toc-section-title" href="#admin-users">Admin &mdash; Users</a>
             </div>
         </nav>
@@ -422,6 +426,7 @@
                 <tbody>
                     <tr><td>Rep</td><td>Select the sales representative for this quote. Saved alongside each quote.</td></tr>
                     <tr><td>Contractor</td><td>Select the contractor. This determines the rate card used for installation pricing and sets the contractor details on printed quotes.</td></tr>
+                    <tr><td>Quote Type</td><td>Choose <strong>Traditional Solar</strong> (default) or <strong>Zero Bill</strong>. Zero Bill adds a premium to the customer price calculated as the greater of a flat base amount or a percentage of the price before rebates. Both values are configurable in Business Parameters.</td></tr>
                     <tr><td>New</td><td>Clear the form and start a fresh quote.</td></tr>
                     <tr><td>Save</td><td>Save the current quote to the database. Requires a customer name and postcode.</td></tr>
                     <tr><td>Print</td><td>Generate a PDF quote document for the customer.</td></tr>
@@ -572,7 +577,7 @@
                     <tr><td>Auto items</td><td>Automatically included based on the system configuration. Always costed.</td></tr>
                     <tr><td>Standard items</td><td>Displayed as a label + price. Always included when visible.</td></tr>
                     <tr><td>Checkbox items</td><td>Displayed as a 3-column grid of checkboxes. Tick to include the cost.</td></tr>
-                    <tr><td>Add-on items</td><td>Select from the dropdown to add. Supports quantity. Remove with the &times; button.</td></tr>
+                    <tr><td>Add-on items</td><td>Select from the dropdown to add. Remove with the &times; button. Per-panel items (e.g. System Removal) show a +/&minus; stepper labelled "panels". Per-metre items (e.g. DC Run, AC Run) show a +/&minus; stepper labelled "metres"; charges apply only beyond the threshold (e.g. DC Run charges after 20 m, AC Run after 8 m).</td></tr>
                 </tbody>
             </table>
 
@@ -697,6 +702,7 @@
             <p>The <strong>BOM</strong> button in the toolbar opens a full-screen overlay listing every component with supplier codes and quantities. The full system price (inc GST, before rebates) is shown prominently in the header.</p>
             <p>At the bottom, STC rebates, any discount, and the final <strong>Customer Price (inc GST)</strong> are displayed. No individual item prices are shown in the BOM &mdash; only quantities.</p>
             <p>Use <strong>Print / Save PDF</strong> within the BOM view to export it.</p>
+            <p>When a quote is saved, the full BOM is <strong>snapshotted</strong> into the quote record. This preserves exact line items and costs at the time of saving, regardless of later price changes. The snapshot can be viewed from the admin Quotes view (see <a href="#admin-quotes">Admin &mdash; Quotes</a>).</p>
 
             <!-- ================================================ -->
             <!-- ADMIN — CONTRACTORS -->
@@ -858,11 +864,38 @@
                     <tr><td>Battery Rebate per kWh</td><td>State battery rebate amount per kWh of installed capacity (if applicable).</td></tr>
                     <tr><td>Install per kW (PV)</td><td>Base installation cost per kW of solar capacity.</td></tr>
                     <tr><td>Install per Stack</td><td>Base installation cost per battery stack.</td></tr>
+                    <tr><td>Fixed Overhead ($)</td><td>Hidden flat dollar amount added to the final customer price (inc GST). Not visible in quotes, BOM, or PDF line items. GP margin and commission do not compound on it.</td></tr>
+                    <tr><td>Zero Bill Base Premium ($)</td><td>Minimum premium added when quote type is "Zero Bill". The actual premium is the greater of this base amount or the percentage-based amount below.</td></tr>
+                    <tr><td>Zero Bill Premium (%)</td><td>Percentage of the price before rebates (inc GST) used to calculate the Zero Bill premium. Compared against the base amount; whichever is higher is applied.</td></tr>
                 </tbody>
             </table>
 
             <div class="guide-warning">
                 <strong>Caution:</strong> Changes to business parameters affect all new quotes immediately. Review values carefully before saving.
+            </div>
+
+            <!-- ================================================ -->
+            <!-- ADMIN — QUOTES -->
+            <!-- ================================================ -->
+            <h2 id="admin-quotes">Admin &mdash; Quotes</h2>
+
+            <p>Switch to <strong>Quotes</strong> mode using the mode switcher in the admin toolbar. This view shows all saved quotes in a table with financial breakdown columns.</p>
+
+            <h3>Quotes Table</h3>
+            <p>Each row shows the quote date, customer name, sales rep, system size, price (inc GST), customer price, COG, installation cost, STC rebates, commission, discount, net GP, and net GP percentage.</p>
+
+            <h3>BOM Viewer</h3>
+            <p>Quotes saved with the BOM snapshot feature have a <strong>BOM</strong> button in the last column. Clicking it opens a fully costed Bill of Materials overlay showing:</p>
+            <ul>
+                <li><strong>Customer header</strong> &mdash; name, address, contact details, and quote date.</li>
+                <li><strong>Itemised line items</strong> &mdash; grouped by category (PV Equipment &amp; Mounting, Battery Components, Accessories, Installation). Each line shows description, SKU/supplier code, quantity, unit cost (ex GST), and line total (ex GST), with category subtotals.</li>
+                <li><strong>Grand Total COG</strong> &mdash; sum of all categories (ex GST).</li>
+                <li><strong>Pricing summary</strong> &mdash; Price Before Rebates (inc GST), PV STC Rebate, Battery STC Rebate, Discount, Zero Bill Premium, Fixed Overhead, and Customer Price (inc GST).</li>
+            </ul>
+            <p>Click <strong>Print</strong> to print the BOM. The print view hides all other admin UI for a clean output.</p>
+
+            <div class="guide-warning">
+                <strong>Note:</strong> Quotes saved before the BOM snapshot feature show "N/A" instead of a BOM button. To capture the BOM for an older quote, load it in the quote tool and re-save.
             </div>
 
             <!-- ================================================ -->
