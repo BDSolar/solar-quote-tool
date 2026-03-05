@@ -1796,9 +1796,13 @@ async function loadQuotes() {
     var wrap = document.getElementById('quotesContent');
     wrap.innerHTML = '<div style="text-align:center;color:var(--text-quaternary);padding:40px;font-size:14px;">Loading quotes…</div>';
     try {
-        var { data, error } = await sb.from('quotes').select('*, reps(name)').order('created_at', { ascending: false });
-        if (error) throw error;
-        adminQuotes = data || [];
+        var [quotesRes, bpRes] = await Promise.all([
+            sb.from('quotes').select('*, reps(name)').order('created_at', { ascending: false }),
+            businessParamsRow ? Promise.resolve({ data: businessParamsRow }) : sb.from('business_params').select('*').limit(1).maybeSingle()
+        ]);
+        if (quotesRes.error) throw quotesRes.error;
+        adminQuotes = quotesRes.data || [];
+        if (bpRes.data) businessParamsRow = bpRes.data;
         renderQuotesView();
     } catch (e) {
         console.error('loadQuotes:', e);
