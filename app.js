@@ -2925,7 +2925,7 @@ function calculateQuote() {
             updateGatewayBackupUI();
         }
 
-        const totalCog = totalPv + totalBattery + totalInstall + (CONFIG.fixed_overhead || 0);
+        const totalCog = totalPv + totalBattery + totalInstall;
         state.totalCog = totalCog;
 
         const zoneResult = lookupZone(document.getElementById('installPostcode').value);
@@ -2946,7 +2946,7 @@ function calculateQuote() {
         const priceBeforeRebates = priceBeforeCommission + commAmt;
         const finalPrice = priceBeforeRebates - pvReb - batReb;
         const discountAmt = parseFloat(document.getElementById('discountAmount')?.value) || 0;
-        const customerPriceNum = Math.round(priceBeforeRebates * GST - pvReb - batReb - discountAmt);
+        const customerPriceNum = Math.round(priceBeforeRebates * GST - pvReb - batReb - discountAmt + (CONFIG.fixed_overhead || 0));
         var customerPriceVal = '$' + customerPriceNum.toLocaleString('en-AU');
 
         document.getElementById('priceBeforeRebates').textContent = fmtIncGst(priceBeforeRebates);
@@ -2989,7 +2989,7 @@ function calculateQuote() {
                 var batRebMay = calcBatteryRebateFuture(usableKwh, state.stcPrice);
                 var commAmtMay = (baseIncGst - pvRebMay - batRebMay) * commRate / (1 - commRate * GST) / GST;
                 var priceBeforeRebatesMay = priceBeforeCommission + commAmtMay;
-                var futurePriceNum = Math.round(priceBeforeRebatesMay * GST - pvRebMay - batRebMay - discountAmt);
+                var futurePriceNum = Math.round(priceBeforeRebatesMay * GST - pvRebMay - batRebMay - discountAmt + (CONFIG.fixed_overhead || 0));
                 var increaseNum = futurePriceNum - customerPriceNum;
                 if (increaseNum > 0) {
                     urgBanner.style.display = 'flex';
@@ -4057,7 +4057,7 @@ function generateQuote() {
     const date = new Date().toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' });
 
     // Pricing (same logic as calculateQuote / showBOM)
-    const grandTotal = bom.reduce((s, g) => s + g.items.reduce((s2, i) => s2 + i.total, 0), 0) + (CONFIG.fixed_overhead || 0);
+    const grandTotal = bom.reduce((s, g) => s + g.items.reduce((s2, i) => s2 + i.total, 0), 0);
     const gp = state.gpMargin, gpAmt = grandTotal * (gp / 100);
     const priceBeforeComm = grandTotal + gpAmt;
     const zoneResult = lookupZone(pc);
@@ -4279,7 +4279,7 @@ function generateQuote() {
     if (pdfDiscount > 0) drawTotalRow('Discount', '-$' + Math.round(pdfDiscount).toLocaleString('en-AU'), { valueColor: [52, 211, 153] });
 
     y += 2;
-    var customerPrice = '$' + Math.round(priceBeforeRebates * GST - pvReb - batReb - pdfDiscount).toLocaleString('en-AU');
+    var customerPrice = '$' + Math.round(priceBeforeRebates * GST - pvReb - batReb - pdfDiscount + (CONFIG.fixed_overhead || 0)).toLocaleString('en-AU');
     drawTotalRow('Customer Price (inc GST)', customerPrice, {
         divider: true, dividerColor: magenta, dividerWidth: 0.8,
         fontSize: 12, fontStyle: 'bold', labelColor: magenta, valueColor: magenta, spacing: 8
