@@ -448,34 +448,42 @@ function renderRcAddonRows() {
                 '<div class="addon-stepper-center"><span class="addon-stepper-num rc-addon-qty" data-id="' + itemId + '">' + qty + '</span><span class="addon-stepper-label">panels</span></div>' +
                 '<input type="hidden" class="rc-addon-qty-input" data-id="' + itemId + '" value="' + qty + '">' +
                 '<button type="button" class="stepper-btn addon-stepper-btn rc-addon-qty-up" data-id="' + itemId + '">+</button></div>';
+        } else if (item.pricing_type === 'per_metre') {
+            var metres = addonData.value || 0;
+            qtyHtml = '<div class="addon-stepper">' +
+                '<button type="button" class="stepper-btn addon-stepper-btn rc-addon-qty-down" data-id="' + itemId + '">−</button>' +
+                '<div class="addon-stepper-center"><span class="addon-stepper-num rc-addon-qty" data-id="' + itemId + '">' + metres + '</span><span class="addon-stepper-label">metres</span></div>' +
+                '<input type="hidden" class="rc-addon-qty-input" data-id="' + itemId + '" value="' + metres + '">' +
+                '<button type="button" class="stepper-btn addon-stepper-btn rc-addon-qty-up" data-id="' + itemId + '">+</button></div>';
         }
         div.innerHTML = '<svg class="auto-acc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' +
             '<span class="auto-acc-label">' + esc(item.label) + '</span>' +
             (qtyHtml || '<span class="auto-acc-badge">Added</span>') +
             '<button class="btn-remove-acc" title="Remove">&times;</button>';
-        (function(id) {
+        (function(id, pricingType) {
             div.querySelector('.btn-remove-acc').addEventListener('click', function() { removeRcAddon(id); });
             var downBtn = div.querySelector('.rc-addon-qty-down');
             var upBtn = div.querySelector('.rc-addon-qty-up');
             var qtyDisplay = div.querySelector('.addon-stepper-num');
             var qtyHidden = div.querySelector('.rc-addon-qty-input');
+            var field = pricingType === 'per_metre' ? 'value' : 'quantity';
             if (downBtn && upBtn && qtyDisplay && qtyHidden) {
                 downBtn.addEventListener('click', function() {
                     var v = Math.max(0, (parseInt(qtyHidden.value) || 0) - 1);
                     qtyHidden.value = v;
                     qtyDisplay.textContent = v;
-                    installationAddons.addonItems[id].quantity = v;
+                    installationAddons.addonItems[id][field] = v;
                     calculateQuote();
                 });
                 upBtn.addEventListener('click', function() {
-                    var v = Math.min(99, (parseInt(qtyHidden.value) || 0) + 1);
+                    var v = Math.min(999, (parseInt(qtyHidden.value) || 0) + 1);
                     qtyHidden.value = v;
                     qtyDisplay.textContent = v;
-                    installationAddons.addonItems[id].quantity = v;
+                    installationAddons.addonItems[id][field] = v;
                     calculateQuote();
                 });
             }
-        })(itemId);
+        })(itemId, item.pricing_type);
         container.appendChild(div);
     }
 }
@@ -1118,6 +1126,13 @@ function getEffectivePrice(product, field) {
     return base;
 }
 
+function getZeroBillPremium(priceBeforeRebatesIncGst) {
+    if (document.getElementById('quoteTypeSelect')?.value !== 'zerobill') return 0;
+    var base = CONFIG.zero_bill_base || 0;
+    var pctAmt = priceBeforeRebatesIncGst * (CONFIG.zero_bill_pct || 0) / 100;
+    return Math.max(base, pctAmt);
+}
+
 // ====================
 // RECONSTRUCT CONFIG — merge DB pricing into structural config
 // ====================
@@ -1135,6 +1150,8 @@ function reconstructConfig(baseConfig, tables, batteryPackages, bmsParts, busine
     cfg.rebates.stc_deeming_period = Number(businessParams.stc_deeming_period);
     cfg.rebates.battery_rebate_per_kwh = Number(businessParams.battery_rebate_per_kwh);
     cfg.fixed_overhead = Number(businessParams.fixed_overhead) || 0;
+    cfg.zero_bill_base = Number(businessParams.zero_bill_base) || 0;
+    cfg.zero_bill_pct = Number(businessParams.zero_bill_pct) || 0;
     var surcharges = businessParams.roof_surcharges || {};
     Object.keys(cfg.installation.roof_types).forEach(function(rt) {
         if (surcharges[rt] !== undefined) cfg.installation.roof_types[rt].surcharge = Number(surcharges[rt]);
@@ -1955,7 +1972,7 @@ function updateStepperBatteryLabel() {
 // ====================
 
 function bindEvents() {
-    const dedicatedIds = ['inverterSelect','phaseType','desiredBatteryKwh','manufacturerSelect','batteryTypeSelect','roofType','panelOrientation','numRows','numArrays','tiltAngle','gatewaySelect','solaxBackupType','installPostcode','systemTypeSelect'];
+    const dedicatedIds = ['inverterSelect','phaseType','desiredBatteryKwh','manufacturerSelect','batteryTypeSelect','roofType','panelOrientation','numRows','numArrays','tiltAngle','gatewaySelect','solaxBackupType','installPostcode','systemTypeSelect','quoteTypeSelect'];
     document.querySelectorAll('input, select').forEach(el => { if (!dedicatedIds.includes(el.id)) { el.addEventListener('input', debouncedCalculateQuote); el.addEventListener('change', calculateQuote); } });
     document.getElementById('installPostcode').addEventListener('input', function() { this.value = this.value.replace(/\D/g, '').slice(0, 4); updateZoneDisplay(); calculateQuote(); });
     document.getElementById('systemTypeSelect').addEventListener('change', onSystemTypeChange);
@@ -1988,6 +2005,7 @@ function bindEvents() {
     document.getElementById('tiltAngle').addEventListener('change', () => { calculateQuote(); });
     document.getElementById('gatewaySelect').addEventListener('change', function() { updateBackupCircuitsVisibility(); calculateQuote(); });
     document.getElementById('solaxBackupType').addEventListener('change', function() { updateBackupCircuitsVisibility(); calculateQuote(); });
+    document.getElementById('quoteTypeSelect').addEventListener('change', calculateQuote);
     document.querySelectorAll('input[type="number"]').forEach(el => {
         el.addEventListener('click', function(e) { const rect = this.getBoundingClientRect(); if (e.clientX > rect.right - 30) { const mid = rect.top + rect.height / 2; if (e.clientY < mid) this.stepUp(); else this.stepDown(); this.dispatchEvent(new Event('input', { bubbles: true })); } });
         el.addEventListener('mousemove', function(e) { const rect = this.getBoundingClientRect(); this.style.cursor = (e.clientX > rect.right - 30) ? 'pointer' : 'text'; });
@@ -2927,6 +2945,7 @@ function calculateQuote() {
 
         const totalCog = totalPv + totalBattery + totalInstall;
         state.totalCog = totalCog;
+        state.totalInstall = totalInstall;
 
         const zoneResult = lookupZone(document.getElementById('installPostcode').value);
         const zoneRating = zoneResult ? zoneResult.rating : 0;
@@ -2944,9 +2963,13 @@ function calculateQuote() {
         const baseIncGst = priceBeforeCommission * GST;
         const commAmt = (baseIncGst - pvReb - batReb) * commRate / (1 - commRate * GST) / GST; // commission as % of customer price inc GST, stored ex GST
         const priceBeforeRebates = priceBeforeCommission + commAmt;
+        state.priceBeforeRebates = priceBeforeRebates;
+        state.pvStcCount = pvStcCount;
         const finalPrice = priceBeforeRebates - pvReb - batReb;
         const discountAmt = parseFloat(document.getElementById('discountAmount')?.value) || 0;
-        const customerPriceNum = Math.round(priceBeforeRebates * GST - pvReb - batReb - discountAmt + (CONFIG.fixed_overhead || 0));
+        const zeroBillPremium = getZeroBillPremium(priceBeforeRebates * GST);
+        state.zeroBillPremium = zeroBillPremium;
+        const customerPriceNum = Math.round(priceBeforeRebates * GST - pvReb - batReb - discountAmt + (CONFIG.fixed_overhead || 0) + zeroBillPremium);
         var customerPriceVal = '$' + customerPriceNum.toLocaleString('en-AU');
 
         document.getElementById('priceBeforeRebates').textContent = fmtIncGst(priceBeforeRebates);
@@ -2989,7 +3012,7 @@ function calculateQuote() {
                 var batRebMay = calcBatteryRebateFuture(usableKwh, state.stcPrice);
                 var commAmtMay = (baseIncGst - pvRebMay - batRebMay) * commRate / (1 - commRate * GST) / GST;
                 var priceBeforeRebatesMay = priceBeforeCommission + commAmtMay;
-                var futurePriceNum = Math.round(priceBeforeRebatesMay * GST - pvRebMay - batRebMay - discountAmt + (CONFIG.fixed_overhead || 0));
+                var futurePriceNum = Math.round(priceBeforeRebatesMay * GST - pvRebMay - batRebMay - discountAmt + (CONFIG.fixed_overhead || 0) + getZeroBillPremium(priceBeforeRebatesMay * GST));
                 var increaseNum = futurePriceNum - customerPriceNum;
                 if (increaseNum > 0) {
                     urgBanner.style.display = 'flex';
@@ -3524,6 +3547,7 @@ function collectQuoteData() {
             gatewaySelectIdx: document.getElementById('gatewaySelect').selectedIndex,
             gatewayValue: document.getElementById('gatewaySelect').value,
             solaxBackupType: document.getElementById('solaxBackupType')?.value || 'partial',
+            quoteType: document.getElementById('quoteTypeSelect')?.value || 'traditional',
             selectedAccessories: selectedAccessories.map(function(a) {
                 var copy = { id: a.id, label: a.label, price: a.price, type: a.type, supplier_code: a.supplier_code || '' };
                 if (a.type === 'ev_charger') { copy.evModel = a.evModel; copy.evDesc = a.evDesc || ''; copy.evSupplierCode = a.evSupplierCode || ''; }
@@ -3548,6 +3572,7 @@ function collectQuoteData() {
             gpMargin: state.gpMargin,
             salesCommission: state.salesCommission
         },
+        bom_snapshot: buildBOM(),
         custom_addons: getCustomAddons(),
         installation: {
             contractorId: currentContractorId || null,
@@ -3565,8 +3590,14 @@ function collectQuoteData() {
             batteryKwh: bat.totalKwh,
             discount: parseFloat(document.getElementById('discountAmount')?.value) || 0,
             fixedOverhead: CONFIG.fixed_overhead || 0,
+            zeroBillPremium: state.zeroBillPremium || 0,
+            zeroBillBase: CONFIG.zero_bill_base || 0,
+            zeroBillPct: CONFIG.zero_bill_pct || 0,
             pvStcRebate: state.pvStcRebate || 0,
             batteryStcRebate: state.batteryStcRebate || 0,
+            priceBeforeRebatesIncGst: Math.round((state.priceBeforeRebates || 0) * 1.1),
+            pvStcCount: state.pvStcCount || 0,
+            installTotal: state.totalInstall || 0,
             productDiscounts: collectActiveDiscounts()
         },
         rep_id: currentRepId || null
@@ -3879,6 +3910,10 @@ async function loadQuote(quoteId) {
         if (s.solaxBackupType) { var sbt = document.getElementById('solaxBackupType'); if (sbt) sbt.value = s.solaxBackupType; }
         updateGatewayBackupUI();
 
+        // Restore quote type
+        var qtSel = document.getElementById('quoteTypeSelect');
+        if (qtSel) qtSel.value = s.quoteType || 'traditional';
+
         // Restore accessories
         var loadedAccs = (s.selectedAccessories || []).filter(function(a) { return a.id !== 'power_sensor'; });
         selectedAccessories = loadedAccs;
@@ -3994,6 +4029,7 @@ function clearQuote() {
     syncStepperDisplay(); updateStepperPanelLabel(); syncBatteryStepperDisplay(); updateStepperBatteryLabel();
     document.getElementById('gatewaySelect').selectedIndex = 0;
     var sbtClear = document.getElementById('solaxBackupType'); if (sbtClear) sbtClear.value = 'partial';
+    var qtClear = document.getElementById('quoteTypeSelect'); if (qtClear) qtClear.value = 'traditional';
     selectedAccessories = []; renderSelectedAccessories();
     customAddonCount = 0; document.getElementById('customAddons').innerHTML = '';
     var discEl = document.getElementById('discountAmount'); if (discEl) discEl.value = 0;
@@ -4278,9 +4314,11 @@ function generateQuote() {
     if (batReb > 0) drawTotalRow('Battery STC Rebate', '-' + fmtPdf(batReb), { valueColor: [52, 211, 153] });
     var pdfDiscount = parseFloat(document.getElementById('discountAmount')?.value) || 0;
     if (pdfDiscount > 0) drawTotalRow('Discount', '-$' + Math.round(pdfDiscount).toLocaleString('en-AU'), { valueColor: [52, 211, 153] });
+    var pdfZeroBillPremium = getZeroBillPremium(priceBeforeRebates * GST);
+    if (pdfZeroBillPremium > 0) drawTotalRow('Zero Bill Premium', '+$' + Math.round(pdfZeroBillPremium).toLocaleString('en-AU'));
 
     y += 2;
-    var customerPrice = '$' + Math.round(priceBeforeRebates * GST - pvReb - batReb - pdfDiscount + (CONFIG.fixed_overhead || 0)).toLocaleString('en-AU');
+    var customerPrice = '$' + Math.round(priceBeforeRebates * GST - pvReb - batReb - pdfDiscount + (CONFIG.fixed_overhead || 0) + pdfZeroBillPremium).toLocaleString('en-AU');
     drawTotalRow('Customer Price (inc GST)', customerPrice, {
         divider: true, dividerColor: magenta, dividerWidth: 0.8,
         fontSize: 12, fontStyle: 'bold', labelColor: magenta, valueColor: magenta, spacing: 8

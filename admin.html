@@ -826,6 +826,12 @@
                 display: none;
             }
         }
+        @media print {
+            body > *:not(#adminBomOverlay) { display: none !important; }
+            #adminBomOverlay { position: static !important; background: none !important; overflow: visible !important; }
+            #adminBomOverlay > div { box-shadow: none !important; margin: 0 !important; padding: 20px !important; border-radius: 0 !important; }
+            #adminBomOverlay button { display: none !important; }
+        }
     </style>
 </head>
 <body>
@@ -947,6 +953,20 @@
         <span id="quotesCount" style="font-size:12px;color:var(--text-tertiary);"></span>
     </div>
     <div id="quotesContent" style="padding:20px;max-height:calc(100vh - 150px);overflow:auto;"></div>
+</div>
+
+<!-- QUOTE BOM OVERLAY -->
+<div id="adminBomOverlay" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.5);overflow-y:auto;">
+    <div style="max-width:900px;margin:40px auto;background:#fff;border-radius:12px;padding:32px;position:relative;box-shadow:0 25px 50px -12px rgba(0,0,0,.25);">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+            <h2 style="margin:0;font-size:18px;font-weight:700;">Bill of Materials</h2>
+            <div style="display:flex;gap:8px;">
+                <button onclick="printAdminBOM()" style="padding:6px 16px;font-size:13px;border:1px solid #d1d5db;border-radius:8px;background:#fff;cursor:pointer;">Print</button>
+                <button onclick="closeAdminBOM()" style="padding:6px 16px;font-size:13px;border:1px solid #d1d5db;border-radius:8px;background:#fff;cursor:pointer;">&times; Close</button>
+            </div>
+        </div>
+        <div id="adminBomContent"></div>
+    </div>
 </div>
 
 <!-- ADD USER MODAL -->

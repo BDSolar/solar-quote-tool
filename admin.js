@@ -1436,6 +1436,8 @@ function renderBusinessParams() {
         '<div class="form-group"><label>Default Battery kWh</label><input type="number" id="bpDefBattery" value="' + bp.default_battery_kwh + '"></div>' +
         '<div class="form-group"><label>Split Array Labour ($)</label><input type="number" id="bpSplitLabour" value="' + bp.split_array_labour + '" step="0.01"></div>' +
         '<div class="form-group"><label>Fixed Overhead ($)</label><input type="number" id="bpFixedOverhead" value="' + (bp.fixed_overhead || 0) + '" step="1"></div>' +
+        '<div class="form-group"><label>Zero Bill Base Premium ($)</label><input type="number" id="bpZeroBillBase" value="' + (bp.zero_bill_base || 0) + '" step="1"></div>' +
+        '<div class="form-group"><label>Zero Bill Premium (%)</label><input type="number" id="bpZeroBillPct" value="' + (bp.zero_bill_pct || 0) + '" step="0.01"></div>' +
         '</div>' +
         '<div class="detail-section-title">Roof Surcharges</div>' +
         '<div class="params-grid">' +
@@ -1466,6 +1468,8 @@ async function saveBusinessParams() {
         default_battery_kwh: val('bpDefBattery'),
         split_array_labour: val('bpSplitLabour'),
         fixed_overhead: val('bpFixedOverhead'),
+        zero_bill_base: val('bpZeroBillBase'),
+        zero_bill_pct: val('bpZeroBillPct'),
         roof_surcharges: {
             metal: val('bpRsMetal'),
             tile: val('bpRsTile'),
@@ -1820,7 +1824,7 @@ function renderQuotesView() {
         return;
     }
 
-    var rows = adminQuotes.map(function(q) {
+    var rows = adminQuotes.map(function(q, idx) {
         var customer = (q.customer && q.customer.name) || '—';
         var repName = (q.reps && q.reps.name) || '—';
         var date = q.created_at ? new Date(q.created_at).toLocaleDateString() : '—';
@@ -1877,6 +1881,7 @@ function renderQuotesView() {
             '<td style="text-align:right;">' + (discount ? fmtDollar(discount) : '—') + '</td>' +
             '<td style="text-align:right;">' + fmtDollar(netGp) + '</td>' +
             '<td style="text-align:right;">' + netGpPct.toFixed(1) + '%</td>' +
+            '<td style="text-align:center;">' + (q.bom_snapshot ? '<button onclick="showQuoteBOM(' + idx + ')" style="padding:4px 10px;font-size:12px;border:1px solid var(--border-primary);border-radius:6px;background:var(--bg-primary);color:var(--text-secondary);cursor:pointer;">BOM</button>' : '<span style="color:var(--text-quaternary);font-size:11px;">N/A</span>') + '</td>' +
             '</tr>';
     }).join('');
 
@@ -1899,10 +1904,121 @@ function renderQuotesView() {
             '<th style="text-align:right;">Discount</th>' +
             '<th style="text-align:right;">Net GP$</th>' +
             '<th style="text-align:right;">Net GP%</th>' +
+            '<th style="text-align:center;">BOM</th>' +
         '</tr></thead>' +
         '<tbody>' + rows + '</tbody>' +
         '</table>' +
         '</div>';
+}
+
+// ==============================
+// QUOTE BOM OVERLAY
+// ==============================
+function showQuoteBOM(idx) {
+    var q = adminQuotes[idx];
+    if (!q || !q.bom_snapshot) {
+        alert('BOM not available — saved before snapshot feature.');
+        return;
+    }
+    var bom = q.bom_snapshot;
+    var totals = q.totals || {};
+    var customer = q.customer || {};
+    var date = q.created_at ? new Date(q.created_at).toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
+    var addrParts = [customer.address, customer.suburb, customer.state, customer.postcode].filter(Boolean);
+
+    var html = '';
+
+    // Customer header
+    html += '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;">';
+    html += '<div><strong style="font-size:15px;">' + esc(customer.name || '—') + '</strong>';
+    if (addrParts.length) html += '<br><span style="color:#6b7280;">' + esc(addrParts.join(', ')) + '</span>';
+    if (customer.phone || customer.email) html += '<br><span style="color:#6b7280;">' + [customer.phone, customer.email].filter(Boolean).map(esc).join(' | ') + '</span>';
+    html += '</div>';
+    html += '<div style="text-align:right;white-space:nowrap;">' + esc(date) + '</div>';
+    html += '</div>';
+
+    // BOM table per category
+    var grandTotal = 0;
+    bom.forEach(function(group) {
+        var groupTotal = group.items.reduce(function(s, item) { return s + (item.total || 0); }, 0);
+        grandTotal += groupTotal;
+        html += '<div style="margin-bottom:14px;">';
+        html += '<div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#2563eb;padding:8px 0;border-bottom:2px solid #2563eb;">' + esc(group.category) + '</div>';
+        html += '<table style="width:100%;border-collapse:collapse;font-size:13px;">';
+        html += '<thead><tr style="color:#9ca3af;text-transform:uppercase;font-size:11px;letter-spacing:0.5px;">' +
+            '<th style="text-align:left;padding:8px 4px;border-bottom:1px solid #e5e7eb;">Description</th>' +
+            '<th style="text-align:left;padding:8px 4px;border-bottom:1px solid #e5e7eb;width:120px;">SKU / Code</th>' +
+            '<th style="text-align:center;padding:8px 4px;border-bottom:1px solid #e5e7eb;width:50px;">Qty</th>' +
+            '<th style="text-align:right;padding:8px 4px;border-bottom:1px solid #e5e7eb;width:100px;">Unit (ex)</th>' +
+            '<th style="text-align:right;padding:8px 4px;border-bottom:1px solid #e5e7eb;width:100px;">Total (ex)</th>' +
+            '</tr></thead><tbody>';
+        group.items.forEach(function(item, ii) {
+            var bg = ii % 2 === 0 ? '#f9fafb' : '#fff';
+            var pad = item.indent ? '7px 4px 7px 24px' : '7px 4px';
+            var fw = item.isGroup ? 'font-weight:600;' : '';
+            var clr = item.indent ? 'color:#6b7280;' : '';
+            var codeDisplay = item.supplier_code || item.sku || '';
+            if (codeDisplay === 'Labour' || codeDisplay === 'Custom') codeDisplay = '';
+            html += '<tr style="background:' + bg + ';' + clr + fw + '">' +
+                '<td style="padding:' + pad + ';">' + (item.indent ? '- ' : '') + esc(item.desc) + '</td>' +
+                '<td style="padding:7px 4px;font-size:11px;color:#9ca3af;">' + esc(codeDisplay) + '</td>' +
+                '<td style="text-align:center;padding:7px 4px;">' + item.qty + '</td>' +
+                '<td style="text-align:right;padding:7px 4px;">' + (item.isGroup ? '' : '$' + Math.round(item.unit || 0).toLocaleString()) + '</td>' +
+                '<td style="text-align:right;padding:7px 4px;">' + (item.isGroup ? '' : '$' + Math.round(item.total || 0).toLocaleString()) + '</td>' +
+                '</tr>';
+        });
+        html += '<tr style="font-weight:600;border-top:1px solid #d1d5db;">' +
+            '<td colspan="4" style="padding:7px 4px;text-align:right;">Subtotal</td>' +
+            '<td style="padding:7px 4px;text-align:right;">$' + Math.round(groupTotal).toLocaleString() + '</td></tr>';
+        html += '</tbody></table></div>';
+    });
+
+    // Grand total COG
+    html += '<div style="border-top:2px solid #111827;padding:10px 0;font-size:15px;font-weight:700;display:flex;justify-content:space-between;">' +
+        '<span>Total COG (ex GST)</span><span>$' + Math.round(grandTotal).toLocaleString() + '</span></div>';
+
+    // Summary section
+    html += '<div style="margin-top:16px;padding-top:12px;border-top:1px solid #e5e7eb;">';
+    html += '<table style="width:100%;font-size:14px;border-collapse:collapse;">';
+    var summaryRow = function(label, value, style) {
+        return '<tr style="' + (style || '') + '"><td style="padding:6px 0;color:#6b7280;">' + label + '</td><td style="padding:6px 0;text-align:right;font-weight:500;">' + value + '</td></tr>';
+    };
+
+    var priceBeforeRebatesIncGst = totals.priceBeforeRebatesIncGst || 0;
+    if (!priceBeforeRebatesIncGst && totals.customerPrice) {
+        // Fallback: derive from customer price + rebates + discount - overhead - zeroBill
+        priceBeforeRebatesIncGst = parseDollar(totals.customerPrice) + (totals.pvStcRebate || 0) + (totals.batteryStcRebate || 0) + (totals.discount || 0) - (totals.fixedOverhead || 0) - (totals.zeroBillPremium || 0);
+    }
+    html += summaryRow('Price Before Rebates (inc GST)', '$' + Math.round(priceBeforeRebatesIncGst).toLocaleString());
+
+    var pvStcCount = totals.pvStcCount || 0;
+    var pvStcRebate = totals.pvStcRebate || 0;
+    if (pvStcRebate > 0) html += summaryRow('PV STC Rebate' + (pvStcCount ? ' (' + pvStcCount + ' STCs)' : ''), '-$' + Math.round(pvStcRebate).toLocaleString(), 'color:#059669;');
+    var batStcRebate = totals.batteryStcRebate || 0;
+    if (batStcRebate > 0) html += summaryRow('Battery STC Rebate', '-$' + Math.round(batStcRebate).toLocaleString(), 'color:#059669;');
+    var discount = totals.discount || 0;
+    if (discount > 0) html += summaryRow('Discount', '-$' + Math.round(discount).toLocaleString(), 'color:#059669;');
+    var zeroBillPremium = totals.zeroBillPremium || 0;
+    if (zeroBillPremium > 0) html += summaryRow('Zero Bill Premium', '$' + Math.round(zeroBillPremium).toLocaleString());
+    var fixedOverhead = Number(totals.fixedOverhead) || 0;
+    if (fixedOverhead > 0) html += summaryRow('Fixed Overhead', '$' + Math.round(fixedOverhead).toLocaleString());
+
+    var customerPrice = totals.customerPrice || '—';
+    html += summaryRow('Customer Price (inc GST)', customerPrice, 'border-top:2px solid #2563eb;font-weight:700;font-size:16px;color:#2563eb;');
+    html += '</table></div>';
+
+    document.getElementById('adminBomContent').innerHTML = html;
+    document.getElementById('adminBomOverlay').style.display = 'block';
+    document.body.style.overflow = 'hidden';
+}
+
+function closeAdminBOM() {
+    document.getElementById('adminBomOverlay').style.display = 'none';
+    document.body.style.overflow = '';
+}
+
+function printAdminBOM() {
+    window.print();
 }
 
 // ==============================
