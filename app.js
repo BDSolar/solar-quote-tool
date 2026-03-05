@@ -3564,6 +3564,7 @@ function collectQuoteData() {
             sysKw: state.sysKw,
             batteryKwh: bat.totalKwh,
             discount: parseFloat(document.getElementById('discountAmount')?.value) || 0,
+            fixedOverhead: CONFIG.fixed_overhead || 0,
             pvStcRebate: state.pvStcRebate || 0,
             batteryStcRebate: state.batteryStcRebate || 0,
             productDiscounts: collectActiveDiscounts()
