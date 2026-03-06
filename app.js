@@ -195,10 +195,11 @@ function buildQuoteContext() {
     var gwIdx = gwSel ? gwSel.selectedIndex : 0;
     var gwVal = gwSel ? gwSel.value : 'none';
     var hasBattery = (state.desiredBatteryKwh || 0) > 0;
-    // SolaX: has_backup when battery is configured in hybrid mode (not battery-only, since existing inverter handles backup)
+    // SolaX: has_backup when backup option is partial or full (not none)
     // Sigenergy: has_backup when gateway is selected from dropdown
+    var solaxBackup = document.getElementById('solaxBackupType')?.value || 'none';
     var hasBackup = currentManufacturer === 'solax'
-        ? hasBattery && !isSolarOnly() && !isBatteryOnly()
+        ? hasBattery && !isSolarOnly() && !isBatteryOnly() && solaxBackup !== 'none'
         : gwIdx > 0 && gwVal !== 'none';
     return {
         sysKw: state.sysKw || 0,
@@ -540,8 +541,9 @@ function updateBackupCircuitsVisibility() {
     if (!el) return;
     var hasBackup = false;
     if (currentManufacturer === 'solax') {
-        // SolaX: backup circuits visible when battery is configured in hybrid mode (not battery-only)
-        hasBackup = (state.desiredBatteryKwh || 0) > 0 && !isSolarOnly() && !isBatteryOnly();
+        // SolaX: backup circuits visible when backup option is partial or full
+        var sbtVal = document.getElementById('solaxBackupType')?.value || 'none';
+        hasBackup = (state.desiredBatteryKwh || 0) > 0 && !isSolarOnly() && !isBatteryOnly() && sbtVal !== 'none';
     } else {
         // Sigenergy: backup when gateway is selected
         var gwSel = document.getElementById('gatewaySelect');
@@ -560,12 +562,14 @@ function updateBackupCircuitsVisibility() {
 function updateGatewayBackupUI() {
     var gwGroup = document.getElementById('gatewayGroup');
     var solaxGroup = document.getElementById('solaxBackupGroup');
+    var scopeGroup = document.getElementById('backupScopeGroup');
     if (!gwGroup || !solaxGroup) return;
     var solarOnly = isSolarOnly();
     var batteryOnly = isBatteryOnly();
     var hasBattery = (state.desiredBatteryKwh || 0) > 0 && !solarOnly && !batteryOnly;
     if (currentManufacturer === 'solax') {
         gwGroup.style.display = 'none';
+        if (scopeGroup) scopeGroup.style.display = 'none';
         if (hasBattery) {
             solaxGroup.style.display = '';
             solaxGroup.classList.remove('disabled');
@@ -573,21 +577,75 @@ function updateGatewayBackupUI() {
             solaxGroup.style.display = 'none';
         }
     } else {
-        // Sigenergy — show gateway dropdown, hide solax backup
+        // Sigenergy — show gateway dropdown + scope toggle, hide solax backup
         solaxGroup.style.display = 'none';
         gwGroup.style.display = '';
+        if (scopeGroup) scopeGroup.style.display = '';
+        var enableScope = false;
         if (solarOnly) {
             gwGroup.classList.add('disabled');
         } else {
             gwGroup.classList.remove('disabled');
+            var gwSel = document.getElementById('gatewaySelect');
+            if (gwSel && gwSel.selectedIndex > 0 && gwSel.value !== 'none') enableScope = true;
+        }
+        if (scopeGroup) {
+            var wasDisabled = scopeGroup.classList.contains('disabled');
+            if (enableScope) {
+                scopeGroup.classList.remove('disabled');
+                if (wasDisabled) onBackupScopeChange();
+            } else {
+                scopeGroup.classList.add('disabled');
+            }
         }
     }
 }
 
+function onBackupScopeChange() {
+    var scope = document.getElementById('backupScope')?.value || 'partial';
+    // Set backup circuits
+    var bcInput = document.getElementById('backupCircuitCount');
+    if (bcInput) bcInput.value = (scope === 'full') ? 5 : 3;
+    // Find board upgrade rate card items by label
+    var partialItem = currentRateCardItems.find(function(i) { return i.label && i.label.toLowerCase().indexOf('partial board upgrade') !== -1; });
+    var meterItem = currentRateCardItems.find(function(i) { return i.label && i.label.toLowerCase().indexOf('meter board upgrade') !== -1; });
+    // Remove whichever board upgrade addon is currently active
+    if (partialItem && installationAddons.addonItems[partialItem.id]) delete installationAddons.addonItems[partialItem.id];
+    if (meterItem && installationAddons.addonItems[meterItem.id]) delete installationAddons.addonItems[meterItem.id];
+    // Add the correct one
+    if (scope === 'full' && meterItem) {
+        installationAddons.addonItems[meterItem.id] = { quantity: 1, value: 0, quotedAmount: 0 };
+    } else if (scope === 'partial' && partialItem) {
+        installationAddons.addonItems[partialItem.id] = { quantity: 1, value: 0, quotedAmount: 0 };
+    }
+    renderInstallationCostsUI();
+    calculateQuote();
+}
+
+function onSolaxBackupChange() {
+    var val = document.getElementById('solaxBackupType')?.value || 'none';
+    var bcInput = document.getElementById('backupCircuitCount');
+    var partialItem = currentRateCardItems.find(function(i) { return i.label && i.label.toLowerCase().indexOf('partial board upgrade') !== -1; });
+    var meterItem = currentRateCardItems.find(function(i) { return i.label && i.label.toLowerCase().indexOf('meter board upgrade') !== -1; });
+    // Remove any existing board upgrade addon
+    if (partialItem && installationAddons.addonItems[partialItem.id]) delete installationAddons.addonItems[partialItem.id];
+    if (meterItem && installationAddons.addonItems[meterItem.id]) delete installationAddons.addonItems[meterItem.id];
+    if (val === 'partial') {
+        if (bcInput) bcInput.value = 3;
+        if (partialItem) installationAddons.addonItems[partialItem.id] = { quantity: 1, value: 0, quotedAmount: 0 };
+    } else if (val === 'full') {
+        if (bcInput) bcInput.value = 5;
+        if (meterItem) installationAddons.addonItems[meterItem.id] = { quantity: 1, value: 0, quotedAmount: 0 };
+    } else {
+        if (bcInput) bcInput.value = 0;
+    }
+    renderInstallationCostsUI();
+}
+
 function getSolaxEpsBoxCost() {
     if (isBatteryOnly()) return null;
-    var backupType = document.getElementById('solaxBackupType')?.value || 'partial';
-    if (backupType !== 'whole_home') return null;
+    var backupType = document.getElementById('solaxBackupType')?.value || 'none';
+    if (backupType !== 'full') return null;
     var invSku = state.invSku || '';
     // X1-VAST and X3-ULT have built-in whole-home backup
     if (invSku.startsWith('X1-VAST')) return null;
@@ -1972,7 +2030,7 @@ function updateStepperBatteryLabel() {
 // ====================
 
 function bindEvents() {
-    const dedicatedIds = ['inverterSelect','phaseType','desiredBatteryKwh','manufacturerSelect','batteryTypeSelect','roofType','panelOrientation','numRows','numArrays','tiltAngle','gatewaySelect','solaxBackupType','installPostcode','systemTypeSelect','quoteTypeSelect'];
+    const dedicatedIds = ['inverterSelect','phaseType','desiredBatteryKwh','manufacturerSelect','batteryTypeSelect','roofType','panelOrientation','numRows','numArrays','tiltAngle','gatewaySelect','solaxBackupType','backupScope','installPostcode','systemTypeSelect','quoteTypeSelect'];
     document.querySelectorAll('input, select').forEach(el => { if (!dedicatedIds.includes(el.id)) { el.addEventListener('input', debouncedCalculateQuote); el.addEventListener('change', calculateQuote); } });
     document.getElementById('installPostcode').addEventListener('input', function() { this.value = this.value.replace(/\D/g, '').slice(0, 4); updateZoneDisplay(); calculateQuote(); });
     document.getElementById('systemTypeSelect').addEventListener('change', onSystemTypeChange);
@@ -2004,7 +2062,8 @@ function bindEvents() {
     document.getElementById('numArrays').addEventListener('input', () => { calculateQuote(); });
     document.getElementById('tiltAngle').addEventListener('change', () => { calculateQuote(); });
     document.getElementById('gatewaySelect').addEventListener('change', function() { updateBackupCircuitsVisibility(); calculateQuote(); });
-    document.getElementById('solaxBackupType').addEventListener('change', function() { updateBackupCircuitsVisibility(); calculateQuote(); });
+    document.getElementById('solaxBackupType').addEventListener('change', function() { onSolaxBackupChange(); updateBackupCircuitsVisibility(); calculateQuote(); });
+    document.getElementById('backupScope').addEventListener('change', onBackupScopeChange);
     document.getElementById('quoteTypeSelect').addEventListener('change', calculateQuote);
     document.querySelectorAll('input[type="number"]').forEach(el => {
         el.addEventListener('click', function(e) { const rect = this.getBoundingClientRect(); if (e.clientX > rect.right - 30) { const mid = rect.top + rect.height / 2; if (e.clientY < mid) this.stepUp(); else this.stepDown(); this.dispatchEvent(new Event('input', { bubbles: true })); } });
@@ -3174,8 +3233,9 @@ function updateSummaryComponents(isDualStack, isParallel, bat, costRoofKit, cost
         }
         // Gateway / Backup Type (skip for battery-only — customer's existing inverter handles backup)
         if (currentManufacturer === 'solax' && !isBatteryOnly()) {
-            var backupVal = document.getElementById('solaxBackupType')?.value || 'partial';
-            batHtml += summaryRow(backupVal === 'whole_home' ? 'Whole Home Backup' : 'Partial Backup', 1);
+            var backupVal = document.getElementById('solaxBackupType')?.value || 'none';
+            if (backupVal === 'full') batHtml += summaryRow('Full Home Backup', 1);
+            else if (backupVal === 'partial') batHtml += summaryRow('Partial Backup', 1);
             var epsInfo = getSolaxEpsBoxCost();
             if (epsInfo) batHtml += summaryRow(epsInfo.desc, 1);
         } else if (currentManufacturer !== 'solax') {
@@ -3546,7 +3606,8 @@ function collectQuoteData() {
             userChangedInverter: userChangedInverter,
             gatewaySelectIdx: document.getElementById('gatewaySelect').selectedIndex,
             gatewayValue: document.getElementById('gatewaySelect').value,
-            solaxBackupType: document.getElementById('solaxBackupType')?.value || 'partial',
+            solaxBackupType: document.getElementById('solaxBackupType')?.value || 'none',
+            backupScope: document.getElementById('backupScope')?.value || 'partial',
             quoteType: document.getElementById('quoteTypeSelect')?.value || 'traditional',
             selectedAccessories: selectedAccessories.map(function(a) {
                 var copy = { id: a.id, label: a.label, price: a.price, type: a.type, supplier_code: a.supplier_code || '' };
@@ -3907,7 +3968,14 @@ async function loadQuote(quoteId) {
         else if (s.addGateway && document.getElementById('gatewaySelect').options.length > 1) document.getElementById('gatewaySelect').selectedIndex = 1;
 
         // Restore SolaX backup type
-        if (s.solaxBackupType) { var sbt = document.getElementById('solaxBackupType'); if (sbt) sbt.value = s.solaxBackupType; }
+        if (s.solaxBackupType) {
+            var sbt = document.getElementById('solaxBackupType');
+            // Map old 'whole_home' values to new 'full'
+            var sbtVal = s.solaxBackupType === 'whole_home' ? 'full' : s.solaxBackupType;
+            if (sbt) { sbt.value = sbtVal; syncSegmentedFromSelect('solaxBackupType'); }
+        }
+        // Restore backup scope
+        if (s.backupScope) { var bsEl = document.getElementById('backupScope'); if (bsEl) { bsEl.value = s.backupScope; syncSegmentedFromSelect('backupScope'); } }
         updateGatewayBackupUI();
 
         // Restore quote type
@@ -4028,7 +4096,8 @@ function clearQuote() {
     document.getElementById('panelCount').value = CONFIG.default_panel_count;
     syncStepperDisplay(); updateStepperPanelLabel(); syncBatteryStepperDisplay(); updateStepperBatteryLabel();
     document.getElementById('gatewaySelect').selectedIndex = 0;
-    var sbtClear = document.getElementById('solaxBackupType'); if (sbtClear) sbtClear.value = 'partial';
+    var sbtClear = document.getElementById('solaxBackupType'); if (sbtClear) { sbtClear.value = 'none'; syncSegmentedFromSelect('solaxBackupType'); }
+    var bsClear = document.getElementById('backupScope'); if (bsClear) { bsClear.value = 'partial'; syncSegmentedFromSelect('backupScope'); }
     var qtClear = document.getElementById('quoteTypeSelect'); if (qtClear) qtClear.value = 'traditional';
     selectedAccessories = []; renderSelectedAccessories();
     customAddonCount = 0; document.getElementById('customAddons').innerHTML = '';
@@ -4192,8 +4261,9 @@ function generateQuote() {
     ];
     // Add backup type for SolaX when battery is present
     if (currentManufacturer === 'solax' && totalKwh > 0) {
-        var pdfBackupType = document.getElementById('solaxBackupType')?.value || 'partial';
-        summaryItems.push({ label: 'Backup', value: pdfBackupType === 'whole_home' ? 'Whole Home' : 'Partial' });
+        var pdfBackupType = document.getElementById('solaxBackupType')?.value || 'none';
+        if (pdfBackupType === 'full') summaryItems.push({ label: 'Backup', value: 'Full Home' });
+        else if (pdfBackupType === 'partial') summaryItems.push({ label: 'Backup', value: 'Partial' });
     }
     const colW = contentW / summaryItems.length;
     summaryItems.forEach((item, i) => {

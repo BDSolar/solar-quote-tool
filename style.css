@@ -769,6 +769,23 @@ select option {
     pointer-events: none;
 }
 
+/* Gateway + Backup Scope row */
+.gw-scope-row {
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
+}
+.gw-scope-row #backupScopeGroup {
+    flex-shrink: 0;
+}
+.gw-scope-row #backupScopeGroup .seg-group {
+    height: 50px;
+    align-items: center;
+}
+.gw-scope-row #backupScopeGroup .seg-btn {
+    padding: 12px 14px;
+}
+
 /* Power sensor display */
 .power-sensor-display {
     width: 100%;

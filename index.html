@@ -152,8 +152,11 @@
             <div class="section">
                 <div class="grid-2">
                     <div class="form-group" id="inverterGroup"><label id="inverterDropdownLabel">Inverter/Energy Controller</label><select id="inverterSelect"></select></div>
-                    <div class="form-group" id="gatewayGroup"><label id="gatewayDropdownLabel">Gateway/Backup Protection</label><select id="gatewaySelect"></select></div>
-                    <div class="form-group" id="solaxBackupGroup" style="display:none;"><label>Backup Type</label><select id="solaxBackupType"><option value="partial">Partial Backup</option><option value="whole_home">Whole Home</option></select></div>
+                    <div class="gw-scope-row">
+                        <div class="form-group" id="gatewayGroup" style="flex:1;min-width:0;"><label id="gatewayDropdownLabel">Gateway/Backup Protection</label><select id="gatewaySelect"></select></div>
+                        <div class="form-group" id="solaxBackupGroup" style="display:none;flex:1;min-width:0;"><label>Backup Options</label><select id="solaxBackupType" style="display:none"><option value="none">None</option><option value="partial">Partial</option><option value="full">Full Home</option></select><div class="seg-group" data-target="solaxBackupType"><button type="button" class="seg-btn active" data-value="none">None</button><button type="button" class="seg-btn" data-value="partial">Partial</button><button type="button" class="seg-btn" data-value="full">Full Home</button></div></div>
+                        <div class="form-group" id="backupScopeGroup"><label>Scope</label><select id="backupScope" style="display:none"><option value="partial">Partial</option><option value="full">Full Home</option></select><div class="seg-group" data-target="backupScope"><button type="button" class="seg-btn active" data-value="partial">Partial</button><button type="button" class="seg-btn" data-value="full">Full Home</button></div></div>
+                    </div>
                 </div>
                 <div id="batteryConfigPanel" class="info-box" style="display:none;">
                     <strong>Recommended Config:</strong> <span id="batteryBreakdown"></span>
