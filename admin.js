@@ -1827,7 +1827,7 @@ function renderQuotesView() {
     var rows = adminQuotes.map(function(q, idx) {
         var customer = (q.customer && q.customer.name) || '—';
         var repName = (q.reps && q.reps.name) || '—';
-        var date = q.created_at ? new Date(q.created_at).toLocaleDateString() : '—';
+        var date = q.created_at ? (function(d){return (d.getDate()+'').padStart(2,'0')+'/'+(d.getMonth()+1+'').padStart(2,'0')+'/'+d.getFullYear()})(new Date(q.created_at)) : '—';
         var totals = q.totals || {};
         var pricing = q.pricing || {};
 

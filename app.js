@@ -3882,7 +3882,7 @@ async function searchQuotes() {
         let html = '';
         results.forEach(r => {
             const c = r.customer || {};
-            const date = r.updated_at ? new Date(r.updated_at).toLocaleDateString('en-AU') : '';
+            const date = r.updated_at ? (d => (d.getDate()+'').padStart(2,'0')+'/'+(d.getMonth()+1+'').padStart(2,'0')+'/'+d.getFullYear())(new Date(r.updated_at)) : '';
             const sysInfo = (r.totals?.sysKw ? r.totals.sysKw.toFixed(1) + 'kW' : '') + (r.totals?.batteryKwh ? ' / ' + fmtKwh(r.totals.batteryKwh) + 'kWh' : '');
             html += '<div onclick="loadQuote(\'' + r.id + '\')" style="padding:10px 16px;background:var(--white);border:1px solid var(--gray-200);border-radius:var(--radius-sm, 12px);margin-bottom:6px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;box-shadow:var(--shadow-sm);" onmouseover="this.style.borderColor=\'var(--blue)\'" onmouseout="this.style.borderColor=\'var(--gray-200)\'">';
             html += '<div><span style="color:var(--gray-900);font-weight:500;">' + esc(c.name || 'Unknown') + '</span>';
