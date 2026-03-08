@@ -210,7 +210,7 @@ function buildQuoteContext() {
         arrays: state.numArrays || 1,
         has_pv: (state.sysKw || 0) > 0,
         has_battery: hasBattery,
-        dual_stack: dualStackResult !== null,
+        dual_stack: dualStackResult !== null || (parallelResult !== null && parallelResult.isParallel),
         has_backup: hasBackup,
         backupCircuitCount: parseInt(document.getElementById('backupCircuitCount')?.value) || 0,
         travelDistanceKm: parseInt(document.getElementById('travelDistanceKm')?.value) || 0
