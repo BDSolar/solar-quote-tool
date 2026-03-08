@@ -13,6 +13,9 @@ try {
     console.warn('[!] Supabase init failed:', err);
 }
 
+const STANDARD_RATES_NAME = 'Standard Rates';
+function isStandardRates(c) { return c && c.business_name === STANDARD_RATES_NAME; }
+
 // === AUTH ===
 async function checkAuth() {
     if (!sb) return false;
@@ -261,6 +264,15 @@ async function saveContractor() {
         return;
     }
 
+    // Protect Standard Rates from rename or deactivation
+    if (selectedContractorId && isStandardRates(selectedContractor)) {
+        if (data.business_name !== STANDARD_RATES_NAME) {
+            showToast('Cannot rename "Standard Rates" — it is the default contractor.', 'error');
+            return;
+        }
+        data.active = true;
+    }
+
     if (selectedContractorId) {
         // UPDATE
         const { error } = await sb.from('contractors').update(data).eq('id', selectedContractorId);
@@ -320,6 +332,10 @@ function collectContractorForm() {
 
 async function deactivateContractor() {
     if (!selectedContractorId) return;
+    if (isStandardRates(selectedContractor)) {
+        showToast('Cannot deactivate "Standard Rates" — it is the default contractor.', 'error');
+        return;
+    }
     showConfirmModal(
         'Deactivate Contractor',
         `Are you sure you want to deactivate "${selectedContractor?.business_name || ''}"? They will no longer appear in the quote tool.`,
@@ -591,10 +607,11 @@ function renderDetailsTab(isNew = false) {
         return `<div class="compliance-warning expiring">Expires ${w.date} (within 30 days)</div>`;
     }
 
+    const locked = isStandardRates(c);
     const body = document.getElementById('detailBody');
     body.innerHTML = `
         <div class="detail-section-title">Contact &amp; Business</div>
-        <div class="form-group"><label>Business Name *</label><input type="text" id="cBusinessName" value="${esc(c.business_name || '')}"></div>
+        <div class="form-group"><label>Business Name *</label><input type="text" id="cBusinessName" value="${esc(c.business_name || '')}" ${locked ? 'readonly style="opacity:0.6;cursor:not-allowed;"' : ''}></div>
         <div class="grid-2">
             <div class="form-group"><label>Contact Name</label><input type="text" id="cContactName" value="${esc(c.contact_name || '')}"></div>
             <div class="form-group"><label>Phone</label><input type="tel" id="cPhone" value="${esc(c.phone || '')}"></div>
@@ -627,7 +644,7 @@ function renderDetailsTab(isNew = false) {
         <div class="form-group" style="display:flex;align-items:center;gap:10px;">
             <label style="margin:0;">Active</label>
             <label class="toggle-switch">
-                <input type="checkbox" id="cActive" ${c.active !== false ? 'checked' : ''}>
+                <input type="checkbox" id="cActive" ${c.active !== false ? 'checked' : ''} ${locked ? 'disabled' : ''}>
                 <span class="toggle-slider"></span>
             </label>
         </div>
@@ -639,7 +656,7 @@ function renderDetailsTab(isNew = false) {
 
         <div class="detail-actions">
             <button class="btn-save" onclick="saveContractor()">Save</button>
-            ${selectedContractorId && c.active !== false ? '<button class="btn-danger" onclick="deactivateContractor()">Deactivate</button>' : ''}
+            ${selectedContractorId && c.active !== false && !locked ? '<button class="btn-danger" onclick="deactivateContractor()">Deactivate</button>' : ''}
         </div>
     `;
     attachPlacesAutocomplete('cAddress');

@@ -94,6 +94,8 @@ async function loadReps() {
 // CONTRACTOR + RATE CARD LOADING
 // ====================
 
+const STANDARD_RATES_NAME = 'Standard Rates';
+
 async function loadContractors() {
     if (!supabaseClient) return;
     try {
@@ -101,36 +103,30 @@ async function loadContractors() {
             .select('id, business_name').eq('active', true).order('business_name');
         if (error || !data) return;
         const sel = document.getElementById('contractorSelect');
+        sel.innerHTML = '';
         data.forEach(r => {
             const o = document.createElement('option');
             o.value = r.id;
             o.textContent = r.business_name;
             sel.appendChild(o);
         });
-        // Restore from localStorage, or default to "Standard Rates"
+        // Restore from localStorage, default to "Standard Rates", or first contractor
         const saved = localStorage.getItem('bds_contractor_id');
         var match = saved && data.find(r => r.id === saved);
-        if (!match) match = data.find(r => r.business_name === 'Standard Rates');
+        if (!match) match = data.find(r => r.business_name === STANDARD_RATES_NAME);
+        if (!match && data.length) match = data[0];
         if (match) {
             sel.value = match.id;
             currentContractorId = match.id;
             localStorage.setItem('bds_contractor_id', match.id);
             loadRateCard(match.id);
         }
+        sel.disabled = (data.length <= 1);
         sel.addEventListener('change', function() {
-            currentContractorId = this.value || null;
-            if (currentContractorId) {
-                localStorage.setItem('bds_contractor_id', currentContractorId);
-                loadRateCard(currentContractorId);
-            } else {
-                localStorage.removeItem('bds_contractor_id');
-                currentRateCardItems = [];
-                currentContractorRecord = null;
-                rateCardResult = null;
-                installationAddons = { standardItems: {}, checkboxItems: {}, addonItems: {} };
-                updateInstallCostsVisibility();
-                calculateQuote();
-            }
+            currentContractorId = this.value;
+            localStorage.setItem('bds_contractor_id', currentContractorId);
+            installationAddons = { standardItems: {}, checkboxItems: {}, addonItems: {} };
+            loadRateCard(currentContractorId);
         });
         console.log('[OK] Contractors loaded (' + data.length + ')');
     } catch (e) {
@@ -160,6 +156,15 @@ async function loadRateCard(contractorId, options) {
                 installationAddons.standardItems[item.id] = true;
             }
         });
+
+        // Re-apply backup addons with new contractor's rate card item IDs
+        if (currentManufacturer === 'solax') {
+            var sbt = document.getElementById('solaxBackupType')?.value || 'none';
+            if (sbt !== 'none') onSolaxBackupChange();
+        } else {
+            var gwSel = document.getElementById('gatewaySelect');
+            if (gwSel && gwSel.selectedIndex > 0 && gwSel.value !== 'none') onBackupScopeChange();
+        }
 
         updateInstallCostsVisibility();
         renderInstallationCostsUI();
