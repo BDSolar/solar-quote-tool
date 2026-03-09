@@ -3527,6 +3527,31 @@ function showBOM() {
     custHtml += '</div>';
     document.getElementById('bomCustomerHeader').innerHTML = custHtml;
 
+    // Site Details section
+    var storeyVal = document.getElementById('storeyCount')?.value;
+    var storeyLabel = storeyVal === '2' ? 'Double Storey' : 'Single Storey';
+    var mountTypeVal = document.getElementById('mountingType')?.value;
+    var mountLabel = mountTypeVal === 'wall' ? 'Wall Mount' : 'Ground Mount';
+    var orientVal = document.getElementById('panelOrientation')?.value;
+    var orientLabel = orientVal === 'landscape' ? 'Landscape' : 'Portrait';
+    var roofVal = document.getElementById('roofType')?.value || '';
+    var roofLabel = roofVal ? document.getElementById('roofType').options[document.getElementById('roofType').selectedIndex].text : '';
+    var rowsVal = document.getElementById('numRows')?.value || '1';
+    var arraysVal = document.getElementById('numArrays')?.value || '1';
+    var phaseVal = document.getElementById('phaseType')?.value;
+    var phaseLabel = phaseVal === 'three_phase' ? 'Three Phase' : 'Single Phase';
+    var siteHtml = '<div style="margin-bottom:6px;"><strong style="color:var(--gray-900); font-size:13px; text-transform:uppercase; letter-spacing:0.5px;">Site Details</strong></div>';
+    siteHtml += '<div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px 24px; color:var(--gray-500);">';
+    siteHtml += '<div><span style="color:var(--gray-400);">Storeys:</span> ' + esc(storeyLabel) + '</div>';
+    siteHtml += '<div><span style="color:var(--gray-400);">Battery Mount:</span> ' + esc(mountLabel) + '</div>';
+    siteHtml += '<div><span style="color:var(--gray-400);">Orientation:</span> ' + esc(orientLabel) + '</div>';
+    siteHtml += '<div><span style="color:var(--gray-400);">Roof Type:</span> ' + esc(roofLabel) + '</div>';
+    siteHtml += '<div><span style="color:var(--gray-400);">Rows:</span> ' + esc(rowsVal) + '</div>';
+    siteHtml += '<div><span style="color:var(--gray-400);">Arrays:</span> ' + esc(arraysVal) + '</div>';
+    siteHtml += '<div><span style="color:var(--gray-400);">Phase:</span> ' + esc(phaseLabel) + '</div>';
+    siteHtml += '</div>';
+    document.getElementById('bomSiteDetails').innerHTML = siteHtml;
+
     let html = '', grandTotal = 0;
     bom.forEach((group, gi) => {
         const groupTotal = group.items.reduce((s, item) => s + item.total, 0); grandTotal += groupTotal;
