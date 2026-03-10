@@ -1447,8 +1447,6 @@ function renderBusinessParams() {
         '<div class="form-group"><label>STC Price ($)</label><input type="number" id="bpStcPrice" value="' + bp.stc_price + '" step="0.01"></div>' +
         '<div class="form-group"><label>STC Deeming Period (yrs)</label><input type="number" id="bpStcDeeming" value="' + bp.stc_deeming_period + '"></div>' +
         '<div class="form-group"><label>Battery Rebate ($/kWh)</label><input type="number" id="bpBatRebate" value="' + bp.battery_rebate_per_kwh + '" step="0.01"></div>' +
-        '<div class="form-group"><label>Install PV ($/kW)</label><input type="number" id="bpInstallPv" value="' + bp.install_pv_per_kw + '" step="0.01"></div>' +
-        '<div class="form-group"><label>Install Battery ($/stack)</label><input type="number" id="bpInstallBat" value="' + bp.install_battery_per_stack + '" step="0.01"></div>' +
         '<div class="form-group"><label>Default Panel Count</label><input type="number" id="bpDefPanels" value="' + bp.default_panel_count + '"></div>' +
         '<div class="form-group"><label>Default Battery kWh</label><input type="number" id="bpDefBattery" value="' + bp.default_battery_kwh + '"></div>' +
         '<div class="form-group"><label>Split Array Labour ($)</label><input type="number" id="bpSplitLabour" value="' + bp.split_array_labour + '" step="0.01"></div>' +
@@ -1479,8 +1477,6 @@ async function saveBusinessParams() {
         stc_price: val('bpStcPrice'),
         stc_deeming_period: val('bpStcDeeming'),
         battery_rebate_per_kwh: val('bpBatRebate'),
-        install_pv_per_kw: val('bpInstallPv'),
-        install_battery_per_stack: val('bpInstallBat'),
         default_panel_count: val('bpDefPanels'),
         default_battery_kwh: val('bpDefBattery'),
         split_array_labour: val('bpSplitLabour'),

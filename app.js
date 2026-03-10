@@ -166,7 +166,6 @@ async function loadRateCard(contractorId, options) {
             if (gwSel && gwSel.selectedIndex > 0 && gwSel.value !== 'none') onBackupScopeChange();
         }
 
-        updateInstallCostsVisibility();
         renderInstallationCostsUI();
         if (!skipCalc) calculateQuote();
         calculateTravelDistance();
@@ -176,20 +175,6 @@ async function loadRateCard(contractorId, options) {
     }
 }
 
-function updateInstallCostsVisibility() {
-    var section = document.getElementById('installCostsSection');
-    var installPvGroup = document.getElementById('installPvGroup');
-    var installBatGroup = document.getElementById('installBatGroup');
-    if (currentContractorId && currentRateCardItems.length > 0) {
-        if (section) section.style.display = '';
-        if (installPvGroup) installPvGroup.style.display = 'none';
-        if (installBatGroup) installBatGroup.style.display = 'none';
-    } else {
-        if (section) section.style.display = 'none';
-        if (installPvGroup) installPvGroup.style.display = '';
-        if (installBatGroup) installBatGroup.style.display = '';
-    }
-}
 
 // ====================
 // RATE CARD CALCULATION ENGINE
@@ -797,7 +782,6 @@ const state = {
     sysKw: 0, desiredBatteryKwh: 0, actualBatteryKwh: 0,
     invSku: '', invPrice: 0, invKw: 0, invMaxPv: 0, invSupplierCode: '',
     gpMargin: 0, salesCommission: 0, stcPrice: 0, deemingPeriod: 0, batteryRebatePerKwh: 0,
-    installPvPerKw: 0, installBatPerStack: 0,
     roofType: 'metal', orientation: 'portrait', numRows: 1, numArrays: 1, tiltAngle: '10_15', kliplockProfile: 'kliplock_606', mountingType: 'ground', wallMountAutoSwitched: false
 };
 
@@ -818,8 +802,6 @@ function syncStateFromDOM() {
     state.stcPrice = parseFloat(document.getElementById('stcPrice').value) || 0;
     state.deemingPeriod = getDeemingPeriod();
     state.batteryRebatePerKwh = isPostMay2026() ? state.stcPrice : (parseFloat(document.getElementById('batteryRebatePerKwh').value) || 0);
-    state.installPvPerKw = parseFloat(document.getElementById('installPerKwPv').value) || 0;
-    state.installBatPerStack = parseFloat(document.getElementById('installPerStack').value) || 0;
     state.desiredBatteryKwh = parseFloat(document.getElementById('desiredBatteryKwh').value) || 0;
     const panelSel = document.getElementById('panelSelect');
     const panelOpt = panelSel.options[panelSel.selectedIndex];
@@ -969,7 +951,6 @@ function updateSystemModeUI() {
     setFieldDisabled('orientationGroup', batteryOnly);
     setFieldDisabled('numRowsGroup', batteryOnly);
     setFieldDisabled('numArraysGroup', batteryOnly);
-    setFieldDisabled('installPvGroup', batteryOnly);
 
     // Tilt angle group (only if visible AND battery-only)
     var tiltGroup = document.getElementById('tiltAngleGroup');
@@ -994,7 +975,6 @@ function updateSystemModeUI() {
     updateGatewayBackupUI();
     setFieldDisabled('powerSensorGroup', solarOnly);
     setFieldDisabled('mountingTypeGroup', solarOnly);
-    setFieldDisabled('installBatGroup', solarOnly);
 
     // Battery type group (if visible)
     var btGroup = document.getElementById('batteryTypeGroup');
@@ -1207,8 +1187,6 @@ function reconstructConfig(baseConfig, tables, batteryPackages, bmsParts, busine
     cfg.sales_commission = Number(businessParams.sales_commission);
     cfg.default_panel_count = Number(businessParams.default_panel_count);
     cfg.default_battery_kwh = Number(businessParams.default_battery_kwh);
-    cfg.installation.install_pv_per_kw = Number(businessParams.install_pv_per_kw);
-    cfg.installation.install_battery_per_stack = Number(businessParams.install_battery_per_stack);
     cfg.rebates.stc_price = Number(businessParams.stc_price);
     cfg.rebates.stc_deeming_period = Number(businessParams.stc_deeming_period);
     cfg.rebates.battery_rebate_per_kwh = Number(businessParams.battery_rebate_per_kwh);
@@ -1515,8 +1493,6 @@ async function loadConfig() {
     batteryQtys = {};
     document.getElementById('panelCount').value = CONFIG.default_panel_count;
     syncStepperDisplay(); updateStepperPanelLabel(); syncBatteryStepperDisplay(); updateStepperBatteryLabel();
-    document.getElementById('installPerKwPv').value = CONFIG.installation.install_pv_per_kw;
-    document.getElementById('installPerStack').value = CONFIG.installation.install_battery_per_stack;
     document.getElementById('stcPrice').value = CONFIG.rebates.stc_price;
     document.getElementById('stcDeemingPeriod').value = CONFIG.rebates.stc_deeming_period;
     document.getElementById('batteryRebatePerKwh').value = CONFIG.rebates.battery_rebate_per_kwh;
@@ -2210,7 +2186,7 @@ function optimizeDualStack(desired) {
     const gateways = mfg.gateways?.[phase] || [];
     const gwPrice = gateways.length ? Math.min(...gateways.map(g => getEffectivePrice(g))) : 0;
     const gwObj = gateways.find(g => getEffectivePrice(g) === gwPrice) || gateways[0] || null;
-    const labourPerStack = state.installBatPerStack;
+    const labourPerStack = 0; // labour handled by rate card, not used in optimizer cost comparison
     const sysKw = state.sysKw;
 
     // All CEC-approved kWh values for this phase (excluding 0)
@@ -2890,8 +2866,8 @@ function calculateQuote() {
         // --- COST CALCULATIONS ---
         // Solar-only: no battery/inverter costs
         // Battery-only: no PV/roof costs
-        let costPanels, costRoofKit, costRoofSurcharge, installPv;
-        let costInverter, costBattery, costGateway, costMount, installBat;
+        let costPanels, costRoofKit, costRoofSurcharge;
+        let costInverter, costBattery, costGateway, costMount;
 
         if (solarOnly) {
             // Solar-only mode: PV costs + inverter (SolaX X1-HYBRID)
@@ -2900,20 +2876,17 @@ function calculateQuote() {
             costRoofSurcharge = roof.surcharge;
             const mountingResult = getMountingKitItems(state.panelCount, state.roofType, state.orientation, state.numRows, state.numArrays, state.tiltAngle, state.panelWidthMm, state.panelHeightMm);
             costRoofKit = mountingResult.total;
-            installPv = state.sysKw * state.installPvPerKw;
 
             // Include inverter cost for PV-only (SolaX X1-HYBRID)
             costInverter = state.invPrice || 0;
             costBattery = 0;
             costGateway = 0;
             costMount = 0;
-            installBat = 0;
         } else if (batteryOnly) {
             // Battery-only mode: no PV costs; inverter/BMS/sensor optional
             costPanels = 0;
             costRoofKit = 0;
             costRoofSurcharge = 0;
-            installPv = 0;
             costInverter = state.invPrice;
 
             // Battery costs — deduct BMS if excluded via toggle
@@ -2922,7 +2895,6 @@ function calculateQuote() {
                 costBattery = dualStackResult.totalBatteryCost - bmsCostDeduct;
                 costGateway = dualStackResult.gwPrice;
                 costMount = dualStackResult.mountCost;
-                installBat = dualStackResult.labourCost;
                 const gw = document.getElementById('gatewaySelect');
                 const userGwPrice = parseFloat(gw.options[gw.selectedIndex]?.dataset.price) || 0;
                 if (userGwPrice > costGateway) costGateway = userGwPrice;
@@ -2931,7 +2903,6 @@ function calculateQuote() {
                 costInverter = state.invPrice;
                 costGateway = getSolaxEpsBoxCost()?.price || 0;
                 costMount = 0;
-                installBat = (state.desiredBatteryKwh > 0) ? 2 * state.installBatPerStack : 0;
             } else {
                 costBattery = bat.equipmentCost - bmsCostDeduct;
                 costInverter = state.invPrice;
@@ -2943,7 +2914,6 @@ function calculateQuote() {
                 }
                 const mfgMount = getMfg().battery_mounting || {};
                 costMount = (bat.totalModules > 0 && mfgMount.show !== false) ? (mfgMount[state.mountingType === 'wall' ? 'mount_wall' : 'mount_ground'] ?? 0) : 0;
-                installBat = (bat.totalModules > 0) ? state.installBatPerStack : 0;
             }
         } else {
             // Hybrid mode: both PV and battery costs
@@ -2952,14 +2922,12 @@ function calculateQuote() {
             costRoofSurcharge = roof.surcharge;
             const mountingResult = getMountingKitItems(state.panelCount, state.roofType, state.orientation, state.numRows, state.numArrays, state.tiltAngle, state.panelWidthMm, state.panelHeightMm);
             costRoofKit = mountingResult.total;
-            installPv = state.sysKw * state.installPvPerKw;
 
             if (isDualStack && dualStackResult) {
                 costInverter = dualStackResult.totalEcCost;
                 costBattery = dualStackResult.totalBatteryCost;
                 costGateway = dualStackResult.gwPrice;
                 costMount = dualStackResult.mountCost;
-                installBat = (state.desiredBatteryKwh > 0) ? dualStackResult.labourCost : 0;
                 const gw = document.getElementById('gatewaySelect');
                 const userGwPrice = parseFloat(gw.options[gw.selectedIndex]?.dataset.price) || 0;
                 if (userGwPrice > costGateway) costGateway = userGwPrice;
@@ -2968,7 +2936,6 @@ function calculateQuote() {
                 costBattery = parallelResult.totalBatteryCost;
                 costGateway = getSolaxEpsBoxCost()?.price || 0;
                 costMount = 0;
-                installBat = (state.desiredBatteryKwh > 0) ? 2 * state.installBatPerStack : 0;
             } else {
                 costInverter = state.invPrice;
                 costBattery = bat.equipmentCost;
@@ -2980,7 +2947,6 @@ function calculateQuote() {
                 }
                 const mfgMount = getMfg().battery_mounting || {};
                 costMount = (bat.totalModules > 0 && mfgMount.show !== false) ? (mfgMount[state.mountingType === 'wall' ? 'mount_wall' : 'mount_ground'] ?? 0) : 0;
-                installBat = (bat.totalModules > 0) ? state.installBatPerStack : 0;
             }
         }
 
@@ -2992,20 +2958,13 @@ function calculateQuote() {
         const totalPv = costPanels + costRoofKit + costRoofSurcharge;
         const totalBattery = costInverter + costBattery + costGateway + costMount;
 
-        // Rate card integration: replace flat installPv + installBat when contractor is selected
-        let totalInstall;
-        if (currentContractorId && currentRateCardItems.length > 0) {
-            var ctx = buildQuoteContext();
-            rateCardResult = calculateInstallationCosts(ctx, currentContractorRecord, currentRateCardItems, installationAddons);
-            totalInstall = rateCardResult.total + costAcc; // rate card replaces installPv + installBat
-            updateInstallationCostsDisplay();
-            updateGatewayBackupUI();
-            updateBackupCircuitsVisibility();
-        } else {
-            rateCardResult = null;
-            totalInstall = installPv + installBat + costAcc;
-            updateGatewayBackupUI();
-        }
+        // Rate card calculates all installation costs
+        var ctx = buildQuoteContext();
+        rateCardResult = calculateInstallationCosts(ctx, currentContractorRecord, currentRateCardItems, installationAddons);
+        let totalInstall = rateCardResult.total + costAcc;
+        updateInstallationCostsDisplay();
+        updateGatewayBackupUI();
+        updateBackupCircuitsVisibility();
 
         const totalCog = totalPv + totalBattery + totalInstall;
         state.totalCog = totalCog;
@@ -3091,7 +3050,7 @@ function calculateQuote() {
         }
 
         // Update right panel component summary
-        updateSummaryComponents(isDualStack, isParallel, bat, costRoofKit, costRoofSurcharge, installPv, installBat, costAcc);
+        updateSummaryComponents(isDualStack, isParallel, bat, costRoofKit, costRoofSurcharge);
 
     } catch (err) { console.error('[!] Quote calculation error:', err); }
 }
@@ -3108,7 +3067,7 @@ function summarySubRow(label, qty) {
     return '<div class="summary-row summary-sub"><span>' + esc(label) + '</span><span>x ' + qty + '</span></div>';
 }
 
-function updateSummaryComponents(isDualStack, isParallel, bat, costRoofKit, costRoofSurcharge, installPv, installBat, costAcc) {
+function updateSummaryComponents(isDualStack, isParallel, bat, costRoofKit, costRoofSurcharge) {
     var pvHtml = '';
     var batHtml = '';
     var addonHtml = '';
@@ -3478,31 +3437,6 @@ function buildBOM() {
                 bom.push({ category: 'Installation - ' + (catLabels[cat] || cat) + ' (' + (currentContractorRecord?.business_name || 'Contractor') + ')', items: catItems[cat] });
             }
         });
-    } else {
-        // Flat-rate BOM (no contractor)
-        let installItems = [];
-        var isDualBom = dualStackResult && currentManufacturer === 'sigenergy' && state.desiredBatteryKwh > 48;
-        var isParallelBom = parallelResult && currentManufacturer === 'solax' && parallelResult.isParallel;
-
-        // PV installation (skip for battery-only)
-        if (!batteryOnly && state.panelCount > 0) {
-            installItems.push({ desc: 'PV Installation (' + state.sysKw.toFixed(2) + 'kW)', sku: 'Labour', qty: 1, unit: state.sysKw * state.installPvPerKw, total: state.sysKw * state.installPvPerKw, supplier_code: 'BDS:LABOUR-PV' });
-        }
-
-        // Battery installation (skip for solar-only)
-        if (!solarOnly && state.desiredBatteryKwh > 0) {
-            if (isDualBom) {
-                installItems.push({ desc: 'Battery Installation (2 stacks)', sku: 'Labour', qty: 2, unit: state.installBatPerStack, total: 2 * state.installBatPerStack, supplier_code: 'BDS:LABOUR-BAT' });
-            } else if (isParallelBom) {
-                installItems.push({ desc: 'Battery Installation (2 systems)', sku: 'Labour', qty: 2, unit: state.installBatPerStack, total: 2 * state.installBatPerStack, supplier_code: 'BDS:LABOUR-BAT' });
-            } else if (bat.totalModules > 0) {
-                installItems.push({ desc: 'Battery Installation', sku: 'Labour', qty: 1, unit: state.installBatPerStack, total: state.installBatPerStack, supplier_code: 'BDS:LABOUR-BAT' });
-            }
-        }
-
-        if (installItems.length > 0) {
-            bom.push({ category: 'Installation (Labour)', items: installItems });
-        }
     }
     return bom;
 }
@@ -3655,8 +3589,6 @@ function collectQuoteData() {
             mountingType: state.mountingType
         },
         pricing: {
-            installPvPerKw: state.installPvPerKw,
-            installBatPerStack: state.installBatPerStack,
             stcPrice: state.stcPrice,
             deemingPeriod: state.deemingPeriod,
             batteryRebatePerKwh: state.batteryRebatePerKwh,
@@ -4031,8 +3963,6 @@ async function loadQuote(quoteId) {
         updateRoofInfo();
         // Restore pricing
         const p = data.pricing || {};
-        document.getElementById('installPerKwPv').value = p.installPvPerKw ?? CONFIG.installation.install_pv_per_kw;
-        document.getElementById('installPerStack').value = p.installBatPerStack ?? CONFIG.installation.install_battery_per_stack;
         document.getElementById('stcPrice').value = p.stcPrice ?? CONFIG.rebates.stc_price;
         document.getElementById('stcDeemingPeriod').value = p.deemingPeriod ?? CONFIG.rebates.stc_deeming_period;
         document.getElementById('batteryRebatePerKwh').value = p.batteryRebatePerKwh ?? CONFIG.rebates.battery_rebate_per_kwh;
@@ -4056,7 +3986,6 @@ async function loadQuote(quoteId) {
             currentRateCardItems = [];
             currentContractorRecord = null;
             rateCardResult = null;
-            updateInstallCostsVisibility();
         }
 
         // Restore custom add-ons (new key: custom_addons; fallback to old customAddons)
@@ -4151,8 +4080,6 @@ function clearQuote() {
         });
         renderInstallationCostsUI();
     }
-    document.getElementById('installPerKwPv').value = CONFIG.installation.install_pv_per_kw;
-    document.getElementById('installPerStack').value = CONFIG.installation.install_battery_per_stack;
     document.getElementById('stcPrice').value = CONFIG.rebates.stc_price;
     document.getElementById('stcDeemingPeriod').value = CONFIG.rebates.stc_deeming_period;
     document.getElementById('batteryRebatePerKwh').value = CONFIG.rebates.battery_rebate_per_kwh;
@@ -4578,7 +4505,7 @@ const DEFAULT_CONFIG = {
             "cec_approved": { "type": "battery_system", "tp_hs36": { "min": 2, "max": 13, "usable_per_module": 3.25, "entries": [{ "modules": 2, "model": "T-BAT HS7.2", "nominal_kwh": 7.3, "usable_kwh": 6.5 },{ "modules": 3, "model": "T-BAT HS10.8", "nominal_kwh": 11.0, "usable_kwh": 9.9 },{ "modules": 4, "model": "T-BAT HS14.4", "nominal_kwh": 14.75, "usable_kwh": 13.3 },{ "modules": 5, "model": "T-BAT HS18.0", "nominal_kwh": 18.4, "usable_kwh": 16.5 },{ "modules": 6, "model": "T-BAT HS21.6", "nominal_kwh": 22.1, "usable_kwh": 19.8 },{ "modules": 7, "model": "T-BAT HS25.2", "nominal_kwh": 25.8, "usable_kwh": 23.2 },{ "modules": 8, "model": "T-BAT HS28.8", "nominal_kwh": 29.4, "usable_kwh": 26.4 },{ "modules": 9, "model": "T-BAT HS32.4", "nominal_kwh": 33.1, "usable_kwh": 29.7 },{ "modules": 10, "model": "T-BAT HS36.0", "nominal_kwh": 36.8, "usable_kwh": 33.1 },{ "modules": 11, "model": "T-BAT HS39.6", "nominal_kwh": 40.5, "usable_kwh": 36.4 },{ "modules": 12, "model": "T-BAT HS43.2", "nominal_kwh": 44.2, "usable_kwh": 39.7 },{ "modules": 13, "model": "T-BAT HS46.8", "nominal_kwh": 47.9, "usable_kwh": 43.1 }] }, "tb_hs51": { "min": 2, "max": 13, "usable_per_module": 5.1, "entries": [{ "modules": 2, "model": "T-HS10.2", "nominal_kwh": 10.2, "usable_kwh": 10.2 },{ "modules": 3, "model": "T-HS15.3", "nominal_kwh": 15.3, "usable_kwh": 15.3 },{ "modules": 4, "model": "T-HS20.4", "nominal_kwh": 20.4, "usable_kwh": 20.4 },{ "modules": 5, "model": "T-HS25.6", "nominal_kwh": 25.6, "usable_kwh": 25.6 },{ "modules": 6, "model": "T-HS30.7", "nominal_kwh": 30.7, "usable_kwh": 30.7 },{ "modules": 7, "model": "T-HS35.8", "nominal_kwh": 35.8, "usable_kwh": 35.8 },{ "modules": 8, "model": "T-HS40.9", "nominal_kwh": 40.9, "usable_kwh": 40.9 },{ "modules": 9, "model": "T-HS46.0", "nominal_kwh": 46.0, "usable_kwh": 46.0 },{ "modules": 10, "model": "T-HS51.2", "nominal_kwh": 51.2, "usable_kwh": 51.2 },{ "modules": 11, "model": "T-HS56.3", "nominal_kwh": 56.3, "usable_kwh": 56.3 },{ "modules": 12, "model": "T-HS61.4", "nominal_kwh": 61.4, "usable_kwh": 61.4 },{ "modules": 13, "model": "T-HS66.5", "nominal_kwh": 66.5, "usable_kwh": 66.5 }] } }
         }
     },
-    "installation": { "install_pv_per_kw": 300, "install_battery_per_stack": 1600, "roof_types": { "metal": {"label":"Metal","surcharge":0}, "tile": {"label":"Tile","surcharge":100}, "concrete": {"label":"Concrete/Terracotta","surcharge":200}, "kliplock": {"label":"Klip Lock","surcharge":0}, "terracotta": {"label":"Terracotta","surcharge":0}, "flat": {"label":"Flat","surcharge":300} } },
+    "installation": { "roof_types": { "metal": {"label":"Metal","surcharge":0}, "tile": {"label":"Tile","surcharge":100}, "concrete": {"label":"Concrete/Terracotta","surcharge":200}, "kliplock": {"label":"Klip Lock","surcharge":0}, "terracotta": {"label":"Terracotta","surcharge":0}, "flat": {"label":"Flat","surcharge":300} } },
     "rebates": { "stc_price": 37, "stc_deeming_period": 5, "battery_rebate_per_kwh": 311, "stc_zones": [[0,9999,3,1.382]] },
     "gp_margin": 37.5,
     "sales_commission": 8.75,
