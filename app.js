@@ -2246,7 +2246,7 @@ function optimizeDualStack(desired) {
         for (const m of models) {
             const k = getCecKey(m.sku);
             if (!combos[k] || !combos[k].includes(stackKwh)) continue;
-            if (m.kw > 0 && pvKw / m.kw >= 1.4) continue;
+            if (m.kw > 0 && pvKw / m.kw >= 1.6) continue;
             if (!cheapest || m.price < cheapest.price) cheapest = m;
         }
         return cheapest;
@@ -2275,7 +2275,7 @@ function optimizeDualStack(desired) {
             const totalModules2 = Object.values(bat2.qtys).reduce((s, v) => s + v, 0);
 
             // Try PV splits: allocate panels to each EC
-            // Each EC must handle its panels within 1.4x ratio
+            // Each EC must handle its panels within 1.6x ratio
             for (let p1 = 0; p1 <= state.panelCount; p1++) {
                 const p2 = state.panelCount - p1;
                 const pv1kw = (p1 * state.panelWattage) / 1000;
@@ -2503,7 +2503,7 @@ function getDualEcOptions(stackNum) {
         var m = models[i];
         var k = getCecKey(m.sku);
         if (!combos[k] || !combos[k].includes(stackKwh)) continue;
-        if (m.kw > 0 && pvKw / m.kw >= 1.4) continue;
+        if (m.kw > 0 && pvKw / m.kw >= 1.6) continue;
         validModels.push(m);
         if (m.price < cheapestPrice) { cheapestPrice = m.price; cheapestSku = m.sku; }
     }
@@ -2580,12 +2580,12 @@ function autoSelectInverter(sysKw, battKwh, battModules, phase) {
     const mfg = getMfg(), models = mfg.inverters?.[phase] || [], cec = mfg.cec_approved;
     if (cec?.type === 'inverter_battery_combo') {
         const combos = cec[phase];
-        for (const m of models) { const k = getCecKey(m.sku); if (sysKw / m.kw < 1.4 && combos[k] && combos[k].includes(battKwh)) return m.sku; }
+        for (const m of models) { const k = getCecKey(m.sku); if (sysKw / m.kw < 1.6 && combos[k] && combos[k].includes(battKwh)) return m.sku; }
         for (const m of models) { const k = getCecKey(m.sku); if (combos[k] && combos[k].includes(battKwh)) return m.sku; }
         return models[models.length - 1]?.sku || '';
     }
     // SolaX: just find smallest inverter where PV fits
-    for (const m of models) { if (sysKw / m.kw < 1.4) return m.sku; }
+    for (const m of models) { if (sysKw / m.kw < 1.6) return m.sku; }
     return models[models.length - 1]?.sku || '';
 }
 
@@ -2599,7 +2599,7 @@ function updateInverterOptions(sysKw, battKwh, phase) {
     for (var i = 0; i < allModels.length; i++) {
         var m = allModels[i];
         var valid = true;
-        if (sysKw / m.kw >= 1.4) valid = false;
+        if (sysKw / m.kw >= 1.6) valid = false;
         if (valid && combos && battKwh > 0) {
             var key = getCecKey(m.sku);
             if (!combos[key] || !combos[key].includes(battKwh)) valid = false;
@@ -2825,9 +2825,9 @@ function calculateQuote() {
         }
 
         document.getElementById('inverterInfo').style.display = 'none';
-        if (!isDualStack && state.invKw > 0 && state.sysKw / state.invKw >= 1.4) {
+        if (!isDualStack && state.invKw > 0 && state.sysKw / state.invKw >= 1.6) {
             document.getElementById('inverterWarning').style.display = 'flex';
-            document.getElementById('inverterWarning').innerHTML = warnShieldHtml('PV Oversizing', 'PV (' + state.sysKw.toFixed(1) + 'kW) / ' + getInverterLabel() + ' (' + state.invKw + 'kW) ratio exceeds 1.4. Select larger ' + getInverterLabel().toLowerCase() + '.');
+            document.getElementById('inverterWarning').innerHTML = warnShieldHtml('PV Oversizing', 'PV (' + state.sysKw.toFixed(1) + 'kW) / ' + getInverterLabel() + ' (' + state.invKw + 'kW) ratio exceeds 1.6. Select larger ' + getInverterLabel().toLowerCase() + '.');
         } else {
             document.getElementById('inverterWarning').style.display = 'none';
         }
