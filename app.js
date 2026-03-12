@@ -596,17 +596,16 @@ function onBackupScopeChange() {
     // Set backup circuits
     var bcInput = document.getElementById('backupCircuitCount');
     if (bcInput) bcInput.value = (scope === 'full') ? 5 : 3;
-    // Find board upgrade rate card items by label
+    // Find switchboard upgrade rate card item by label
+    var sbItem = currentRateCardItems.find(function(i) { return i.label && i.label.toLowerCase().indexOf('switchboard upgrade') !== -1; });
+    // Remove old board upgrade addons (backwards compat)
     var partialItem = currentRateCardItems.find(function(i) { return i.label && i.label.toLowerCase().indexOf('partial board upgrade') !== -1; });
     var meterItem = currentRateCardItems.find(function(i) { return i.label && i.label.toLowerCase().indexOf('meter board upgrade') !== -1; });
-    // Remove whichever board upgrade addon is currently active
     if (partialItem && installationAddons.addonItems[partialItem.id]) delete installationAddons.addonItems[partialItem.id];
     if (meterItem && installationAddons.addonItems[meterItem.id]) delete installationAddons.addonItems[meterItem.id];
-    // Add the correct one
-    if (scope === 'full' && meterItem) {
-        installationAddons.addonItems[meterItem.id] = { quantity: 1, value: 0, quotedAmount: 0 };
-    } else if (scope === 'partial' && partialItem) {
-        installationAddons.addonItems[partialItem.id] = { quantity: 1, value: 0, quotedAmount: 0 };
+    // Always add switchboard upgrade
+    if (sbItem) {
+        installationAddons.addonItems[sbItem.id] = { quantity: 1, value: 0, quotedAmount: 0 };
     }
     renderInstallationCostsUI();
     calculateQuote();
