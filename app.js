@@ -535,9 +535,10 @@ function updateBackupCircuitsVisibility() {
         var sbtVal = document.getElementById('solaxBackupType')?.value || 'none';
         hasBackup = (state.desiredBatteryKwh || 0) > 0 && !isSolarOnly() && !isBatteryOnly() && sbtVal !== 'none';
     } else {
-        // Sigenergy: backup when gateway is selected
+        // Sigenergy: backup when gateway is selected AND scope is partial (full = no per-circuit charge)
         var gwSel = document.getElementById('gatewaySelect');
-        hasBackup = gwSel && gwSel.selectedIndex > 0 && gwSel.value !== 'none';
+        var sigScope = document.getElementById('backupScope')?.value || 'partial';
+        hasBackup = gwSel && gwSel.selectedIndex > 0 && gwSel.value !== 'none' && sigScope !== 'full';
     }
     // Also check if backup circuit item exists in rate card
     var hasItem = currentRateCardItems.some(function(i) { return i.conditions && i.conditions.has_backup === true; });
@@ -586,6 +587,11 @@ function updateGatewayBackupUI() {
                 if (wasDisabled) onBackupScopeChange();
             } else {
                 scopeGroup.classList.add('disabled');
+                // Remove backup addons when gateway deselected
+                var sbClean = currentRateCardItems.find(function(i) { return i.label && i.label.toLowerCase().indexOf('switchboard upgrade') !== -1; });
+                var gwInstClean = currentRateCardItems.find(function(i) { return i.label && i.label.toLowerCase().indexOf('gateway install') !== -1; });
+                if (sbClean && installationAddons.addonItems[sbClean.id]) delete installationAddons.addonItems[sbClean.id];
+                if (gwInstClean && installationAddons.addonItems[gwInstClean.id]) delete installationAddons.addonItems[gwInstClean.id];
             }
         }
     }
@@ -593,9 +599,9 @@ function updateGatewayBackupUI() {
 
 function onBackupScopeChange() {
     var scope = document.getElementById('backupScope')?.value || 'partial';
-    // Set backup circuits
+    // Set backup circuits — full home = 0 (full switchboard upgrade covers it), partial = 3
     var bcInput = document.getElementById('backupCircuitCount');
-    if (bcInput) bcInput.value = (scope === 'full') ? 5 : 3;
+    if (bcInput) bcInput.value = (scope === 'full') ? 0 : 3;
     // Find switchboard upgrade rate card item by label
     var sbItem = currentRateCardItems.find(function(i) { return i.label && i.label.toLowerCase().indexOf('switchboard upgrade') !== -1; });
     // Remove old board upgrade addons (backwards compat)
@@ -607,6 +613,12 @@ function onBackupScopeChange() {
     if (sbItem) {
         installationAddons.addonItems[sbItem.id] = { quantity: 1, value: 0, quotedAmount: 0 };
     }
+    // Always add gateway install
+    var gwInstallItem = currentRateCardItems.find(function(i) { return i.label && i.label.toLowerCase().indexOf('gateway install') !== -1; });
+    if (gwInstallItem) {
+        installationAddons.addonItems[gwInstallItem.id] = { quantity: 1, value: 0, quotedAmount: 0 };
+    }
+    updateBackupCircuitsVisibility();
     renderInstallationCostsUI();
     calculateQuote();
 }
