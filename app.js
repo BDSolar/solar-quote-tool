@@ -3461,16 +3461,11 @@ function showBOM() {
     const name = document.getElementById('customerName').value || 'Customer';
     const addr = document.getElementById('installAddress').value || '', suburb = document.getElementById('installSuburb')?.value || '';
     const st = document.getElementById('installState')?.value || '', pc = document.getElementById('installPostcode').value || '';
-    const phone = document.getElementById('customerPhone')?.value || '', email = document.getElementById('customerEmail')?.value || '';
     const date = new Date().toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' });
     let addrLine = [addr, suburb, st, pc].filter(Boolean).join(', ');
     let custHtml = '<div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px;">';
     custHtml += '<div><strong style="color:var(--gray-900); font-size:15px;">' + esc(name) + '</strong>';
     if (addrLine) custHtml += '<br><span style="color:var(--gray-500);">' + esc(addrLine) + '</span>';
-    let contactParts = [];
-    if (phone) contactParts.push(esc(phone));
-    if (email) contactParts.push(esc(email));
-    if (contactParts.length > 0) custHtml += '<br><span style="color:var(--gray-500);">' + contactParts.join(' &nbsp;|&nbsp; ') + '</span>';
     custHtml += '</div>';
     custHtml += '<div style="text-align:right; white-space:nowrap;"><span style="color:var(--gray-900);">' + esc(date) + '</span></div>';
     custHtml += '</div>';
@@ -3563,8 +3558,6 @@ function collectQuoteData() {
     return {
         customer: {
             name: document.getElementById('customerName').value || '',
-            phone: document.getElementById('customerPhone').value || '',
-            email: document.getElementById('customerEmail').value || '',
             address: document.getElementById('installAddress').value || '',
             suburb: document.getElementById('installSuburb').value || '',
             state: document.getElementById('installState').value || '',
@@ -3709,8 +3702,6 @@ async function saveQuote() {
     var firstEl = null;
     var checks = [
         { id: 'customerName', label: 'Customer Name' },
-        { id: 'customerPhone', label: 'Phone' },
-        { id: 'customerEmail', label: 'Email' },
         { id: 'installAddress', label: 'Street Address' },
         { id: 'installSuburb', label: 'Suburb' },
         { id: 'installState', label: 'State' },
@@ -3914,8 +3905,6 @@ async function loadQuote(quoteId) {
         // Restore customer info
         const c = data.customer || {};
         document.getElementById('customerName').value = c.name || '';
-        document.getElementById('customerPhone').value = c.phone || '';
-        document.getElementById('customerEmail').value = c.email || '';
         document.getElementById('installAddress').value = c.address || '';
         document.getElementById('installSuburb').value = c.suburb || '';
         document.getElementById('installState').value = c.state || '';
@@ -4060,8 +4049,6 @@ function clearQuote() {
     var discBanner = document.getElementById('discountExpiredBanner'); if (discBanner) discBanner.remove();
     // Keep rep selection (sticky) — don't reset repSelect
     document.getElementById('customerName').value = '';
-    document.getElementById('customerPhone').value = '';
-    document.getElementById('customerEmail').value = '';
     document.getElementById('installAddress').value = '';
     document.getElementById('installSuburb').value = '';
     document.getElementById('installState').value = '';
@@ -4126,8 +4113,6 @@ function generateQuote() {
     const bat = getBatterySummary();
     const invLabel = getInverterLabel();
     const name = document.getElementById('customerName').value || 'Customer';
-    const phone = document.getElementById('customerPhone').value || '';
-    const email = document.getElementById('customerEmail').value || '';
     const addr = document.getElementById('installAddress').value || '';
     const suburb = document.getElementById('installSuburb').value || '';
     const st = document.getElementById('installState').value || '';
@@ -4209,8 +4194,6 @@ function generateQuote() {
     doc.setFontSize(9);
     doc.setTextColor(...mutedText);
     if (addrLine) { y += 5; doc.text(addrLine, margin, y); }
-    if (phone) { y += 4.5; doc.text(phone, margin, y); }
-    if (email) { y += 4.5; doc.text(email, margin, y); }
     y += 8;
 
     // --- SYSTEM SUMMARY BOX ---
