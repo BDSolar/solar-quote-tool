@@ -531,9 +531,9 @@ function updateBackupCircuitsVisibility() {
     if (!el) return;
     var hasBackup = false;
     if (currentManufacturer === 'solax') {
-        // SolaX: backup circuits visible when backup option is partial or full
+        // SolaX: backup circuits visible only for partial (full = switchboard upgrade, no per-circuit charge)
         var sbtVal = document.getElementById('solaxBackupType')?.value || 'none';
-        hasBackup = (state.desiredBatteryKwh || 0) > 0 && !isSolarOnly() && !isBatteryOnly() && sbtVal !== 'none';
+        hasBackup = (state.desiredBatteryKwh || 0) > 0 && !isSolarOnly() && !isBatteryOnly() && sbtVal === 'partial';
     } else {
         // Sigenergy: backup when gateway is selected AND scope is partial (full = no per-circuit charge)
         var gwSel = document.getElementById('gatewaySelect');
@@ -629,18 +629,21 @@ function onSolaxBackupChange() {
     var bcInput = document.getElementById('backupCircuitCount');
     var partialItem = currentRateCardItems.find(function(i) { return i.label && i.label.toLowerCase().indexOf('partial board upgrade') !== -1; });
     var meterItem = currentRateCardItems.find(function(i) { return i.label && i.label.toLowerCase().indexOf('meter board upgrade') !== -1; });
-    // Remove any existing board upgrade addon
+    var sbItem = currentRateCardItems.find(function(i) { return i.label && i.label.toLowerCase().indexOf('switchboard upgrade') !== -1; });
+    // Remove any existing board/switchboard upgrade addon
     if (partialItem && installationAddons.addonItems[partialItem.id]) delete installationAddons.addonItems[partialItem.id];
     if (meterItem && installationAddons.addonItems[meterItem.id]) delete installationAddons.addonItems[meterItem.id];
+    if (sbItem && installationAddons.addonItems[sbItem.id]) delete installationAddons.addonItems[sbItem.id];
     if (val === 'partial') {
         if (bcInput) bcInput.value = 3;
         if (partialItem) installationAddons.addonItems[partialItem.id] = { quantity: 1, value: 0, quotedAmount: 0 };
     } else if (val === 'full') {
-        if (bcInput) bcInput.value = 5;
-        if (meterItem) installationAddons.addonItems[meterItem.id] = { quantity: 1, value: 0, quotedAmount: 0 };
+        if (bcInput) bcInput.value = 0;
+        if (sbItem) installationAddons.addonItems[sbItem.id] = { quantity: 1, value: 0, quotedAmount: 0 };
     } else {
         if (bcInput) bcInput.value = 0;
     }
+    updateBackupCircuitsVisibility();
     renderInstallationCostsUI();
 }
 
