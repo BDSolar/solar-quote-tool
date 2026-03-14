@@ -618,10 +618,12 @@ function onBackupScopeChange() {
     var meterItem = currentRateCardItems.find(function(i) { return i.label && i.label.toLowerCase().indexOf('meter board upgrade') !== -1; });
     if (partialItem && installationAddons.addonItems[partialItem.id]) delete installationAddons.addonItems[partialItem.id];
     if (meterItem && installationAddons.addonItems[meterItem.id]) delete installationAddons.addonItems[meterItem.id];
-    // Switchboard upgrade only for full home backup
+    // Switchboard upgrade for full home, partial board upgrade for partial
     if (sbItem && installationAddons.addonItems[sbItem.id]) delete installationAddons.addonItems[sbItem.id];
     if (scope === 'full' && sbItem) {
         installationAddons.addonItems[sbItem.id] = { quantity: 1, value: 0, quotedAmount: 0 };
+    } else if (scope === 'partial' && partialItem) {
+        installationAddons.addonItems[partialItem.id] = { quantity: 1, value: 0, quotedAmount: 0 };
     }
     // Always add gateway install
     var gwInstallItem = currentRateCardItems.find(function(i) { return i.label && i.label.toLowerCase().indexOf('gateway install') !== -1; });
