@@ -558,18 +558,24 @@ function updateGatewayBackupUI() {
     var solarOnly = isSolarOnly();
     var batteryOnly = isBatteryOnly();
     var hasBattery = (state.desiredBatteryKwh || 0) > 0 && !solarOnly && !batteryOnly;
+    // On manufacturer switch, remove all backup-related addons
+    var _sbReset = currentRateCardItems.find(function(i) { return i.label && i.label.toLowerCase().indexOf('switchboard upgrade') !== -1; });
+    var _gwInstReset = currentRateCardItems.find(function(i) { return i.label && i.label.toLowerCase().indexOf('gateway install') !== -1; });
+    var _partialReset = currentRateCardItems.find(function(i) { return i.label && i.label.toLowerCase().indexOf('partial board upgrade') !== -1; });
+    var _meterReset = currentRateCardItems.find(function(i) { return i.label && i.label.toLowerCase().indexOf('meter board upgrade') !== -1; });
+    if (_sbReset && installationAddons.addonItems[_sbReset.id]) delete installationAddons.addonItems[_sbReset.id];
+    if (_gwInstReset && installationAddons.addonItems[_gwInstReset.id]) delete installationAddons.addonItems[_gwInstReset.id];
+    if (_partialReset && installationAddons.addonItems[_partialReset.id]) delete installationAddons.addonItems[_partialReset.id];
+    if (_meterReset && installationAddons.addonItems[_meterReset.id]) delete installationAddons.addonItems[_meterReset.id];
+
     if (currentManufacturer === 'solax') {
         gwGroup.style.display = 'none';
         if (scopeGroup) scopeGroup.style.display = 'none';
-        // Clean up Sigenergy-specific Gateway Install addon (always remove on SolaX)
-        var gwInstCleanSolax = currentRateCardItems.find(function(i) { return i.label && i.label.toLowerCase().indexOf('gateway install') !== -1; });
-        if (gwInstCleanSolax && installationAddons.addonItems[gwInstCleanSolax.id]) delete installationAddons.addonItems[gwInstCleanSolax.id];
-        // Only remove Switchboard Upgrade if SolaX backup is not full (full home needs it)
-        var solaxBt = document.getElementById('solaxBackupType')?.value || 'none';
-        if (solaxBt !== 'full') {
-            var sbCleanSolax = currentRateCardItems.find(function(i) { return i.label && i.label.toLowerCase().indexOf('switchboard upgrade') !== -1; });
-            if (sbCleanSolax && installationAddons.addonItems[sbCleanSolax.id]) delete installationAddons.addonItems[sbCleanSolax.id];
-        }
+        // Reset SolaX backup to none
+        var sbtReset = document.getElementById('solaxBackupType');
+        if (sbtReset) { sbtReset.value = 'none'; syncSegmentedFromSelect('solaxBackupType'); }
+        var bcReset = document.getElementById('backupCircuitCount');
+        if (bcReset) bcReset.value = 0;
         if (hasBattery) {
             solaxGroup.style.display = '';
             solaxGroup.classList.remove('disabled');
@@ -579,6 +585,9 @@ function updateGatewayBackupUI() {
     } else {
         // Sigenergy — show gateway dropdown + scope toggle, hide solax backup
         solaxGroup.style.display = 'none';
+        // Reset SolaX backup (in case switching back later)
+        var sbtResetSig = document.getElementById('solaxBackupType');
+        if (sbtResetSig) { sbtResetSig.value = 'none'; syncSegmentedFromSelect('solaxBackupType'); }
         gwGroup.style.display = '';
         if (scopeGroup) scopeGroup.style.display = '';
         var enableScope = false;
