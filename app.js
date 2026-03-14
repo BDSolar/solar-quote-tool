@@ -21,6 +21,7 @@ let currentRateCardItems = []; // rate card items for selected contractor
 let currentContractorRecord = null; // full contractor row
 let rateCardResult = null; // result of calculateInstallationCosts()
 let installationAddons = { standardItems: {}, checkboxItems: {}, addonItems: {} };
+var liveFixedOverhead, liveZeroBillBase, liveZeroBillPct;
 
 // ====================
 // DEBOUNCE UTILITY
@@ -1208,6 +1209,9 @@ function reconstructConfig(baseConfig, tables, batteryPackages, bmsParts, busine
     cfg.fixed_overhead = Number(businessParams.fixed_overhead) || 0;
     cfg.zero_bill_base = Number(businessParams.zero_bill_base) || 0;
     cfg.zero_bill_pct = Number(businessParams.zero_bill_pct) || 0;
+    liveFixedOverhead = cfg.fixed_overhead;
+    liveZeroBillBase = cfg.zero_bill_base;
+    liveZeroBillPct = cfg.zero_bill_pct;
     var surcharges = businessParams.roof_surcharges || {};
     Object.keys(cfg.installation.roof_types).forEach(function(rt) {
         if (surcharges[rt] !== undefined) cfg.installation.roof_types[rt].surcharge = Number(surcharges[rt]);
@@ -3601,7 +3605,10 @@ function collectQuoteData() {
             deemingPeriod: state.deemingPeriod,
             batteryRebatePerKwh: state.batteryRebatePerKwh,
             gpMargin: state.gpMargin,
-            salesCommission: state.salesCommission
+            salesCommission: state.salesCommission,
+            fixedOverhead: CONFIG.fixed_overhead || 0,
+            zeroBillBase: CONFIG.zero_bill_base || 0,
+            zeroBillPct: CONFIG.zero_bill_pct || 0
         },
         bom_snapshot: buildBOM(),
         custom_addons: getCustomAddons(),
@@ -3972,6 +3979,9 @@ async function loadQuote(quoteId) {
         document.getElementById('batteryRebatePerKwh').value = p.batteryRebatePerKwh ?? CONFIG.rebates.battery_rebate_per_kwh;
         document.getElementById('gpMargin').value = p.gpMargin ?? CONFIG.gp_margin;
         document.getElementById('salesCommission').value = p.salesCommission ?? CONFIG.sales_commission;
+        if (p.fixedOverhead !== undefined) CONFIG.fixed_overhead = Number(p.fixedOverhead);
+        if (p.zeroBillBase !== undefined) CONFIG.zero_bill_base = Number(p.zeroBillBase);
+        if (p.zeroBillPct !== undefined) CONFIG.zero_bill_pct = Number(p.zeroBillPct);
 
         // Restore installation / contractor
         const inst = data.installation || {};
@@ -4046,6 +4056,9 @@ function checkExpiredDiscounts(savedDiscounts) {
 
 function clearQuote() {
     currentQuoteId = null;
+    CONFIG.fixed_overhead = liveFixedOverhead ?? CONFIG.fixed_overhead;
+    CONFIG.zero_bill_base = liveZeroBillBase ?? CONFIG.zero_bill_base;
+    CONFIG.zero_bill_pct = liveZeroBillPct ?? CONFIG.zero_bill_pct;
     var discBanner = document.getElementById('discountExpiredBanner'); if (discBanner) discBanner.remove();
     // Keep rep selection (sticky) — don't reset repSelect
     document.getElementById('customerName').value = '';
