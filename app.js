@@ -535,10 +535,8 @@ function updateBackupCircuitsVisibility() {
         // SolaX: backup circuits always hidden — partial and full both use board upgrade addons, no per-circuit charge
         hasBackup = false;
     } else {
-        // Sigenergy: backup when gateway is selected AND scope is partial (full = no per-circuit charge)
-        var gwSel = document.getElementById('gatewaySelect');
-        var sigScope = document.getElementById('backupScope')?.value || 'partial';
-        hasBackup = gwSel && gwSel.selectedIndex > 0 && gwSel.value !== 'none' && sigScope !== 'full';
+        // Sigenergy: backup circuits always hidden — board upgrades handle backup
+        hasBackup = false;
     }
     // Also check if backup circuit item exists in rate card
     var hasItem = currentRateCardItems.some(function(i) { return i.conditions && i.conditions.has_backup === true; });
@@ -624,9 +622,9 @@ function updateGatewayBackupUI() {
 
 function onBackupScopeChange() {
     var scope = document.getElementById('backupScope')?.value || 'partial';
-    // Set backup circuits — full home = 0 (full switchboard upgrade covers it), partial = 3
+    // Set backup circuits to 0 — board upgrades handle backup, no per-circuit charge
     var bcInput = document.getElementById('backupCircuitCount');
-    if (bcInput) bcInput.value = (scope === 'full') ? 0 : 3;
+    if (bcInput) bcInput.value = 0;
     // Find switchboard upgrade rate card item by label
     var sbItem = currentRateCardItems.find(function(i) { return i.label && i.label.toLowerCase().indexOf('switchboard upgrade') !== -1; });
     // Remove old board upgrade addons (backwards compat)
