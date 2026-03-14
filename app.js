@@ -561,11 +561,15 @@ function updateGatewayBackupUI() {
     if (currentManufacturer === 'solax') {
         gwGroup.style.display = 'none';
         if (scopeGroup) scopeGroup.style.display = 'none';
-        // Clean up Sigenergy-specific addons (Gateway Install, Switchboard Upgrade) when switching to SolaX
+        // Clean up Sigenergy-specific Gateway Install addon (always remove on SolaX)
         var gwInstCleanSolax = currentRateCardItems.find(function(i) { return i.label && i.label.toLowerCase().indexOf('gateway install') !== -1; });
-        var sbCleanSolax = currentRateCardItems.find(function(i) { return i.label && i.label.toLowerCase().indexOf('switchboard upgrade') !== -1; });
         if (gwInstCleanSolax && installationAddons.addonItems[gwInstCleanSolax.id]) delete installationAddons.addonItems[gwInstCleanSolax.id];
-        if (sbCleanSolax && installationAddons.addonItems[sbCleanSolax.id]) delete installationAddons.addonItems[sbCleanSolax.id];
+        // Only remove Switchboard Upgrade if SolaX backup is not full (full home needs it)
+        var solaxBt = document.getElementById('solaxBackupType')?.value || 'none';
+        if (solaxBt !== 'full') {
+            var sbCleanSolax = currentRateCardItems.find(function(i) { return i.label && i.label.toLowerCase().indexOf('switchboard upgrade') !== -1; });
+            if (sbCleanSolax && installationAddons.addonItems[sbCleanSolax.id]) delete installationAddons.addonItems[sbCleanSolax.id];
+        }
         if (hasBattery) {
             solaxGroup.style.display = '';
             solaxGroup.classList.remove('disabled');
