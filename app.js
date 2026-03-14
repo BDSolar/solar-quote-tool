@@ -596,11 +596,15 @@ function updateGatewayBackupUI() {
                 if (wasDisabled) onBackupScopeChange();
             } else {
                 scopeGroup.classList.add('disabled');
-                // Remove backup addons when gateway deselected
+                // Remove all backup addons when gateway deselected
                 var sbClean = currentRateCardItems.find(function(i) { return i.label && i.label.toLowerCase().indexOf('switchboard upgrade') !== -1; });
                 var gwInstClean = currentRateCardItems.find(function(i) { return i.label && i.label.toLowerCase().indexOf('gateway install') !== -1; });
+                var partialClean = currentRateCardItems.find(function(i) { return i.label && i.label.toLowerCase().indexOf('partial board upgrade') !== -1; });
+                var meterClean = currentRateCardItems.find(function(i) { return i.label && i.label.toLowerCase().indexOf('meter board upgrade') !== -1; });
                 if (sbClean && installationAddons.addonItems[sbClean.id]) delete installationAddons.addonItems[sbClean.id];
                 if (gwInstClean && installationAddons.addonItems[gwInstClean.id]) delete installationAddons.addonItems[gwInstClean.id];
+                if (partialClean && installationAddons.addonItems[partialClean.id]) delete installationAddons.addonItems[partialClean.id];
+                if (meterClean && installationAddons.addonItems[meterClean.id]) delete installationAddons.addonItems[meterClean.id];
             }
         }
     }
