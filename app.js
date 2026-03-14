@@ -532,9 +532,8 @@ function updateBackupCircuitsVisibility() {
     if (!el) return;
     var hasBackup = false;
     if (currentManufacturer === 'solax') {
-        // SolaX: backup circuits visible only for partial (full = switchboard upgrade, no per-circuit charge)
-        var sbtVal = document.getElementById('solaxBackupType')?.value || 'none';
-        hasBackup = (state.desiredBatteryKwh || 0) > 0 && !isSolarOnly() && !isBatteryOnly() && sbtVal === 'partial';
+        // SolaX: backup circuits always hidden — partial and full both use board upgrade addons, no per-circuit charge
+        hasBackup = false;
     } else {
         // Sigenergy: backup when gateway is selected AND scope is partial (full = no per-circuit charge)
         var gwSel = document.getElementById('gatewaySelect');
@@ -636,7 +635,7 @@ function onSolaxBackupChange() {
     if (meterItem && installationAddons.addonItems[meterItem.id]) delete installationAddons.addonItems[meterItem.id];
     if (sbItem && installationAddons.addonItems[sbItem.id]) delete installationAddons.addonItems[sbItem.id];
     if (val === 'partial') {
-        if (bcInput) bcInput.value = 3;
+        if (bcInput) bcInput.value = 0;
         if (partialItem) installationAddons.addonItems[partialItem.id] = { quantity: 1, value: 0, quotedAmount: 0 };
     } else if (val === 'full') {
         if (bcInput) bcInput.value = 0;
