@@ -561,6 +561,11 @@ function updateGatewayBackupUI() {
     if (currentManufacturer === 'solax') {
         gwGroup.style.display = 'none';
         if (scopeGroup) scopeGroup.style.display = 'none';
+        // Clean up Sigenergy-specific addons (Gateway Install, Switchboard Upgrade) when switching to SolaX
+        var gwInstCleanSolax = currentRateCardItems.find(function(i) { return i.label && i.label.toLowerCase().indexOf('gateway install') !== -1; });
+        var sbCleanSolax = currentRateCardItems.find(function(i) { return i.label && i.label.toLowerCase().indexOf('switchboard upgrade') !== -1; });
+        if (gwInstCleanSolax && installationAddons.addonItems[gwInstCleanSolax.id]) delete installationAddons.addonItems[gwInstCleanSolax.id];
+        if (sbCleanSolax && installationAddons.addonItems[sbCleanSolax.id]) delete installationAddons.addonItems[sbCleanSolax.id];
         if (hasBattery) {
             solaxGroup.style.display = '';
             solaxGroup.classList.remove('disabled');
