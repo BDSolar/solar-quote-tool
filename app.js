@@ -550,6 +550,7 @@ function updateBackupCircuitsVisibility() {
     }
 }
 
+var _lastBackupManufacturer = null;
 function updateGatewayBackupUI() {
     var gwGroup = document.getElementById('gatewayGroup');
     var solaxGroup = document.getElementById('solaxBackupGroup');
@@ -558,24 +559,29 @@ function updateGatewayBackupUI() {
     var solarOnly = isSolarOnly();
     var batteryOnly = isBatteryOnly();
     var hasBattery = (state.desiredBatteryKwh || 0) > 0 && !solarOnly && !batteryOnly;
-    // On manufacturer switch, remove all backup-related addons
-    var _sbReset = currentRateCardItems.find(function(i) { return i.label && i.label.toLowerCase().indexOf('switchboard upgrade') !== -1; });
-    var _gwInstReset = currentRateCardItems.find(function(i) { return i.label && i.label.toLowerCase().indexOf('gateway install') !== -1; });
-    var _partialReset = currentRateCardItems.find(function(i) { return i.label && i.label.toLowerCase().indexOf('partial board upgrade') !== -1; });
-    var _meterReset = currentRateCardItems.find(function(i) { return i.label && i.label.toLowerCase().indexOf('meter board upgrade') !== -1; });
-    if (_sbReset && installationAddons.addonItems[_sbReset.id]) delete installationAddons.addonItems[_sbReset.id];
-    if (_gwInstReset && installationAddons.addonItems[_gwInstReset.id]) delete installationAddons.addonItems[_gwInstReset.id];
-    if (_partialReset && installationAddons.addonItems[_partialReset.id]) delete installationAddons.addonItems[_partialReset.id];
-    if (_meterReset && installationAddons.addonItems[_meterReset.id]) delete installationAddons.addonItems[_meterReset.id];
+
+    // On manufacturer switch only, remove all backup-related addons and reset toggles
+    if (_lastBackupManufacturer !== null && _lastBackupManufacturer !== currentManufacturer) {
+        var _sbReset = currentRateCardItems.find(function(i) { return i.label && i.label.toLowerCase().indexOf('switchboard upgrade') !== -1; });
+        var _gwInstReset = currentRateCardItems.find(function(i) { return i.label && i.label.toLowerCase().indexOf('gateway install') !== -1; });
+        var _partialReset = currentRateCardItems.find(function(i) { return i.label && i.label.toLowerCase().indexOf('partial board upgrade') !== -1; });
+        var _meterReset = currentRateCardItems.find(function(i) { return i.label && i.label.toLowerCase().indexOf('meter board upgrade') !== -1; });
+        if (_sbReset && installationAddons.addonItems[_sbReset.id]) delete installationAddons.addonItems[_sbReset.id];
+        if (_gwInstReset && installationAddons.addonItems[_gwInstReset.id]) delete installationAddons.addonItems[_gwInstReset.id];
+        if (_partialReset && installationAddons.addonItems[_partialReset.id]) delete installationAddons.addonItems[_partialReset.id];
+        if (_meterReset && installationAddons.addonItems[_meterReset.id]) delete installationAddons.addonItems[_meterReset.id];
+        // Reset SolaX backup toggle
+        var sbtSwitch = document.getElementById('solaxBackupType');
+        if (sbtSwitch) { sbtSwitch.value = 'none'; syncSegmentedFromSelect('solaxBackupType'); }
+        // Reset backup circuits
+        var bcSwitch = document.getElementById('backupCircuitCount');
+        if (bcSwitch) bcSwitch.value = 0;
+    }
+    _lastBackupManufacturer = currentManufacturer;
 
     if (currentManufacturer === 'solax') {
         gwGroup.style.display = 'none';
         if (scopeGroup) scopeGroup.style.display = 'none';
-        // Reset SolaX backup to none
-        var sbtReset = document.getElementById('solaxBackupType');
-        if (sbtReset) { sbtReset.value = 'none'; syncSegmentedFromSelect('solaxBackupType'); }
-        var bcReset = document.getElementById('backupCircuitCount');
-        if (bcReset) bcReset.value = 0;
         if (hasBattery) {
             solaxGroup.style.display = '';
             solaxGroup.classList.remove('disabled');
@@ -585,9 +591,6 @@ function updateGatewayBackupUI() {
     } else {
         // Sigenergy — show gateway dropdown + scope toggle, hide solax backup
         solaxGroup.style.display = 'none';
-        // Reset SolaX backup (in case switching back later)
-        var sbtResetSig = document.getElementById('solaxBackupType');
-        if (sbtResetSig) { sbtResetSig.value = 'none'; syncSegmentedFromSelect('solaxBackupType'); }
         gwGroup.style.display = '';
         if (scopeGroup) scopeGroup.style.display = '';
         var enableScope = false;
