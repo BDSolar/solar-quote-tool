@@ -252,7 +252,12 @@ function calculateItemCost(item, ctx, addons) {
             } else {
                 qty = ctx.panelCount || 0;
             }
-            return qty * rate;
+            var equipPrice = 0;
+            if (item.equipment_sku) {
+                var eqAcc = (getMfg().accessories || []).find(function(a) { return a.id === item.equipment_sku; });
+                if (eqAcc) equipPrice = eqAcc.phase_dependent ? (state.phase === 'single_phase' ? (eqAcc.price_single || 0) : (eqAcc.price_three || 0)) : getEffectivePrice(eqAcc);
+            }
+            return qty * (rate + equipPrice);
         }
         case 'per_metre': {
             var addonData2 = addons.addonItems[item.id];
@@ -323,7 +328,8 @@ function calculateInstallationCosts(ctx, contractor, rateCardItems, addons) {
                 pricing_type: item.pricing_type,
                 input_type: item.input_type,
                 rate: parseFloat(item.rate) || 0,
-                cost: cost
+                cost: cost,
+                equipment_sku: item.equipment_sku || null
             });
             total += cost;
         }
@@ -1774,7 +1780,7 @@ function switchBatteryType() {
 function getAllDropdownItems() {
     var items = [];
     // Manufacturer-specific accessories (excluding power sensor)
-    var accs = (getMfg().accessories || []).filter(function(a) { return a.id !== 'power_sensor'; });
+    var accs = (getMfg().accessories || []).filter(function(a) { return a.id !== 'power_sensor' && a.id !== 'tigo_optimiser'; });
     accs.forEach(function(acc) {
         var basePrice = acc.phase_dependent ? (state.phase === 'single_phase' ? acc.price_single : acc.price_three) : acc.price;
         var price = acc.discount_pct ? getEffectivePrice({ price: basePrice, discount_pct: acc.discount_pct, discount_from: acc.discount_from, discount_to: acc.discount_to }) : basePrice;
@@ -1847,7 +1853,7 @@ function buildAccessoriesUI() {
     var list = document.createElement('div'); list.id = 'accessoryList'; container.appendChild(list);
     // Auto-add defaults on first build
     if (selectedAccessories.length === 0) {
-        var accs = (getMfg().accessories || []).filter(function(a) { return a.id !== 'power_sensor'; });
+        var accs = (getMfg().accessories || []).filter(function(a) { return a.id !== 'power_sensor' && a.id !== 'tigo_optimiser'; });
         accs.filter(function(a) { return a.default_checked; }).forEach(function(a) {
             var basePrice = a.phase_dependent ? (state.phase === 'single_phase' ? a.price_single : a.price_three) : a.price;
             var price = a.discount_pct ? getEffectivePrice({ price: basePrice, discount_pct: a.discount_pct, discount_from: a.discount_from, discount_to: a.discount_to }) : basePrice;
@@ -3473,7 +3479,12 @@ function buildBOM() {
         rateCardResult.items.forEach(function(item) {
             var cat = item.category || 'other';
             if (!catItems[cat]) catItems[cat] = [];
-            catItems[cat].push({ desc: item.label, sku: 'Labour', qty: 1, unit: item.cost, total: item.cost, supplier_code: 'BDS:RC-' + cat.toUpperCase() });
+            var rcSku = 'Labour', rcSupplier = 'BDS:RC-' + cat.toUpperCase();
+            if (item.equipment_sku) {
+                var eqA = (getMfg().accessories || []).find(function(a) { return a.id === item.equipment_sku; });
+                if (eqA) { rcSku = eqA.label || item.equipment_sku; rcSupplier = eqA.supplier_code || rcSupplier; }
+            }
+            catItems[cat].push({ desc: item.label, sku: rcSku, qty: 1, unit: item.cost, total: item.cost, supplier_code: rcSupplier });
         });
         ['pv', 'electrical', 'battery', 'access', 'travel'].forEach(function(cat) {
             if (catItems[cat] && catItems[cat].length > 0) {

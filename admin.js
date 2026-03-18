@@ -78,7 +78,7 @@ const DEFAULT_RATE_CARD_ITEMS = [
     { sort_order: 5,  category: 'pv',         label: 'Tile Roof',                              pricing_type: 'flat',        input_type: 'auto',     rate: 120,    threshold: null, threshold_type: null,    conditions: { roof_type: 'tile' },                                   applies_to: null },
     { sort_order: 6,  category: 'pv',         label: 'Double Storey',                          pricing_type: 'flat',        input_type: 'auto',     rate: 120,    threshold: null, threshold_type: null,    conditions: { storey: 2 },                                           applies_to: null },
     { sort_order: 7,  category: 'pv',         label: 'Terracotta per panel',                   pricing_type: 'per_panel',   input_type: 'auto',     rate: 20,     threshold: null, threshold_type: null,    conditions: { roof_type: 'terracotta' },                             applies_to: 'panelCount' },
-    { sort_order: 8,  category: 'pv',         label: 'Optimiser per panel',                    pricing_type: 'per_panel',   input_type: 'addon',    rate: 10,     threshold: null, threshold_type: null,    conditions: null,                                                    applies_to: 'optimiserCount' },
+    { sort_order: 8,  category: 'pv',         label: 'Optimiser per panel',                    pricing_type: 'per_panel',   input_type: 'addon',    rate: 10,     threshold: null, threshold_type: null,    conditions: null,                                                    applies_to: 'optimiserCount', equipment_sku: 'tigo_optimiser' },
     { sort_order: 9,  category: 'electrical', label: 'Energy Meter (inc basic wifi)',           pricing_type: 'flat',        input_type: 'standard', rate: 200,    threshold: null, threshold_type: null,    conditions: null,                                                    applies_to: null },
     { sort_order: 10, category: 'electrical', label: 'DC run exceeding 20m',                   pricing_type: 'per_metre',   input_type: 'addon',    rate: 6,      threshold: 20,   threshold_type: 'after', conditions: null,                                                    applies_to: 'dcRunMetres' },
     { sort_order: 11, category: 'electrical', label: 'AC run exceeding 8m',                    pricing_type: 'per_metre',   input_type: 'addon',    rate: 20,     threshold: 8,    threshold_type: 'after', conditions: null,                                                    applies_to: 'acRunMetres' },
@@ -751,6 +751,7 @@ function openItemModal(itemId) {
     document.getElementById('itemThreshold').value = item && item.threshold != null ? item.threshold : '';
     document.getElementById('itemThresholdType').value = item ? (item.threshold_type || '') : '';
     document.getElementById('itemAppliesTo').value = item ? (item.applies_to || '') : '';
+    document.getElementById('itemEquipmentSku').value = item ? (item.equipment_sku || '') : '';
 
     onPricingTypeChange();
     renderConditionsEditor(item ? item.conditions : null);
@@ -874,6 +875,7 @@ async function saveItemFromModal() {
         threshold: thresholdVal === '' ? null : Number(thresholdVal),
         threshold_type: document.getElementById('itemThresholdType').value || null,
         applies_to: document.getElementById('itemAppliesTo').value || null,
+        equipment_sku: document.getElementById('itemEquipmentSku').value || null,
         conditions: collectConditions(),
     };
 
