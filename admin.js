@@ -1829,10 +1829,25 @@ async function loadQuotes() {
     }
 }
 
+function filterQuotes() {
+    var term = (document.getElementById('quoteSearch')?.value || '').toLowerCase().trim();
+    var rows = document.querySelectorAll('#quotesContent table tbody tr');
+    var count = 0;
+    rows.forEach(function(row) {
+        var name = row.cells[1]?.textContent?.toLowerCase() || '';
+        var match = !term || name.indexOf(term) !== -1;
+        row.style.display = match ? '' : 'none';
+        if (match) count++;
+    });
+    document.getElementById('quotesCount').textContent = count + ' quote' + (count !== 1 ? 's' : '');
+}
+
 function renderQuotesView() {
     var wrap = document.getElementById('quotesContent');
     var countEl = document.getElementById('quotesCount');
     if (countEl) countEl.textContent = adminQuotes.length + ' quote' + (adminQuotes.length !== 1 ? 's' : '');
+    var searchEl = document.getElementById('quoteSearch');
+    if (searchEl) searchEl.value = '';
 
     if (adminQuotes.length === 0) {
         wrap.innerHTML = '<div style="text-align:center;color:var(--text-quaternary);padding:40px;font-size:14px;">No saved quotes found</div>';
