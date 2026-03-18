@@ -320,6 +320,19 @@ function calculateInstallationCosts(ctx, contractor, rateCardItems, addons) {
 
         var cost = calculateItemCost(item, ctx, addons);
         cost = Math.round(cost * 100) / 100;
+        // Determine quantity for BOM display
+        var itemQty = 1;
+        if (item.pricing_type === 'per_panel' && item.input_type === 'addon') {
+            var ad = addons.addonItems[item.id];
+            itemQty = ad ? (parseInt(ad.quantity) || 0) : 0;
+        } else if (item.pricing_type === 'per_panel') {
+            itemQty = ctx.panelCount || 0;
+        } else if (item.pricing_type === 'per_metre') {
+            var ad2 = addons.addonItems[item.id];
+            itemQty = ad2 ? (parseFloat(ad2.value) || 0) : 0;
+        } else if (item.pricing_type === 'per_circuit') {
+            itemQty = ctx.backupCircuitCount || 0;
+        }
         if (cost > 0 || item.pricing_type === 'quoted') {
             items.push({
                 id: item.id,
@@ -329,6 +342,7 @@ function calculateInstallationCosts(ctx, contractor, rateCardItems, addons) {
                 input_type: item.input_type,
                 rate: parseFloat(item.rate) || 0,
                 cost: cost,
+                qty: itemQty,
                 equipment_sku: item.equipment_sku || null
             });
             total += cost;
@@ -3484,7 +3498,9 @@ function buildBOM() {
                 var eqA = (getMfg().accessories || []).find(function(a) { return a.id === item.equipment_sku; });
                 if (eqA) { rcSku = eqA.label || item.equipment_sku; rcSupplier = eqA.supplier_code || rcSupplier; }
             }
-            catItems[cat].push({ desc: item.label, sku: rcSku, qty: 1, unit: item.cost, total: item.cost, supplier_code: rcSupplier });
+            var bomQty = item.qty || 1;
+            var bomUnit = bomQty > 0 ? Math.round(item.cost / bomQty * 100) / 100 : item.cost;
+            catItems[cat].push({ desc: item.label, sku: rcSku, qty: bomQty, unit: bomUnit, total: item.cost, supplier_code: rcSupplier });
         });
         ['pv', 'electrical', 'battery', 'access', 'travel'].forEach(function(cat) {
             if (catItems[cat] && catItems[cat].length > 0) {
