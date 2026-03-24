@@ -1433,6 +1433,20 @@ async function saveProduct() {
 // ==============================
 // BUSINESS PARAMS
 // ==============================
+
+// Build dropdown options for STC deeming period — only current year and forward
+function buildDeemingOptions(currentValue) {
+    var currentYear = new Date().getFullYear();
+    var html = '';
+    for (var yr = 2026; yr <= 2030; yr++) {
+        var dp = 5 - (yr - 2026); // 5 in 2026, 4 in 2027, etc.
+        var disabled = yr < currentYear ? ' disabled' : '';
+        var selected = Number(currentValue) === dp ? ' selected' : '';
+        html += '<option value="' + dp + '"' + disabled + selected + '>' + dp + ' (' + yr + ')</option>';
+    }
+    return html;
+}
+
 function renderBusinessParams() {
     var wrap = document.getElementById('businessParamsWrap');
     if (!businessParamsRow) {
@@ -1447,8 +1461,8 @@ function renderBusinessParams() {
         '<div class="form-group"><label>GP Margin (%)</label><input type="number" id="bpGpMargin" value="' + bp.gp_margin + '" step="0.01"></div>' +
         '<div class="form-group"><label>Sales Commission (%)</label><input type="number" id="bpCommission" value="' + bp.sales_commission + '" step="0.01"></div>' +
         '<div class="form-group"><label>STC Price ($)</label><input type="number" id="bpStcPrice" value="' + bp.stc_price + '" step="0.01"></div>' +
-        '<div class="form-group"><label>STC Deeming Period (yrs)</label><input type="number" id="bpStcDeeming" value="' + bp.stc_deeming_period + '"></div>' +
-        '<div class="form-group"><label>Battery Rebate ($/kWh)</label><input type="number" id="bpBatRebate" value="' + bp.battery_rebate_per_kwh + '" step="0.01"></div>' +
+        '<div class="form-group"><label>STC Deeming Period (yrs)</label><select id="bpStcDeeming">' + buildDeemingOptions(bp.stc_deeming_period) + '</select></div>' +
+        '<div class="form-group"><label>Battery STC Factor</label><input type="number" id="bpBatFactor" value="' + (bp.battery_stc_factor || 8.4) + '" step="0.1"></div>' +
         '<div class="form-group"><label>Default Panel Count</label><input type="number" id="bpDefPanels" value="' + bp.default_panel_count + '"></div>' +
         '<div class="form-group"><label>Default Battery kWh</label><input type="number" id="bpDefBattery" value="' + bp.default_battery_kwh + '"></div>' +
         '<div class="form-group"><label>Split Array Labour ($)</label><input type="number" id="bpSplitLabour" value="' + bp.split_array_labour + '" step="0.01"></div>' +
@@ -1478,7 +1492,7 @@ async function saveBusinessParams() {
         sales_commission: val('bpCommission'),
         stc_price: val('bpStcPrice'),
         stc_deeming_period: val('bpStcDeeming'),
-        battery_rebate_per_kwh: val('bpBatRebate'),
+        battery_stc_factor: val('bpBatFactor'),
         default_panel_count: val('bpDefPanels'),
         default_battery_kwh: val('bpDefBattery'),
         split_array_labour: val('bpSplitLabour'),

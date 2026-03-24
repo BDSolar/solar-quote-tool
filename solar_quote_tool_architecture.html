@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solar Quote Tool — System Architecture</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            line-height: 1.6;
+            color: #2d2d2d;
+            background: #f8f9fa;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        /* Title Page */
+        .title-page {
+            text-align: center;
+            padding: 100px 20px;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: white;
+            margin-bottom: 40px;
+        }
+
+        .title-page h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .title-page .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.8;
+            margin-bottom: 30px;
+        }
+
+        .title-page .description {
+            font-size: 1rem;
+            opacity: 0.7;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        /* Table of Contents */
+        .toc {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            margin-bottom: 40px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .toc h2 {
+            font-size: 1.3rem;
+            color: #1a1a2e;
+            margin-bottom: 15px;
+        }
+
+        .toc ul {
+            list-style: none;
+        }
+
+        .toc li {
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .toc li:last-child {
+            border-bottom: none;
+        }
+
+        .toc a {
+            color: #0f3460;
+            text-decoration: none;
+        }
+
+        .toc a:hover {
+            text-decoration: underline;
+        }
+
+        /* Sections */
+        .section {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .section h2 {
+            font-size: 1.5rem;
+            color: #1a1a2e;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e8e8e8;
+        }
+
+        .section h3 {
+            font-size: 1.15rem;
+            color: #0f3460;
+            margin: 25px 0 12px 0;
+        }
+
+        .section p {
+            margin-bottom: 15px;
+            color: #444;
+        }
+
+        .section ul {
+            margin: 10px 0 20px 25px;
+        }
+
+        .section li {
+            margin-bottom: 8px;
+            color: #444;
+        }
+
+        .section li strong {
+            color: #1a1a2e;
+        }
+
+        /* Diagram Container */
+        .diagram-container {
+            background: #fafbfc;
+            border: 1px solid #e1e4e8;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 25px 0;
+            overflow-x: auto;
+        }
+
+        .diagram-container .mermaid {
+            display: flex;
+            justify-content: center;
+        }
+
+        .diagram-title {
+            font-size: 0.9rem;
+            color: #666;
+            text-align: center;
+            margin-bottom: 15px;
+            font-weight: 500;
+        }
+
+        /* Note boxes */
+        .note {
+            background: #f0f7ff;
+            border-left: 4px solid #0066cc;
+            padding: 15px 20px;
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+            font-size: 0.95rem;
+        }
+
+        .note.warning {
+            background: #fff8e6;
+            border-left-color: #f0ad4e;
+        }
+
+        /* Code/technical terms */
+        code {
+            background: #f1f3f4;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+            font-size: 0.9em;
+            color: #d63384;
+        }
+
+        /* Print styles */
+        @media print {
+            body {
+                background: white;
+            }
+
+            .title-page {
+                page-break-after: always;
+            }
+
+            .section {
+                box-shadow: none;
+                border: 1px solid #ddd;
+                page-break-inside: avoid;
+            }
+
+            .diagram-container {
+                page-break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Title Page -->
+    <div class="title-page">
+        <h1>Solar Quote Tool</h1>
+        <div class="subtitle">System Architecture Documentation</div>
+        <div class="description">
+            A technical overview of the quote builder system, data flows, and administrative functions.
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Table of Contents -->
+        <div class="toc">
+            <h2>Contents</h2>
+            <ul>
+                <li><a href="#section1">1. High-Level Architecture</a></li>
+                <li><a href="#section2">2. Boot Sequence & Data Flow</a></li>
+                <li><a href="#section3">3. The calculateQuote() Engine</a></li>
+                <li><a href="#section4">4. Backup & Board Upgrade Logic</a></li>
+                <li><a href="#section5">5. STC Rebate — Date-Aware Transition</a></li>
+                <li><a href="#section6">6. Quote Save / Load / PDF Flow</a></li>
+                <li><a href="#section7">7. Admin Panel Modes</a></li>
+                <li><a href="#section8">8. Database Schema</a></li>
+            </ul>
+        </div>
+
+        <!-- Section 1: High-Level Architecture -->
+        <div class="section" id="section1">
+            <h2>1. High-Level Architecture</h2>
+
+            <p>
+                The Solar Quote Tool is a vanilla JavaScript single-page application hosted on GitHub Pages.
+                It uses Supabase as a backend for data storage (PostgreSQL with REST API) and Edge Functions for user management.
+                There is no build step or framework — just static HTML, CSS, and JavaScript files.
+            </p>
+
+            <div class="diagram-container">
+                <div class="diagram-title">System Overview</div>
+                <pre class="mermaid">
+graph TB
+    subgraph Frontend["Frontend (GitHub Pages)"]
+        direction TB
+        INDEX["index.html<br/>Quote Builder UI"]
+        ADMIN["admin.html<br/>Contractor, Pricing &amp; Users Admin"]
+        GUIDE["guide.html<br/>User Guide"]
+        STYLE["style.css<br/>Shared Styles"]
+        APPJS["app.js (~4200 lines)<br/>Quote Logic"]
+        ADMINJS["admin.js (~1500 lines)<br/>Admin Logic"]
+        CONFIG["config.json<br/>Structural Rules"]
+    end
+
+    subgraph Supabase["Supabase (PostgreSQL + REST API)"]
+        direction TB
+        subgraph ProductTables["Product Pricing (10 tables)"]
+            PT["panels · inverters · battery_modules<br/>gateways · ev_chargers · accessories<br/>battery_mounting · mounting_kits · mounting_parts<br/>+ addons"]
+        end
+        subgraph RefTables["Reference Tables"]
+            RT["battery_packages<br/>solax_bms_components<br/>business_params"]
+        end
+        subgraph OpsTables["Operations Tables"]
+            OT["quotes · reps · contractors<br/>rate_card_items"]
+        end
+        subgraph EdgeFn["Edge Functions"]
+            EF["admin-users<br/>(list/create/delete auth users)"]
+        end
+    end
+
+    subgraph External["External APIs"]
+        GAPI["Google Maps JS API<br/>Places Autocomplete<br/>Distance Matrix"]
+        CDN["CDN Scripts (SRI-pinned)<br/>supabase-js@2.98.0<br/>jsPDF + AutoTable"]
+    end
+
+    INDEX --> APPJS
+    INDEX --> STYLE
+    ADMIN --> ADMINJS
+    ADMIN --> STYLE
+    APPJS --> CDN
+    ADMINJS --> CDN
+    APPJS --> GAPI
+    ADMINJS --> GAPI
+    CDN --> Supabase
+    APPJS -.->|loads| CONFIG
+                </pre>
+            </div>
+
+            <h3>Key Components</h3>
+
+            <p><strong>Frontend (GitHub Pages)</strong></p>
+            <ul>
+                <li><strong>index.html</strong> — The main quote builder interface where users configure solar systems</li>
+                <li><strong>admin.html</strong> — Administrative interface for managing contractors, pricing, and users</li>
+                <li><strong>guide.html</strong> — Interactive user guide with screenshots and field-level documentation</li>
+                <li><strong>app.js</strong> (~4,200 lines) — Core quote logic including calculations, UI population, and PDF generation</li>
+                <li><strong>admin.js</strong> (~1,500 lines) — Admin panel logic for contractor, pricing, and user management</li>
+                <li><strong>config.json</strong> — Structural rules, CEC tables, STC zone definitions, mounting calc rules, battery rules</li>
+                <li><strong>style.css</strong> — Shared styling across all interfaces</li>
+            </ul>
+
+            <p><strong>Supabase Backend</strong></p>
+            <ul>
+                <li><strong>Product Pricing Tables (10)</strong> — panels, inverters, battery_modules, gateways, ev_chargers, accessories, battery_mounting, mounting_kits, mounting_parts, addons</li>
+                <li><strong>Reference Tables</strong> — battery_packages, solax_bms_components, business_params</li>
+                <li><strong>Operations Tables</strong> — quotes, reps, contractors, rate_card_items</li>
+                <li><strong>Edge Functions</strong> — admin-users (list/create/delete auth users via service_role key, deployed with --no-verify-jwt)</li>
+            </ul>
+
+            <p><strong>External APIs</strong></p>
+            <ul>
+                <li><strong>Google Maps JavaScript API</strong> — Places Autocomplete for address input (quote tool + admin)</li>
+                <li><strong>Google Distance Matrix API</strong> — Auto-calculates driving distance from contractor to install site</li>
+                <li><strong>supabase-js v2.98.0</strong> — Database client (SRI-pinned)</li>
+                <li><strong>jsPDF + AutoTable</strong> — PDF generation (SRI-pinned)</li>
+            </ul>
+
+            <div class="note">
+                All CDN scripts are pinned with SRI (Subresource Integrity) hashes for security. RLS policies cover both <code>anon</code> and <code>authenticated</code> roles on all admin tables.
+            </div>
+        </div>
+
+        <!-- Section 2: Boot Sequence -->
+        <div class="section" id="section2">
+            <h2>2. Boot Sequence & Data Flow</h2>
+
+            <p>
+                When the app loads, four tasks fire in parallel to minimise round-trips and improve mobile load times.
+            </p>
+
+            <div class="diagram-container">
+                <div class="diagram-title">App Initialization Flow</div>
+                <pre class="mermaid">
+flowchart TD
+    DOMLoad["DOMContentLoaded"] --> P1 & P2 & P3 & P4
+
+    subgraph P1["loadConfig()"]
+        direction TB
+        FetchJSON["Fetch config.json<br/>(structural rules, CEC tables, STC zones)"]
+        FetchJSON --> ParallelDB["12 Parallel Supabase Queries<br/>panels, inverters, battery_modules,<br/>gateways, ev_chargers, accessories,<br/>addons, battery_mounting, mounting_kits,<br/>mounting_parts, battery_packages,<br/>solax_bms_components, business_params"]
+        ParallelDB --> Reconstruct["reconstructConfig()<br/>Merge DB pricing into<br/>structural config &rarr; CONFIG object"]
+    end
+
+    subgraph P2["loadReps()"]
+        LR["Fetch reps &rarr; #repSelect"]
+    end
+
+    subgraph P3["loadContractors()"]
+        LC["Fetch contractors &rarr; #contractorSelect<br/>Restore saved selection from localStorage<br/>Call loadRateCard()"]
+    end
+
+    subgraph P4["initAutocomplete()"]
+        GA["Load Google Maps JS API<br/>Attach Places Autocomplete<br/>to #installAddress"]
+    end
+
+    P1 --> PopulateUI["Populate All UI Controls<br/>populateManufacturers()<br/>populatePanels()<br/>populateBatteryTypes()<br/>populateInverters()<br/>populateGateways()<br/>buildAccessoriesUI()"]
+
+    PopulateUI --> Defaults["applyManufacturerDefaults()<br/>Set default panel, battery,<br/>inverter selections"]
+    Defaults --> CalcQuote["calculateQuote()"]
+                </pre>
+            </div>
+
+            <h3>Parallel Initialization</h3>
+            <p>All four tasks run concurrently on <code>DOMContentLoaded</code>:</p>
+            <ul>
+                <li><strong>loadConfig()</strong> — Fetches config.json + 12 parallel Supabase queries, then calls <code>reconstructConfig()</code></li>
+                <li><strong>loadReps()</strong> — Populates the sales rep dropdown</li>
+                <li><strong>loadContractors()</strong> — Loads contractor list, restores saved selection from localStorage, calls <code>loadRateCard()</code></li>
+                <li><strong>initAutocomplete()</strong> — Dynamically loads Google Maps JS API, attaches Places Autocomplete to the address field</li>
+            </ul>
+
+            <h3>Config Merge</h3>
+            <p><code>reconstructConfig(baseConfig, tables, batteryPackages, bmsParts, businessParams)</code> merges database pricing into the structural config from config.json, producing a single <code>CONFIG</code> object used by all calculations.</p>
+
+            <h3>Fallback Chain</h3>
+            <ul>
+                <li><strong>1. Supabase DB</strong> — Primary source (live pricing)</li>
+                <li><strong>2. config.json</strong> — Secondary if DB fails (may have prices)</li>
+                <li><strong>3. DEFAULT_CONFIG</strong> — Embedded in app.js as last resort</li>
+            </ul>
+
+            <h3>Google Places Integration</h3>
+            <p>On address selection, the autocomplete handler:</p>
+            <ul>
+                <li>Splits <code>address_components</code> into Street / Suburb / State / Postcode</li>
+                <li>Calls <code>updateZoneDisplay()</code> to set STC zone</li>
+                <li>Calls <code>calculateTravelDistance()</code> — uses Distance Matrix to compute driving km from contractor's address</li>
+                <li>Shows a yellow warning if distance exceeds the contractor's <code>service_region_km</code></li>
+            </ul>
+        </div>
+
+        <!-- Section 3: calculateQuote() -->
+        <div class="section" id="section3">
+            <h2>3. The calculateQuote() Engine</h2>
+
+            <p>
+                This is the core pricing engine that runs whenever the user changes any input.
+                It reads form state, optimizes battery configurations, validates against CEC requirements,
+                and calculates the final price.
+            </p>
+
+            <div class="diagram-container">
+                <div class="diagram-title">Core Calculation Flow</div>
+                <pre class="mermaid">
+flowchart TD
+    Trigger["User Action<br/>(panel count, kWh, manufacturer,<br/>phase, roof type, contractor...)"]
+    Trigger -->|"150ms debounce<br/>(text inputs)"| Sync
+
+    Sync["syncStateFromDOM()<br/>Read 20+ form fields &rarr; state object<br/>+ date-aware STC deeming period"]
+    Sync --> ModeUI["updateSystemModeUI()<br/>Show/hide battery controls<br/>based on system type"]
+
+    ModeUI --> BatOpt{{"Battery<br/>Optimization"}}
+
+    BatOpt -->|"&gt; 48kWh + Sigenergy"| DualStack["optimizeDualStack()<br/>Split into 2 stacks,<br/>each with own inverter"]
+    BatOpt -->|"SolaX + &gt; capacity"| Parallel["optimizeParallelBattery()<br/>2 parallel battery systems"]
+    BatOpt -->|"Standard"| Single["optimizeBattery()<br/>Cheapest module combo<br/>to reach target kWh"]
+
+    DualStack --> InvSelect
+    Parallel --> InvSelect
+    Single --> InvSelect
+
+    InvSelect["autoSelectInverter()<br/>(if user hasn't manually chosen)"]
+    InvSelect --> CEC["checkCec()<br/>Validate inverter+panel<br/>against CEC-approved combos"]
+
+    CEC --> Mounting["calculateMountingKits()<br/>Roof kits, rails, tilt,<br/>kliplock, surcharges"]
+
+    Mounting --> RateCard{{"Contractor<br/>Selected?"}}
+    RateCard -->|Yes| InstCost["calculateInstallationCosts()<br/>buildQuoteContext() &rarr; match conditions<br/>&rarr; per_watt / per_panel / flat pricing"]
+    RateCard -->|No| FallbackInst["Fallback: $/kW + $/stack<br/>from business_params"]
+
+    InstCost --> Pricing
+    FallbackInst --> Pricing
+
+    Pricing["Final Price Calculation"]
+
+    Pricing --> Adjustments["Apply Adjustments<br/>+ Fixed Overhead (flat $)<br/>+ Zero Bill Premium (if selected)<br/>&minus; Quote-Level Discount"]
+
+    Adjustments --> DOM["Update DOM<br/>updateSummaryComponents()<br/>Price display with animation<br/>CEC shields / warnings<br/>Urgency banner"]
+                </pre>
+            </div>
+
+            <h3>Trigger & Debounce</h3>
+            <p>
+                User actions trigger <code>calculateQuote()</code>. Text inputs are debounced by 150ms.
+                Dedicated controls (dropdowns, steppers) fire immediately on change.
+            </p>
+
+            <h3>Calculation Steps</h3>
+
+            <p><strong>1. syncStateFromDOM()</strong> — Reads 20+ form fields into a state object. Reads admin-set values: <code>state.deemingPeriod</code> (from dropdown) and <code>state.batteryStcFactor</code> (STC factor for battery rebate).</p>
+
+            <p><strong>2. Battery Optimization</strong> (one of three paths):</p>
+            <ul>
+                <li><strong>optimizeDualStack()</strong> — For Sigenergy systems over 48kWh, splits into 2 stacks with separate inverters</li>
+                <li><strong>optimizeParallelBattery()</strong> — For SolaX systems exceeding single-stack capacity</li>
+                <li><strong>optimizeBattery()</strong> — Standard path: finds cheapest module combination to reach target kWh</li>
+            </ul>
+
+            <p><strong>3. autoSelectInverter()</strong> — Picks appropriate inverter if user hasn't manually selected</p>
+            <p><strong>4. checkCec()</strong> — Validates inverter + panel combination against CEC-approved list</p>
+            <p><strong>5. calculateMountingKits()</strong> — Calculates roof kits, rails, tilt frames, kliplock, surcharges</p>
+
+            <p><strong>6. Installation Costs:</strong></p>
+            <ul>
+                <li>If contractor selected: <code>calculateInstallationCosts()</code> uses rate card with condition matching via <code>buildQuoteContext()</code></li>
+                <li>If no contractor: Falls back to $/kW + $/stack rates from business_params</li>
+            </ul>
+
+            <p><strong>7. Product Discounts:</strong></p>
+            <p><code>getEffectivePrice(product)</code> returns discounted price if within the product's <code>discount_from</code>/<code>discount_to</code> date range, else the base price. Applied to panels, inverters, battery modules, gateways, EV chargers, and accessories.</p>
+
+            <p><strong>8. Final Price:</strong></p>
+            <p>Equipment + Mounting + Installation + GP Margin + Commission - PV STC Rebate - Battery Rebate, then &times; 1.1 for GST.</p>
+
+            <p><strong>9. Post-GST Adjustments:</strong></p>
+            <ul>
+                <li><strong>Fixed Overhead</strong> — Flat dollar amount from <code>business_params.fixed_overhead</code>, added after GST. Not visible in quote UI or BOM.</li>
+                <li><strong>Zero Bill Premium</strong> — <code>MAX(zero_bill_base, priceBeforeRebatesIncGst &times; zero_bill_pct / 100)</code>. Applied only when "Zero Bill" quote type is selected.</li>
+                <li><strong>Discount</strong> — Quote-level dollar deduction entered by the rep.</li>
+            </ul>
+        </div>
+
+        <!-- Section 4: Backup & Board Upgrade Logic -->
+        <div class="section" id="section4">
+            <h2>4. Backup & Board Upgrade Logic</h2>
+
+            <p>Backup configuration differs by manufacturer but both feed into the same board upgrade and circuit logic.</p>
+
+            <div class="diagram-container">
+                <div class="diagram-title">Backup Decision Flow</div>
+                <pre class="mermaid">
+flowchart TD
+    MFG{{"Manufacturer?"}}
+
+    MFG -->|Sigenergy| SigGW["Gateway dropdown<br/>#gatewaySelect"]
+    SigGW --> SigCheck{{"Gateway<br/>selected?"}}
+    SigCheck -->|No| ScopeDisabled["Scope toggle disabled<br/>(greyed out)"]
+    SigCheck -->|Yes| ScopeEnabled["Scope toggle enabled<br/>#backupScope"]
+
+    MFG -->|SolaX| SolaxCheck{{"Battery<br/>configured?"}}
+    SolaxCheck -->|No| SolaxHidden["Backup Options hidden"]
+    SolaxCheck -->|Yes| SolaxToggle["Backup Options toggle<br/>#solaxBackupType<br/>None / Partial / Full Home"]
+
+    ScopeEnabled --> Partial["Partial selected"]
+    ScopeEnabled --> Full["Full Home selected"]
+
+    SolaxToggle --> SolaxNone["None selected"]
+    SolaxToggle --> SolaxPartial["Partial selected"]
+    SolaxToggle --> SolaxFull["Full Home selected"]
+
+    SolaxNone --> NoBackup["No backup circuits<br/>No board upgrade addon<br/>No EPS box"]
+
+    Partial --> PartialResult["Circuits = 3<br/>Auto-add: Partial board upgrade<br/>(quoted pricing)"]
+    SolaxPartial --> PartialResult
+
+    Full --> FullResult["Circuits = 5<br/>Auto-add: Meter board upgrade<br/>(quoted pricing)"]
+    SolaxFull --> FullResult
+    SolaxFull --> EPSCheck{{"Inverter SKU?"}}
+    EPSCheck -->|X3-HYBRID| EPS["Auto-add EPS Box<br/>(three phase)"]
+    EPSCheck -->|X1-VAST / X3-ULT| NoEPS["Built-in whole-home<br/>No EPS box needed"]
+                </pre>
+            </div>
+
+            <h3>Sigenergy</h3>
+            <ul>
+                <li><strong>Gateway dropdown</strong> — Selects backup protection device</li>
+                <li><strong>Scope toggle</strong> (Partial / Full Home) — Segmented button to the right of the gateway dropdown, always visible but disabled when no gateway is selected</li>
+                <li>When gateway is selected, <code>onBackupScopeChange()</code> fires automatically, adding the appropriate board upgrade addon</li>
+            </ul>
+
+            <h3>SolaX</h3>
+            <ul>
+                <li><strong>Backup Options toggle</strong> (None / Partial / Full Home) — Three-option segmented button, appears when batteries are configured</li>
+                <li><code>onSolaxBackupChange()</code> handles addon swap and circuit count</li>
+                <li>Full Home additionally triggers <code>getSolaxEpsBoxCost()</code> for EPS box auto-add on X3-Hybrid inverters</li>
+            </ul>
+
+            <h3>Board Upgrade Addons</h3>
+            <p>Both addons are <code>pricing_type: 'quoted'</code> — the rep enters a custom dollar amount. They are matched by label in <code>currentRateCardItems</code>:</p>
+            <ul>
+                <li><strong>Partial</strong> &rarr; "Partial board upgrade" + 3 backup circuits</li>
+                <li><strong>Full Home</strong> &rarr; "Meter board upgrade" + 5 backup circuits</li>
+            </ul>
+            <p>Switching scope/option automatically removes the old addon and adds the new one. If the contractor's rate card doesn't have the matching item, the addon step is skipped gracefully.</p>
+        </div>
+
+        <!-- Section 5: STC Rebate -->
+        <div class="section" id="section5">
+            <h2>5. STC Rebate — Date-Aware Transition</h2>
+
+            <p>The STC rebate system automatically transitions on 1 May 2026 with no admin action required.</p>
+
+            <div class="diagram-container">
+                <div class="diagram-title">STC Rebate Logic</div>
+                <pre class="mermaid">
+flowchart TD
+    Admin["Admin Business Parameters"]
+
+    Admin --> PVDeeming["PV Deeming Period<br/>(dropdown by year, e.g. 5 for 2026)"]
+    Admin --> BatFactor["Battery STC Factor<br/>(e.g. 8.4, declines every 6 months)"]
+    Admin --> StcPrice["STC Price (e.g. $37)"]
+
+    PVDeeming --> PVReb["PV STC Rebate<br/>floor(kW &times; zone &times; deeming) &times; stcPrice"]
+    BatFactor --> BatReb["Battery STC Rebate<br/>floor(tiered_kwh &times; factor) &times; stcPrice"]
+    StcPrice --> PVReb
+    StcPrice --> BatReb
+
+    BatReb --> Tiers{{"After May 1 2026?"}}
+    Tiers -->|"Before"| Flat["Flat: kWh &times; factor"]
+    Tiers -->|"After"| Tiered["Tiered:<br/>0-14 kWh @ 100%<br/>14-28 kWh @ 60%<br/>28-50 kWh @ 15%"]
+
+    PVReb -.->|"Urgency banner"| Banner["getNextStepDown()<br/>Compares current price vs<br/>next scheduled reduction"]
+    BatReb -.-> Banner
+                </pre>
+            </div>
+
+            <h3>Key Functions</h3>
+            <ul>
+                <li><code>calcBatteryRebate(usableKwh, stcFactor, stcPrice)</code> — Calculates battery rebate using admin-set factor; applies tiers from May 2026</li>
+                <li><code>calcBatteryRebateTiered(cappedKwh, stcFactor, stcPrice)</code> — Tiered STC structure with configurable factor</li>
+                <li><code>getNextStepDown(currentDeeming, currentFactor)</code> — Finds next scheduled reduction from hard-coded PV/battery schedules for urgency banner</li>
+            </ul>
+
+            <div class="note">
+                PV deeming period and battery STC factor are admin-controlled via Business Parameters. The urgency banner uses hard-coded published schedules to compare current price against the next step-down. Banner auto-hides when no future step-down exists.
+            </div>
+        </div>
+
+        <!-- Section 6: Quote Save/Load/PDF -->
+        <div class="section" id="section6">
+            <h2>6. Quote Save / Load / PDF Flow</h2>
+
+            <p>The app supports saving quotes to Supabase, loading them back, and generating PDF documents.</p>
+
+            <div class="diagram-container">
+                <div class="diagram-title">Quote Operations Sequence</div>
+                <pre class="mermaid">
+sequenceDiagram
+    participant U as User
+    participant DOM as Browser DOM
+    participant JS as app.js
+    participant SB as Supabase
+
+    Note over U,SB: SAVE QUOTE
+    U->>DOM: Click "Save"
+    DOM->>JS: saveQuote()
+    JS->>JS: Validate mandatory fields
+    JS->>JS: collectQuoteData()<br/>{customer, system, mounting,<br/>pricing, installation, totals,<br/>bom_snapshot, custom_addons}
+    JS->>JS: collectActiveDiscounts()<br/>Snapshot product discounts
+    JS->>SB: upsert('quotes', data)
+    SB-->>JS: {id, created_at}
+    JS->>DOM: Show success toast
+
+    Note over U,SB: LOAD QUOTE
+    U->>DOM: Search &amp; click quote
+    DOM->>JS: loadQuote(quoteId)
+    JS->>SB: select('quotes').eq('id', quoteId)
+    SB-->>JS: Full quote JSONB
+    JS->>JS: Restore system type, manufacturer
+    JS->>JS: Repopulate dropdowns
+    JS->>JS: Restore customer, panels, battery,<br/>inverter, backup scope/options
+    JS->>SB: loadRateCard(contractorId, {skipCalc: true})
+    SB-->>JS: contractor + rate_card_items
+    JS->>JS: Restore custom addons + discount
+    JS->>JS: calculateQuote()
+    JS->>JS: checkExpiredDiscounts()<br/>Warn if saved discounts changed
+    JS->>DOM: Full UI updated
+
+    Note over U,SB: GENERATE PDF
+    U->>DOM: Click "Print"
+    DOM->>JS: generateQuote()
+    JS->>JS: buildBOM() + pricing calc
+    JS->>JS: jsPDF render<br/>(dark theme, itemized BOM,<br/>Zero Bill line, backup type)
+    JS->>DOM: PDF download
+                </pre>
+            </div>
+
+            <h3>Save Quote</h3>
+            <ul>
+                <li><code>collectQuoteData()</code> gathers: customer, system (incl. <code>backupScope</code>, <code>solaxBackupType</code>, <code>quoteType</code>), mounting, pricing, installation, totals</li>
+                <li><strong>BOM Snapshot</strong> — <code>buildBOM()</code> output saved at root of quote JSONB. Format: <code>[{category, items: [{desc, sku, qty, unit, total, supplier_code}]}]</code></li>
+                <li><strong>Product Discounts</strong> — <code>collectActiveDiscounts()</code> snapshots any active promotional discounts at save time</li>
+                <li>Additional totals: <code>priceBeforeRebatesIncGst</code>, <code>pvStcCount</code>, <code>installTotal</code>, <code>discount</code>, <code>zeroBillPremium</code>, <code>fixedOverhead</code></li>
+            </ul>
+
+            <h3>Load Quote</h3>
+            <ul>
+                <li>Restores system type and manufacturer first, then repopulates all dropdowns</li>
+                <li>Restores backup scope (Sigenergy) and backup options (SolaX) — maps old <code>whole_home</code> values to <code>full</code> for backwards compatibility</li>
+                <li>Loads contractor rate card with <code>skipCalc</code> flag to prevent premature calculation</li>
+                <li><code>checkExpiredDiscounts()</code> compares saved discount snapshots against current prices — shows yellow warning banner if they've changed</li>
+            </ul>
+
+            <h3>Generate PDF</h3>
+            <ul>
+                <li>Dark-themed PDF with system summary bar (panels, battery, inverter, backup type)</li>
+                <li>Itemized BOM grouped by category</li>
+                <li>Zero Bill Premium shown as line item if applicable</li>
+                <li>SolaX backup type (Partial/Full Home) and Sigenergy gateway shown in summary</li>
+            </ul>
+
+            <h3>BOM (Bill of Materials)</h3>
+            <p>The BOM is always accessible from the toolbar (no auth required) and is built client-side by <code>buildBOM()</code>. It includes every component, SKU, quantity, and cost. In the admin panel, <code>showQuoteBOM(idx)</code> renders a fully-costed BOM overlay with print support for saved quotes.</p>
+        </div>
+
+        <!-- Section 7: Admin Panel -->
+        <div class="section" id="section7">
+            <h2>7. Admin Panel Modes</h2>
+
+            <p>The admin.html interface has three modes, switched via the mode selector in the toolbar.</p>
+
+            <div class="diagram-container">
+                <div class="diagram-title">Admin Interface Structure</div>
+                <pre class="mermaid">
+flowchart LR
+    subgraph ContractorMode["Contractors Mode"]
+        direction TB
+        CList["loadContractors()<br/>List with search/filter"]
+        CList --> CSelect["selectContractor(id)<br/>Load details + rate card"]
+        CSelect --> CDetail["Details Tab<br/>Business info, address,<br/>licenses, compliance dates,<br/>travel threshold, service region"]
+        CSelect --> CRate["Rate Card Tab<br/>28 default items,<br/>conditions editor,<br/>inline price editing"]
+        CRate --> RCSeed["seedDefaultRateCard()<br/>Insert 28 default items"]
+        CRate --> RCCalc["Item pricing types:<br/>per_watt, per_panel,<br/>per_metre, per_circuit,<br/>per_km, flat, quoted, auto"]
+    end
+
+    subgraph PricingMode["Pricing Mode"]
+        direction TB
+        PLoad["loadPricingData()<br/>12 parallel queries<br/>(same as app.js)"]
+        PLoad --> PFilter["Filter by:<br/>Category (panel, inverter...)<br/>Manufacturer (sig, solax, all)"]
+        PFilter --> PTable["Product Tables<br/>Inline price edit on blur<br/>Active toggle, sort order<br/>Discount badges"]
+        PTable --> PModal["Edit Modal<br/>renderTypeFields(type)<br/>Type-specific form fields<br/>+ Promotional Discount section"]
+        PModal --> PSave["buildTypeData(type)<br/>&rarr; Supabase upsert"]
+        PLoad --> BParams["Business Params<br/>GP margin, commission,<br/>STC price, install rates,<br/>fixed overhead, zero bill"]
+        PLoad --> BulkImport["Bulk Import<br/>CSV paste &rarr; match supplier codes<br/>&rarr; batch price update"]
+    end
+
+    subgraph UsersMode["Users Mode"]
+        direction TB
+        UList["List auth users<br/>via admin-users Edge Function"]
+        UList --> UCreate["Create new user<br/>(email + password)"]
+        UList --> UDelete["Delete user"]
+    end
+
+    Toggle["Mode Selector"] --> ContractorMode
+    Toggle --> PricingMode
+    Toggle --> UsersMode
+                </pre>
+            </div>
+
+            <h3>Contractors Mode</h3>
+            <ul>
+                <li><code>loadContractors()</code> — Lists all contractors with search/filter</li>
+                <li><code>selectContractor(id)</code> — Loads contractor details and their rate card</li>
+                <li><strong>Details Tab:</strong> Business info, address (with Google Places autocomplete), licenses, compliance dates, travel threshold (default 80 km), service region</li>
+                <li><strong>Rate Card Tab:</strong> 28 default items, conditions editor, inline price editing</li>
+                <li><code>seedDefaultRateCard()</code> — Creates 28 standard rate card items for new contractors</li>
+            </ul>
+            <p><strong>Pricing Types:</strong> per_watt, per_panel, per_metre, per_circuit, per_km, flat, quoted, auto</p>
+
+            <h3>Pricing Mode</h3>
+            <ul>
+                <li><code>loadPricingData()</code> — Runs same 12 parallel queries as app.js</li>
+                <li>Filter by category (panel, inverter, etc.) and manufacturer</li>
+                <li>Product tables with inline price editing, active toggle, sort order</li>
+                <li>Green discount badges on rows with active promotional discounts</li>
+                <li>Edit modal with <code>renderTypeFields(type)</code> — includes Promotional Discount section (%, from date, to date) for applicable types</li>
+                <li><code>buildTypeData(type)</code> prepares data for Supabase upsert</li>
+            </ul>
+            <p><strong>Business Params:</strong> GP margin, commission, STC price, install rates, fixed overhead, zero bill base/percentage, battery rebate per kWh</p>
+            <p><strong>Bulk Import:</strong> Paste CSV data, match supplier codes across all tables via <code>buildSupplierCodeLookup()</code>, batch update prices</p>
+
+            <h3>Users Mode</h3>
+            <ul>
+                <li>Lists authenticated users via the <code>admin-users</code> Edge Function</li>
+                <li>Create new users (email + password)</li>
+                <li>Delete users</li>
+                <li>Edge Function uses Supabase service_role key for admin operations</li>
+            </ul>
+
+            <h3>Product Discounts</h3>
+            <p>Six tables support promotional discounts: panels, inverters, battery_modules, gateways, ev_chargers, accessories. Each has <code>discount_pct</code>, <code>discount_from</code>, <code>discount_to</code> columns. Active discounts show as green badges in admin table rows via <code>discountBadge()</code> / <code>isDiscountActive()</code>.</p>
+        </div>
+
+        <!-- Section 8: Database Schema -->
+        <div class="section" id="section8">
+            <h2>8. Database Schema</h2>
+
+            <p>The Supabase database uses PostgreSQL with the following table relationships.</p>
+
+            <div class="diagram-container">
+                <div class="diagram-title">Entity Relationship Diagram</div>
+                <pre class="mermaid">
+erDiagram
+    business_params ||--|| CONFIG : "margins, STC, defaults"
+    panels ||--|{ CONFIG : "panel specs + prices"
+    inverters ||--|{ CONFIG : "inverter specs + prices"
+    battery_modules ||--|{ CONFIG : "battery specs + prices"
+    gateways ||--|{ CONFIG : "gateway specs + prices"
+    ev_chargers ||--|{ CONFIG : "EV charger specs + prices"
+    accessories ||--|{ CONFIG : "accessory specs + prices"
+    addons ||--|{ CONFIG : "addon definitions"
+    battery_mounting ||--|{ CONFIG : "mount prices"
+    mounting_kits ||--|{ CONFIG : "kit prices"
+    mounting_parts ||--|{ CONFIG : "part prices"
+    battery_packages ||--|{ CONFIG : "SolaX bundle pricing"
+    solax_bms_components ||--|{ CONFIG : "BMS/series box costs"
+
+    contractors ||--|{ rate_card_items : "has many"
+    contractors ||--|{ quotes : "referenced by"
+    reps ||--|{ quotes : "referenced by"
+
+    quotes {
+        uuid id
+        jsonb data
+        uuid rep_id
+        timestamp created_at
+    }
+
+    contractors {
+        uuid id
+        text business_name
+        text address
+        numeric travel_threshold_km
+        numeric service_region_km
+        boolean active
+    }
+
+    rate_card_items {
+        uuid id
+        uuid contractor_id
+        text label
+        text category
+        text input_type
+        text pricing_type
+        text threshold_type
+        numeric rate
+        numeric threshold
+        jsonb conditions
+    }
+
+    business_params {
+        numeric gp_margin
+        numeric sales_commission
+        numeric stc_price
+        numeric battery_stc_factor
+        numeric fixed_overhead
+        numeric zero_bill_base
+        numeric zero_bill_pct
+        numeric install_pv_per_kw
+        numeric install_battery_per_stack
+    }
+                </pre>
+            </div>
+
+            <h3>Configuration Tables (feed into CONFIG object)</h3>
+            <ul>
+                <li><strong>business_params</strong> — Margins, STC price, install rates, fixed overhead, zero bill settings, battery rebate rate</li>
+                <li><strong>panels</strong> — Panel specifications and prices (+ discount columns)</li>
+                <li><strong>inverters</strong> — Inverter specifications and prices (+ discount columns)</li>
+                <li><strong>battery_modules</strong> — Battery specifications and prices (+ discount columns)</li>
+                <li><strong>gateways</strong> — Gateway specifications and prices (+ discount columns)</li>
+                <li><strong>ev_chargers</strong> — EV charger specifications and prices (+ discount columns)</li>
+                <li><strong>accessories</strong> — Accessory specifications and prices (+ discount columns)</li>
+                <li><strong>addons</strong> — Add-on definitions and pricing</li>
+                <li><strong>battery_mounting</strong> — Battery mounting prices</li>
+                <li><strong>mounting_kits</strong> — Mounting kit prices</li>
+                <li><strong>mounting_parts</strong> — Individual mounting part prices</li>
+                <li><strong>battery_packages</strong> — SolaX bundle pricing</li>
+                <li><strong>solax_bms_components</strong> — BMS and series box costs</li>
+            </ul>
+
+            <h3>Discount Columns (6 tables)</h3>
+            <p>panels, inverters, battery_modules, gateways, ev_chargers, and accessories each have:</p>
+            <ul>
+                <li><code>discount_pct</code> (numeric) — Percentage discount</li>
+                <li><code>discount_from</code> (date) — Start of promotional period</li>
+                <li><code>discount_to</code> (date) — End of promotional period</li>
+            </ul>
+
+            <h3>Operations Tables</h3>
+
+            <p><strong>quotes</strong></p>
+            <ul>
+                <li><code>id</code> (uuid) — Primary key</li>
+                <li><code>data</code> (jsonb) — Full quote data including customer, system, mounting, pricing, installation, totals, bom_snapshot, custom_addons, discounts</li>
+                <li><code>rep_id</code> (uuid) — References reps table</li>
+                <li><code>created_at</code> (timestamp)</li>
+            </ul>
+
+            <p><strong>contractors</strong></p>
+            <ul>
+                <li><code>id</code> (uuid) — Primary key</li>
+                <li><code>business_name</code> (text)</li>
+                <li><code>address</code> (text) — Origin for travel distance calculation</li>
+                <li><code>travel_threshold_km</code> (numeric) — Free km before travel charges (default 80)</li>
+                <li><code>service_region_km</code> (numeric) — Warning limit for service area</li>
+                <li><code>active</code> (boolean)</li>
+                <li>Has many rate_card_items</li>
+            </ul>
+
+            <p><strong>rate_card_items</strong></p>
+            <ul>
+                <li><code>id</code> (uuid) — Primary key</li>
+                <li><code>contractor_id</code> (uuid) — References contractors</li>
+                <li><code>label</code> (text) — Display name (e.g., "Partial board upgrade")</li>
+                <li><code>category</code> (text) — e.g., 'installation', 'electrical'</li>
+                <li><code>input_type</code> (text) — standard, checkbox, addon, auto</li>
+                <li><code>pricing_type</code> (text) — per_watt, per_panel, per_metre, per_circuit, per_km, flat, quoted</li>
+                <li><code>threshold_type</code> (text) — 'after' for per_km items (charges beyond threshold)</li>
+                <li><code>rate</code> (numeric) — The price value</li>
+                <li><code>threshold</code> (numeric) — Threshold value for per_metre/per_km items</li>
+                <li><code>conditions</code> (jsonb) — Matching rules (e.g., <code>{"has_backup": true}</code>)</li>
+            </ul>
+
+            <div class="note">
+                All admin tables have RLS enabled with policies for both <code>anon</code> and <code>authenticated</code> roles. When adding new tables, always add policies for both roles.
+            </div>
+        </div>
+
+        <div style="text-align: center; padding: 40px; color: #888; font-size: 0.9rem;">
+            — End of Document —
+        </div>
+    </div>
+
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'default',
+            securityLevel: 'loose',
+            flowchart: {
+                useMaxWidth: true,
+                htmlLabels: true
+            }
+        });
+    </script>
+</body>
+</html>
