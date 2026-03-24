@@ -612,7 +612,7 @@
                     <tr><td>Installation</td><td>Installation cost subtotal from the rate card (visible when a contractor is selected).</td></tr>
                     <tr><td>Price Before Rebates</td><td>Total ex-GST price before STC rebate is applied.</td></tr>
                     <tr><td>GST</td><td>10% GST on the total.</td></tr>
-                    <tr><td>STC Rebate</td><td>Government rebate based on system size, STC zone, deeming period, and current STC price. Shown in green. Calculation changes automatically on May 1 2026 &mdash; see <a href="#qt-stc" style="color:var(--blue);">STC Rebates</a> below.</td></tr>
+                    <tr><td>STC Rebate</td><td>Government rebate based on system size, STC zone, deeming period, STC factor, and current STC price. Shown in green. See <a href="#qt-stc" style="color:var(--blue);">STC Rebates</a> below.</td></tr>
                     <tr><td>Discount</td><td>Green highlighted banner below the price card. Enter a dollar amount to deduct from the final customer price (inc GST). The discount is saved with the quote and appears on the PDF. Set to 0 for no discount.</td></tr>
                 </tbody>
             </table>
@@ -634,48 +634,35 @@
             </ul>
             <p>The PV rebate formula is: <code>floor(kW &times; zone_rating &times; deeming_years) &times; STC_price</code></p>
 
-            <h4>Before May 1, 2026</h4>
+            <h4>PV STC Rebate</h4>
+            <p>The PV deeming period is set by the admin in Business Parameters via a dropdown. It drops by 1 year each January under the legislated schedule (5 in 2026, 4 in 2027, ... 1 in 2030). The dropdown only allows selecting the current year or future values.</p>
             <table class="field-table">
                 <thead><tr><th>Component</th><th>Calculation</th></tr></thead>
                 <tbody>
-                    <tr><td>PV deeming period</td><td><strong>5 years</strong></td></tr>
-                    <tr><td>PV rebate</td><td><code>floor(kW &times; zone_rating &times; 5) &times; $37</code></td></tr>
-                    <tr><td>Battery rebate</td><td><strong>Flat rate:</strong> <code>kWh &times; $311/kWh</code> (capped at 50 kWh). Rate set in Business Parameters.</td></tr>
+                    <tr><td>PV deeming period</td><td>Set in Business Parameters (e.g. 5 for 2026)</td></tr>
+                    <tr><td>PV rebate</td><td><code>floor(kW &times; zone_rating &times; deeming_period) &times; STC_price</code></td></tr>
                 </tbody>
             </table>
 
-            <h4>From May 1, 2026</h4>
-            <p>The system automatically switches to the new structure on this date. No admin action is required.</p>
+            <h4>Battery STC Rebate</h4>
+            <p>The battery rebate uses an STC factor set by the admin in Business Parameters. The formula is: <code>floor(kWh &times; factor) &times; STC_price</code>, capped at 50 kWh.</p>
+            <p>From May 1, 2026, the battery rebate applies a tiered structure based on battery size:</p>
             <table class="field-table">
-                <thead><tr><th>Component</th><th>Calculation</th></tr></thead>
+                <thead><tr><th>Capacity Tier</th><th>STC Rate</th><th>Example (factor 6.8, $37/STC)</th></tr></thead>
                 <tbody>
-                    <tr><td>PV deeming period</td><td><strong>4 years</strong> (reduced from 5)</td></tr>
-                    <tr><td>PV rebate</td><td><code>floor(kW &times; zone_rating &times; 4) &times; $37</code></td></tr>
-                    <tr><td>Battery rebate</td><td><strong>Tiered STC structure</strong> (see below), capped at 50 kWh</td></tr>
+                    <tr><td>0 &ndash; 14 kWh</td><td>factor &times; 100%</td><td>14 kWh &rarr; 95 STCs &rarr; $3,515</td></tr>
+                    <tr><td>14 &ndash; 28 kWh</td><td>factor &times; 60%</td><td>+14 kWh &rarr; 57 STCs &rarr; $2,109</td></tr>
+                    <tr><td>28 &ndash; 50 kWh</td><td>factor &times; 15%</td><td>+22 kWh &rarr; 22 STCs &rarr; $814</td></tr>
                 </tbody>
             </table>
-
-            <h4>Tiered Battery Rebate (May 2026+)</h4>
-            <p>The battery rebate changes from a flat dollar-per-kWh rate to a tiered STC-based structure with a factor of 6.8 STCs per kWh:</p>
-            <table class="field-table">
-                <thead><tr><th>Capacity Tier</th><th>STC Rate</th><th>Example (at $37/STC)</th></tr></thead>
-                <tbody>
-                    <tr><td>0 &ndash; 14 kWh</td><td>6.8 STCs/kWh (100%)</td><td>14 kWh &rarr; 95 STCs &rarr; $3,515</td></tr>
-                    <tr><td>14 &ndash; 28 kWh</td><td>6.8 &times; 0.6 STCs/kWh (60%)</td><td>+14 kWh &rarr; 57 STCs &rarr; $2,109</td></tr>
-                    <tr><td>28 &ndash; 50 kWh</td><td>6.8 &times; 0.15 STCs/kWh (15%)</td><td>+22 kWh &rarr; 22 STCs &rarr; $814</td></tr>
-                </tbody>
-            </table>
-
-            <div class="guide-note">
-                <strong>Example:</strong> A 32 kWh battery post-May: <code>floor(14&times;6.8 + 14&times;6.8&times;0.6 + 4&times;6.8&times;0.15)</code> = floor(95.2 + 57.12 + 4.08) = <strong>156 STCs &times; $37 = $5,772</strong>. Compare to the pre-May flat rate: 32 &times; $311 = $9,952. This is the price increase shown in the urgency banner.
-            </div>
+            <p>The STC factor declines every 6 months from May 2026 (8.4 &rarr; 6.8 &rarr; 5.7 &rarr; ... &rarr; 2.1 in Jul 2030). The admin sets the Install Period in Business Parameters and the correct deeming period and factor are applied automatically.</p>
 
             <h4>Urgency Banner</h4>
-            <p>Before May 1, the price summary shows an orange urgency banner comparing the current customer price to what it would be under the post-May rules. This helps sales reps encourage customers to act before the rebate reduction.</p>
-            <p>After May 1, the banner is automatically hidden &mdash; the current price already reflects the new structure and there is no future change to compare against.</p>
+            <p>The price summary shows an orange urgency banner comparing the current customer price to what it would be at the next scheduled STC step-down (either PV deeming reduction or battery factor reduction, whichever comes first). This helps sales reps encourage customers to act before the rebate reduction.</p>
+            <p>The banner automatically hides when no future step-down exists in the published schedule.</p>
 
             <div class="guide-warning">
-                <strong>Fully automatic:</strong> The transition is date-driven in the code. There is no need to update Business Parameters or make any manual changes when May 1 arrives. The deeming period, battery rebate calculation, urgency banner visibility, and all downstream calculations (quote, BOM, PDF, battery optimiser) all switch automatically.
+                <strong>Admin-controlled:</strong> Set the Install Period in Business Parameters to match when systems will be installed. The PV deeming period and battery STC factor are automatically derived from the legislated schedule. The urgency banner shows the price increase at the next scheduled step-down.
             </div>
 
             <h3 id="qt-workflows">Workflows</h3>
@@ -861,8 +848,9 @@
                     <tr><td>GP Margin</td><td>Gross profit margin percentage applied to equipment costs.</td></tr>
                     <tr><td>Sales Commission</td><td>Sales rep commission percentage.</td></tr>
                     <tr><td>STC Price</td><td>Current market price per STC certificate (used in rebate calculation).</td></tr>
-                    <tr><td>STC Deeming Period</td><td>Number of years remaining in the current deeming period. Affects the total STC rebate.</td></tr>
-                    <tr><td>Battery Rebate per kWh</td><td>State battery rebate amount per kWh of installed capacity (if applicable).</td></tr>
+                    <tr><td>Install Period</td><td>Select the period when systems will be installed (e.g. "Jan-Apr 2026"). The PV deeming period and battery STC factor are automatically set from the legislated schedule. Past periods are disabled.</td></tr>
+                    <tr><td>PV Deeming Period</td><td>Read-only. Automatically derived from the install period. Shows the number of deeming years for PV STC calculation.</td></tr>
+                    <tr><td>Battery STC Factor</td><td>Read-only. Automatically derived from the install period. The factor used in battery STC rebate calculation.</td></tr>
                     <tr><td>Install per kW (PV)</td><td>Base installation cost per kW of solar capacity.</td></tr>
                     <tr><td>Install per Stack</td><td>Base installation cost per battery stack.</td></tr>
                     <tr><td>Fixed Overhead ($)</td><td>Hidden flat dollar amount added to the final customer price (inc GST). Not visible in quotes, BOM, or PDF line items. GP margin and commission do not compound on it.</td></tr>
