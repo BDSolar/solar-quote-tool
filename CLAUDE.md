@@ -52,7 +52,7 @@ Two manufacturers: Sigenergy and SolaX. Admin panel manages contractors, pricing
 - Four parallel init calls on DOMContentLoaded: loadConfig, loadReps, loadContractors, initAutocomplete.
 - `calculateQuote()` is the central engine — runs on every input change (150ms debounce for text).
 - Quotes are saved as JSONB in Supabase with full BOM snapshot at save time.
-- STC rebates use admin-controlled values: PV deeming period (dropdown by year) and battery STC factor. Published step-down schedules are hard-coded for urgency banner comparison only. Battery tiers (0-14kWh @100%, 14-28 @60%, 28-50 @15%) are hard-coded and apply from May 1 2026.
+- STC rebates are driven by the admin-set Install Period in business_params. The install period determines both the PV deeming period and battery STC factor automatically from hard-coded legislated schedules (`PV_DEEMING_SCHEDULE`, `BATTERY_STC_SCHEDULE` in app.js). Battery tiers (0-14kWh @100%, 14-28 @60%, 28-50 @15%) are hard-coded and apply from May 1 2026. Urgency banner compares current price against the next scheduled step-down.
 
 ## Code Conventions
 - Vanilla JS throughout — `var` in older code, `let`/`const` in newer. No classes or modules.

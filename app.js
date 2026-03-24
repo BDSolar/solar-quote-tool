@@ -761,6 +761,24 @@ var BATTERY_TIERS = [
     {from: 28, to: 50, pct: 0.15}
 ];
 
+// Look up deeming period and battery factor for an install period key (e.g. "2026-05")
+function getScheduleForPeriod(periodKey) {
+    if (!periodKey) return null;
+    var parts = periodKey.split('-');
+    var year = parseInt(parts[0]);
+    var deeming = PV_DEEMING_SCHEDULE[year] || 1;
+    var entry = BATTERY_STC_SCHEDULE.find(function(s) { return s.start === periodKey; });
+    var factor = entry ? entry.factor : 2.1;
+    var startMonth = parseInt(parts[1]);
+    var periodDate = new Date(year, startMonth - 1, 1);
+    var useTiers = periodDate >= BATTERY_TIERS_START;
+    // Build label like "Jan-Apr 2026"
+    var monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    var endParts = entry ? entry.end.split('-') : [String(year), '12'];
+    var label = monthNames[startMonth - 1] + '-' + monthNames[parseInt(endParts[1]) - 1] + ' ' + year;
+    return { deeming: deeming, factor: factor, useTiers: useTiers, label: label, periodKey: periodKey };
+}
+
 // Battery STC rebate — uses admin-set factor and STC price
 // Pre-May 2026: flat (no tiers) — floor(kWh × factor) × stcPrice
 // Post-May 2026: tiered by battery size — floor(tiered_stcs) × stcPrice
@@ -1300,8 +1318,16 @@ function reconstructConfig(baseConfig, tables, batteryPackages, bmsParts, busine
     cfg.default_panel_count = Number(businessParams.default_panel_count);
     cfg.default_battery_kwh = Number(businessParams.default_battery_kwh);
     cfg.rebates.stc_price = Number(businessParams.stc_price);
-    cfg.rebates.stc_deeming_period = Number(businessParams.stc_deeming_period);
-    cfg.rebates.battery_stc_factor = Number(businessParams.battery_stc_factor) || Number(businessParams.battery_rebate_per_kwh) || 8.4;
+    // Derive deeming and factor from install period if set, otherwise fall back to direct DB values
+    cfg.rebates.install_period = businessParams.install_period || null;
+    var schedule = cfg.rebates.install_period ? getScheduleForPeriod(cfg.rebates.install_period) : null;
+    if (schedule) {
+        cfg.rebates.stc_deeming_period = schedule.deeming;
+        cfg.rebates.battery_stc_factor = schedule.factor;
+    } else {
+        cfg.rebates.stc_deeming_period = Number(businessParams.stc_deeming_period);
+        cfg.rebates.battery_stc_factor = Number(businessParams.battery_stc_factor) || Number(businessParams.battery_rebate_per_kwh) || 8.4;
+    }
     cfg.fixed_overhead = Number(businessParams.fixed_overhead) || 0;
     cfg.zero_bill_base = Number(businessParams.zero_bill_base) || 0;
     cfg.zero_bill_pct = Number(businessParams.zero_bill_pct) || 0;
@@ -3712,6 +3738,7 @@ function collectQuoteData() {
             stcPrice: state.stcPrice,
             deemingPeriod: state.deemingPeriod,
             batteryStcFactor: state.batteryStcFactor,
+            installPeriod: CONFIG.rebates.install_period || null,
             gpMargin: state.gpMargin,
             salesCommission: state.salesCommission,
             fixedOverhead: CONFIG.fixed_overhead || 0,

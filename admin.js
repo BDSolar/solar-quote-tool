@@ -1434,17 +1434,51 @@ async function saveProduct() {
 // BUSINESS PARAMS
 // ==============================
 
-// Build dropdown options for STC deeming period — only current year and forward
-function buildDeemingOptions(currentValue) {
-    var currentYear = new Date().getFullYear();
+// Published STC schedules (must match app.js)
+var ADMIN_PV_DEEMING = {2026: 5, 2027: 4, 2028: 3, 2029: 2, 2030: 1};
+var ADMIN_BATTERY_SCHEDULE = [
+    {start: '2026-01', end: '2026-04', factor: 8.4},
+    {start: '2026-05', end: '2026-12', factor: 6.8},
+    {start: '2027-01', end: '2027-06', factor: 5.7},
+    {start: '2027-07', end: '2027-12', factor: 5.2},
+    {start: '2028-01', end: '2028-06', factor: 4.6},
+    {start: '2028-07', end: '2028-12', factor: 4.1},
+    {start: '2029-01', end: '2029-06', factor: 3.6},
+    {start: '2029-07', end: '2029-12', factor: 3.1},
+    {start: '2030-01', end: '2030-06', factor: 2.6},
+    {start: '2030-07', end: '2030-12', factor: 2.1}
+];
+
+// Build install period dropdown options — past periods are disabled
+function buildInstallPeriodOptions(currentPeriod) {
+    var now = new Date();
+    var monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
     var html = '';
-    for (var yr = 2026; yr <= 2030; yr++) {
-        var dp = 5 - (yr - 2026); // 5 in 2026, 4 in 2027, etc.
-        var disabled = yr < currentYear ? ' disabled' : '';
-        var selected = Number(currentValue) === dp ? ' selected' : '';
-        html += '<option value="' + dp + '"' + disabled + selected + '>' + dp + ' (' + yr + ')</option>';
+    for (var i = 0; i < ADMIN_BATTERY_SCHEDULE.length; i++) {
+        var s = ADMIN_BATTERY_SCHEDULE[i];
+        var parts = s.start.split('-');
+        var year = parseInt(parts[0]);
+        var startMonth = parseInt(parts[1]);
+        var endParts = s.end.split('-');
+        var endMonth = parseInt(endParts[1]);
+        var endDate = new Date(parseInt(endParts[0]), endMonth, 0); // last day of end month
+        var deeming = ADMIN_PV_DEEMING[year] || 1;
+        var label = monthNames[startMonth - 1] + '-' + monthNames[endMonth - 1] + ' ' + year;
+        var disabled = endDate < now ? ' disabled' : '';
+        var selected = currentPeriod === s.start ? ' selected' : '';
+        html += '<option value="' + s.start + '"' + disabled + selected + '>' + label + ' (Deeming: ' + deeming + ', Factor: ' + s.factor + ')</option>';
     }
     return html;
+}
+
+// Get deeming and factor for a given install period key
+function getAdminSchedule(periodKey) {
+    var parts = (periodKey || '2026-01').split('-');
+    var year = parseInt(parts[0]);
+    var deeming = ADMIN_PV_DEEMING[year] || 1;
+    var entry = ADMIN_BATTERY_SCHEDULE.find(function(s) { return s.start === periodKey; });
+    var factor = entry ? entry.factor : 8.4;
+    return { deeming: deeming, factor: factor };
 }
 
 function renderBusinessParams() {
@@ -1461,8 +1495,9 @@ function renderBusinessParams() {
         '<div class="form-group"><label>GP Margin (%)</label><input type="number" id="bpGpMargin" value="' + bp.gp_margin + '" step="0.01"></div>' +
         '<div class="form-group"><label>Sales Commission (%)</label><input type="number" id="bpCommission" value="' + bp.sales_commission + '" step="0.01"></div>' +
         '<div class="form-group"><label>STC Price ($)</label><input type="number" id="bpStcPrice" value="' + bp.stc_price + '" step="0.01"></div>' +
-        '<div class="form-group"><label>STC Deeming Period (yrs)</label><select id="bpStcDeeming">' + buildDeemingOptions(bp.stc_deeming_period) + '</select></div>' +
-        '<div class="form-group"><label>Battery STC Factor</label><input type="number" id="bpBatFactor" value="' + (bp.battery_stc_factor || 8.4) + '" step="0.1"></div>' +
+        '<div class="form-group"><label>Install Period</label><select id="bpInstallPeriod" onchange="updateInstallPeriodDisplay()">' + buildInstallPeriodOptions(bp.install_period || '2026-01') + '</select></div>' +
+        '<div class="form-group"><label>PV Deeming Period</label><input type="text" id="bpDeemingDisplay" readonly style="background:var(--bg-secondary);color:var(--text-secondary);"></div>' +
+        '<div class="form-group"><label>Battery STC Factor</label><input type="text" id="bpFactorDisplay" readonly style="background:var(--bg-secondary);color:var(--text-secondary);"></div>' +
         '<div class="form-group"><label>Default Panel Count</label><input type="number" id="bpDefPanels" value="' + bp.default_panel_count + '"></div>' +
         '<div class="form-group"><label>Default Battery kWh</label><input type="number" id="bpDefBattery" value="' + bp.default_battery_kwh + '"></div>' +
         '<div class="form-group"><label>Split Array Labour ($)</label><input type="number" id="bpSplitLabour" value="' + bp.split_array_labour + '" step="0.01"></div>' +
@@ -1481,6 +1516,19 @@ function renderBusinessParams() {
         '</div>' +
         '<div class="detail-actions"><button class="btn-save" onclick="saveBusinessParams()">Save Parameters</button>' +
         '<button class="btn-sm" onclick="switchPricingSection(\'products\')" style="margin-left:8px;">Back to Products</button></div>';
+    // Init read-only displays after HTML is rendered
+    updateInstallPeriodDisplay();
+}
+
+// Update read-only deeming/factor displays when install period changes
+function updateInstallPeriodDisplay() {
+    var sel = document.getElementById('bpInstallPeriod');
+    if (!sel) return;
+    var sched = getAdminSchedule(sel.value);
+    var deemEl = document.getElementById('bpDeemingDisplay');
+    var factEl = document.getElementById('bpFactorDisplay');
+    if (deemEl) deemEl.value = sched.deeming + ' years';
+    if (factEl) factEl.value = sched.factor;
 }
 
 async function saveBusinessParams() {
@@ -1491,8 +1539,9 @@ async function saveBusinessParams() {
         gp_margin: val('bpGpMargin'),
         sales_commission: val('bpCommission'),
         stc_price: val('bpStcPrice'),
-        stc_deeming_period: val('bpStcDeeming'),
-        battery_stc_factor: val('bpBatFactor'),
+        install_period: document.getElementById('bpInstallPeriod').value,
+        stc_deeming_period: getAdminSchedule(document.getElementById('bpInstallPeriod').value).deeming,
+        battery_stc_factor: getAdminSchedule(document.getElementById('bpInstallPeriod').value).factor,
         default_panel_count: val('bpDefPanels'),
         default_battery_kwh: val('bpDefBattery'),
         split_array_labour: val('bpSplitLabour'),

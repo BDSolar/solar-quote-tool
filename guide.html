@@ -655,14 +655,14 @@
                     <tr><td>28 &ndash; 50 kWh</td><td>factor &times; 15%</td><td>+22 kWh &rarr; 22 STCs &rarr; $814</td></tr>
                 </tbody>
             </table>
-            <p>The STC factor declines every 6 months from May 2026 (8.4 &rarr; 6.8 &rarr; 5.7 &rarr; ... &rarr; 2.1 in Jul 2030). The admin should update the Battery STC Factor in Business Parameters when each new period begins.</p>
+            <p>The STC factor declines every 6 months from May 2026 (8.4 &rarr; 6.8 &rarr; 5.7 &rarr; ... &rarr; 2.1 in Jul 2030). The admin sets the Install Period in Business Parameters and the correct deeming period and factor are applied automatically.</p>
 
             <h4>Urgency Banner</h4>
             <p>The price summary shows an orange urgency banner comparing the current customer price to what it would be at the next scheduled STC step-down (either PV deeming reduction or battery factor reduction, whichever comes first). This helps sales reps encourage customers to act before the rebate reduction.</p>
             <p>The banner automatically hides when no future step-down exists in the published schedule.</p>
 
             <div class="guide-warning">
-                <strong>Admin-controlled:</strong> The PV deeming period and battery STC factor are set in Business Parameters. Update them when the legislated schedule changes each period. The urgency banner uses the published step-down schedule (hard-coded) to show price comparisons.
+                <strong>Admin-controlled:</strong> Set the Install Period in Business Parameters to match when systems will be installed. The PV deeming period and battery STC factor are automatically derived from the legislated schedule. The urgency banner shows the price increase at the next scheduled step-down.
             </div>
 
             <h3 id="qt-workflows">Workflows</h3>
@@ -848,8 +848,9 @@
                     <tr><td>GP Margin</td><td>Gross profit margin percentage applied to equipment costs.</td></tr>
                     <tr><td>Sales Commission</td><td>Sales rep commission percentage.</td></tr>
                     <tr><td>STC Price</td><td>Current market price per STC certificate (used in rebate calculation).</td></tr>
-                    <tr><td>STC Deeming Period</td><td>Dropdown showing deeming period by year (e.g. "5 (2026)"). Only current year and forward are selectable. Drops by 1 each January per the legislated schedule.</td></tr>
-                    <tr><td>Battery STC Factor</td><td>The STC factor used to calculate battery rebates. Declines every 6 months from May 2026 (8.4 &rarr; 6.8 &rarr; 5.7 &rarr; ... &rarr; 2.1). Update when each new period begins.</td></tr>
+                    <tr><td>Install Period</td><td>Select the period when systems will be installed (e.g. "Jan-Apr 2026"). The PV deeming period and battery STC factor are automatically set from the legislated schedule. Past periods are disabled.</td></tr>
+                    <tr><td>PV Deeming Period</td><td>Read-only. Automatically derived from the install period. Shows the number of deeming years for PV STC calculation.</td></tr>
+                    <tr><td>Battery STC Factor</td><td>Read-only. Automatically derived from the install period. The factor used in battery STC rebate calculation.</td></tr>
                     <tr><td>Install per kW (PV)</td><td>Base installation cost per kW of solar capacity.</td></tr>
                     <tr><td>Install per Stack</td><td>Base installation cost per battery stack.</td></tr>
                     <tr><td>Fixed Overhead ($)</td><td>Hidden flat dollar amount added to the final customer price (inc GST). Not visible in quotes, BOM, or PDF line items. GP margin and commission do not compound on it.</td></tr>
