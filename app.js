@@ -782,9 +782,11 @@ function getScheduleForPeriod(periodKey) {
 // Battery STC rebate — uses admin-set factor and STC price
 // Pre-May 2026: flat (no tiers) — floor(kWh × factor) × stcPrice
 // Post-May 2026: tiered by battery size — floor(tiered_stcs) × stcPrice
-function calcBatteryRebate(usableKwh, stcFactor, stcPrice) {
+// useTiers: pass state.useBatteryTiers so the install period drives tier logic, not today's date
+function calcBatteryRebate(usableKwh, stcFactor, stcPrice, useTiers) {
     var capped = Math.min(usableKwh, 50);
-    if (new Date() < BATTERY_TIERS_START) {
+    var applyTiers = (useTiers !== undefined) ? useTiers : (new Date() >= BATTERY_TIERS_START);
+    if (!applyTiers) {
         return Math.floor(capped * stcFactor) * stcPrice;
     }
     return calcBatteryRebateTiered(capped, stcFactor, stcPrice);
@@ -833,9 +835,17 @@ function getNextStepDown(currentDeeming, currentFactor) {
     }
 
     if (!results.length) return null;
-    // Return the earliest upcoming change, merge both if they happen on the same date
+    // Return the earliest upcoming change, merging both if they happen on the same date
     results.sort(function(a, b) { return a.date - b.date; });
-    return results[0];
+    var earliest = results[0];
+    var merged = { date: earliest.date, label: earliest.label };
+    results.forEach(function(r) {
+        if (r.date.getTime() === earliest.date.getTime()) {
+            if (r.deeming !== undefined) merged.deeming = r.deeming;
+            if (r.factor !== undefined) merged.factor = r.factor;
+        }
+    });
+    return merged;
 }
 
 function getBmsName(bt) { return bt.id === 'tp_hs36' ? 'TBMS-MCS0800' : bt.id === 'tb_hs51' ? 'TBMS-S51-80' : (bt.bms_code || 'BMS'); }
@@ -932,6 +942,8 @@ function syncStateFromDOM() {
     state.stcPrice = parseFloat(document.getElementById('stcPrice').value) || 0;
     state.deemingPeriod = parseFloat(document.getElementById('stcDeemingPeriod').value) || 0;
     state.batteryStcFactor = parseFloat(document.getElementById('batteryStcFactor').value) || 0;
+    var _ip = CONFIG && CONFIG.rebates && CONFIG.rebates.install_period;
+    state.useBatteryTiers = _ip ? getScheduleForPeriod(_ip).useTiers : (new Date() >= BATTERY_TIERS_START);
     state.desiredBatteryKwh = parseFloat(document.getElementById('desiredBatteryKwh').value) || 0;
     const panelSel = document.getElementById('panelSelect');
     const panelOpt = panelSel.options[panelSel.selectedIndex];
@@ -2270,7 +2282,7 @@ function optimizeBattery(desired) {
         bt.packages.forEach(pkg => {
             if (pkg.modules > rules.max_modules || pkg.kwh < desired) return;
             const usable = pkg.modules * (mod.usable_kwh || mod.kwh);
-            const cc = (pkg.price * (1 + gpMargin)) - calcBatteryRebate(usable, state.batteryStcFactor, state.stcPrice);
+            const cc = (pkg.price * (1 + gpMargin)) - calcBatteryRebate(usable, state.batteryStcFactor, state.stcPrice, state.useBatteryTiers);
             if (cc < bestCost || (cc === bestCost && pkg.kwh < (bestPkg?.kwh || Infinity))) { bestPkg = pkg; bestCost = cc; }
         });
         if (!bestPkg) { const sorted = [...bt.packages].filter(p => p.modules <= rules.max_modules).sort((a, b) => a.kwh - b.kwh); bestPkg = sorted.find(p => p.kwh >= desired) || sorted[sorted.length - 1]; }
@@ -2285,7 +2297,7 @@ function optimizeBattery(desired) {
             const kwh = q * mod.kwh; if (kwh < desired) continue;
             const usable = q * (mod.usable_kwh || mod.kwh);
             const ec = q * getEffectivePrice(mod) + (bt.bms_cost || 0) + (q >= (bt.series_box_threshold || 999) ? (bt.series_box_cost || 0) : 0);
-            const cc = (ec * (1 + gpMargin)) - calcBatteryRebate(usable, state.batteryStcFactor, state.stcPrice);
+            const cc = (ec * (1 + gpMargin)) - calcBatteryRebate(usable, state.batteryStcFactor, state.stcPrice, state.useBatteryTiers);
             if (cc < bestCost) { bestQty = q; bestCost = cc; bestKwh = kwh; }
         }
         const r = {}; r[mod.kwh] = bestQty; return { qtys: r, total: bestKwh, cost: bestCost };
@@ -2295,7 +2307,7 @@ function optimizeBattery(desired) {
     const maxMod = rules.max_modules, maxKwh = rules.max_kwh;
     const sorted = [...modules].sort((a, b) => (getEffectivePrice(a) / a.kwh) - (getEffectivePrice(b) / b.kwh));
     let bestCombo = null, bestCC = Infinity, bestTotal = Infinity;
-    function cc(ec, usable) { return ec * (1 + gpMargin) - calcBatteryRebate(usable, state.batteryStcFactor, state.stcPrice); }
+    function cc(ec, usable) { return ec * (1 + gpMargin) - calcBatteryRebate(usable, state.batteryStcFactor, state.stcPrice, state.useBatteryTiers); }
     function search(idx, qtys, tKwh, tUsable, tCost, tMod) {
         if (tKwh >= desired) { const c = cc(tCost, tUsable); if (c < bestCC || (c === bestCC && tKwh < bestTotal)) { bestCombo = Object.assign({}, qtys); bestCC = c; bestTotal = tKwh; } }
         if (idx >= sorted.length) return;
@@ -2418,7 +2430,7 @@ function optimizeDualStack(desired) {
                 const equipCost = ec1.price + ec2.price + bat1.equipCost + bat2.equipCost
                     + (2 * mountPrice) + gwPrice + (2 * labourPerStack);
                 const totalUsable = bat1.usableKwh + bat2.usableKwh;
-                const netCost = (equipCost * (1 + gpMargin)) - calcBatteryRebate(totalUsable, state.batteryStcFactor, state.stcPrice);
+                const netCost = (equipCost * (1 + gpMargin)) - calcBatteryRebate(totalUsable, state.batteryStcFactor, state.stcPrice, state.useBatteryTiers);
 
                 if (netCost < bestNetCost) {
                     bestNetCost = netCost;
@@ -3118,7 +3130,7 @@ function calculateQuote() {
         const pvReb = pvStcCount * state.stcPrice;
         // Battery rebate only if we have batteries
         const usableKwh = solarOnly ? 0 : ((isDualStack && dualStackResult) ? dualStackResult.totalUsableKwh : (isParallel && parallelResult) ? parallelResult.totalUsableKwh : bat.usableKwh);
-        const batReb = solarOnly ? 0 : calcBatteryRebate(usableKwh, state.batteryStcFactor, state.stcPrice);
+        const batReb = solarOnly ? 0 : calcBatteryRebate(usableKwh, state.batteryStcFactor, state.stcPrice, state.useBatteryTiers);
         state.pvStcRebate = pvReb;
         state.batteryStcRebate = batReb;
         const gpAmt = totalCog * (state.gpMargin / 100);
@@ -3669,7 +3681,7 @@ function showBOM() {
     const zoneResult = lookupZone(document.getElementById('installPostcode').value);
     const zoneRating = zoneResult ? zoneResult.rating : 0;
     const pvStcCount = zoneRating > 0 ? Math.floor(state.sysKw * zoneRating * state.deemingPeriod) : 0;
-    const pvReb = pvStcCount * state.stcPrice, batSummary = getBatterySummary(), batUsable = (parallelResult && parallelResult.isParallel) ? parallelResult.totalUsableKwh : (dualStackResult && dualStackResult.isDualStack) ? dualStackResult.totalUsableKwh : batSummary.usableKwh, batReb = calcBatteryRebate(batUsable, state.batteryStcFactor, state.stcPrice);
+    const pvReb = pvStcCount * state.stcPrice, batSummary = getBatterySummary(), batUsable = (parallelResult && parallelResult.isParallel) ? parallelResult.totalUsableKwh : (dualStackResult && dualStackResult.isDualStack) ? dualStackResult.totalUsableKwh : batSummary.usableKwh, batReb = calcBatteryRebate(batUsable, state.batteryStcFactor, state.stcPrice, state.useBatteryTiers);
     let totHtml = '<table style="width:100%; font-size:14px; border-collapse:collapse;">';
     const totRow = (l, v, s) => '<tr style="' + (s || '') + '"><td style="padding:8px 0; color:var(--gray-500);">' + l + '</td><td style="padding:8px 0; text-align:right; color:var(--gray-900); font-weight:500;">' + v + '</td></tr>';
     if (pvReb > 0) totHtml += totRow('PV STC Rebate (' + pvStcCount + ' STCs)', '-' + fmtExGst(pvReb), 'color:var(--green);');
@@ -4281,7 +4293,7 @@ function generateQuote() {
     const isDualStack = dualStackResult && currentManufacturer === 'sigenergy' && state.desiredBatteryKwh > 48;
     const isParallelPdf = parallelResult && parallelResult.isParallel;
     const batUsablePdf = isDualStack ? dualStackResult.totalUsableKwh : isParallelPdf ? parallelResult.totalUsableKwh : bat.usableKwh;
-    const batReb = calcBatteryRebate(batUsablePdf, state.batteryStcFactor, state.stcPrice);
+    const batReb = calcBatteryRebate(batUsablePdf, state.batteryStcFactor, state.stcPrice, state.useBatteryTiers);
     const commRate = state.salesCommission / 100;
     const baseIncGst = priceBeforeComm * GST;
     const commAmt = (baseIncGst - pvReb - batReb) * commRate / (1 - commRate * GST) / GST;
