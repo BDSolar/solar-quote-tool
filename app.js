@@ -2387,7 +2387,7 @@ function optimizeDualStack(desired) {
         for (const m of models) {
             const k = getCecKey(m.sku);
             if (!combos[k] || !combos[k].includes(stackKwh)) continue;
-            if (m.kw > 0 && pvKw / m.kw >= 1.6) continue;
+            if (m.max_pv_kw > 0 && pvKw > m.max_pv_kw) continue;
             if (!cheapest || m.price < cheapest.price) cheapest = m;
         }
         return cheapest;
@@ -2644,7 +2644,7 @@ function getDualEcOptions(stackNum) {
         var m = models[i];
         var k = getCecKey(m.sku);
         if (!combos[k] || !combos[k].includes(stackKwh)) continue;
-        if (m.kw > 0 && pvKw / m.kw >= 1.6) continue;
+        if (m.max_pv_kw > 0 && pvKw > m.max_pv_kw) continue;
         validModels.push(m);
         if (m.price < cheapestPrice) { cheapestPrice = m.price; cheapestSku = m.sku; }
     }
@@ -2721,12 +2721,12 @@ function autoSelectInverter(sysKw, battKwh, battModules, phase) {
     const mfg = getMfg(), models = mfg.inverters?.[phase] || [], cec = mfg.cec_approved;
     if (cec?.type === 'inverter_battery_combo') {
         const combos = cec[phase];
-        for (const m of models) { const k = getCecKey(m.sku); if (sysKw / m.kw < 1.6 && combos[k] && combos[k].includes(battKwh)) return m.sku; }
+        for (const m of models) { const k = getCecKey(m.sku); if (sysKw <= m.max_pv_kw && combos[k] && combos[k].includes(battKwh)) return m.sku; }
         for (const m of models) { const k = getCecKey(m.sku); if (combos[k] && combos[k].includes(battKwh)) return m.sku; }
         return models[models.length - 1]?.sku || '';
     }
     // SolaX: just find smallest inverter where PV fits
-    for (const m of models) { if (sysKw / m.kw < 1.6) return m.sku; }
+    for (const m of models) { if (sysKw <= m.max_pv_kw) return m.sku; }
     return models[models.length - 1]?.sku || '';
 }
 
@@ -2740,7 +2740,7 @@ function updateInverterOptions(sysKw, battKwh, phase) {
     for (var i = 0; i < allModels.length; i++) {
         var m = allModels[i];
         var valid = true;
-        if (sysKw / m.kw >= 1.6) valid = false;
+        if (m.max_pv_kw > 0 && sysKw > m.max_pv_kw) valid = false;
         if (valid && combos && battKwh > 0) {
             var key = getCecKey(m.sku);
             if (!combos[key] || !combos[key].includes(battKwh)) valid = false;
@@ -2966,9 +2966,9 @@ function calculateQuote() {
         }
 
         document.getElementById('inverterInfo').style.display = 'none';
-        if (!isDualStack && state.invKw > 0 && state.sysKw / state.invKw >= 1.6) {
+        if (!isDualStack && state.invMaxPv > 0 && state.sysKw > state.invMaxPv) {
             document.getElementById('inverterWarning').style.display = 'flex';
-            document.getElementById('inverterWarning').innerHTML = warnShieldHtml('PV Oversizing', 'PV (' + state.sysKw.toFixed(1) + 'kW) / ' + getInverterLabel() + ' (' + state.invKw + 'kW) ratio exceeds 1.6. Select larger ' + getInverterLabel().toLowerCase() + '.');
+            document.getElementById('inverterWarning').innerHTML = warnShieldHtml('PV Oversizing', 'PV system (' + state.sysKw.toFixed(1) + 'kW) exceeds ' + getInverterLabel() + ' max PV capacity (' + state.invMaxPv + 'kW). Select a larger ' + getInverterLabel().toLowerCase() + '.');
         } else {
             document.getElementById('inverterWarning').style.display = 'none';
         }
@@ -4646,7 +4646,7 @@ const DEFAULT_CONFIG = {
     ],
     "manufacturers": {
         "sigenergy": {
-            "label": "Sigenergy", "default_battery_type_idx": 0, "default_inverter_kw": 10, "inverter_label": "Inverter/Energy Controller", "pv_oversizing": { "single_phase": 2.0, "three_phase": 1.6 },
+            "label": "Sigenergy", "default_battery_type_idx": 0, "default_inverter_kw": 10, "inverter_label": "Inverter/Energy Controller",
             "inverters": { "single_phase": [{ "sku": "SigenStor EC 5.0 SP", "kw": 5, "price": 1343, "max_pv_kw": 10, "supplier_code": "SIG:EC-5.0-SP" },{ "sku": "SigenStor EC 6.0 SP", "kw": 6, "price": 1452, "max_pv_kw": 12, "supplier_code": "SIG:EC-6.0-SP" },{ "sku": "SigenStor EC 8.0 SP", "kw": 8, "price": 2482, "max_pv_kw": 16, "supplier_code": "SIG:EC-8.0-SP" },{ "sku": "SigenStor EC 10.0 SP", "kw": 10, "price": 2675, "max_pv_kw": 20, "supplier_code": "SIG:EC-10.0-SP" },{ "sku": "SigenStor EC 12.0 SP", "kw": 12, "price": 2869, "max_pv_kw": 24, "supplier_code": "SIG:EC-12.0-SP" }], "three_phase": [{ "sku": "SigenStor EC 5.0 TP", "kw": 5, "price": 2300, "max_pv_kw": 8, "supplier_code": "SIG:EC-5.0-TP" },{ "sku": "SigenStor EC 10.0 TP", "kw": 10, "price": 2663, "max_pv_kw": 16, "supplier_code": "SIG:EC-10.0-TP" },{ "sku": "SigenStor EC 15.0 TP", "kw": 15, "price": 3511, "max_pv_kw": 24, "supplier_code": "SIG:EC-15.0-TP" },{ "sku": "SigenStor EC 20.0 TP", "kw": 20, "price": 4007, "max_pv_kw": 32, "supplier_code": "SIG:EC-20.0-TP" },{ "sku": "SigenStor EC 25.0 TP", "kw": 25, "price": 4600, "max_pv_kw": 40, "supplier_code": "SIG:EC-25.0-TP" },{ "sku": "SigenStor EC 30.0 TP", "kw": 30, "price": 5060, "max_pv_kw": 48, "supplier_code": "SIG:EC-30.0-TP" }] },
             "battery_types": [{ "id": "sig_default", "label": "SigenStor (8kWh)", "modules": [{ "kwh": 5, "usable_kwh": 5.2, "price": 2905, "label": "5 kWh", "supplier_code": "SIG:BAT-5.0", "enabled": false },{ "kwh": 8, "usable_kwh": 7.8, "price": 3632, "label": "8 kWh", "supplier_code": "SIG:BAT-8.0" }], "can_mix": true, "bms_cost": 0, "bms_code": "", "series_box_cost": 0, "series_box_code": "", "series_box_threshold": 999, "rules": { "max_modules": 6, "max_kwh": 48, "min_modules_single": 0, "min_modules_three": 0, "max_modules_single": 6, "max_modules_three": 6 } }],
             "gateways": { "single_phase": [{ "sku": "Sigen Gateway Home SP AU (Pro)", "price": 695, "desc": "Pro back entry ($695)", "supplier_code": "SIG:GW-HOME-SP-PRO" },{ "sku": "Sigen Gateway Home SP", "price": 645, "desc": "Standard Single Phase ($645)", "supplier_code": "SIG:GW-HOME-SP" },{ "sku": "Sigen CUST Gateway SP-63", "price": 2200, "desc": "Custom 63A up to 24kW ($2,200)", "supplier_code": "SIG:GW-CUST-SP-63" },{ "sku": "Sigen CUST Gateway SP-63-Hybrid", "price": 3000, "desc": "Custom 63A Hybrid ($3,000)", "supplier_code": "SIG:GW-CUST-SP-63-HYB" },{ "sku": "Sigen CUST Gateway SP-125", "price": 3200, "desc": "Custom 125A up to 24kW ($3,200)", "supplier_code": "SIG:GW-CUST-SP-125" }], "three_phase": [{ "sku": "Sigen Gateway Home TP AU (Pro)", "price": 859, "desc": "Simple 2-inverter ($859)", "supplier_code": "SIG:GW-HOME-TP-PRO" },{ "sku": "Sigen Gateway Home TP", "price": 1575, "desc": "Standard Three Phase ($1,575)", "supplier_code": "SIG:GW-HOME-TP" },{ "sku": "Sigen Gateway C60 AU", "price": 1769, "desc": "C&I 60kW ($1,769)", "supplier_code": "SIG:GW-C60" }] },
@@ -4656,7 +4656,7 @@ const DEFAULT_CONFIG = {
             "cec_approved": { "type": "inverter_battery_combo", "single_phase": { "EC 5.0 SP": [0,5,8,10,13,16,21,24,29,32], "EC 6.0 SP": [0,5,8,10,13,16,21,24,29,32], "EC 8.0 SP": [0,5,8,10,13,16,21,24,29,32,37,40,48], "EC 10.0 SP": [0,5,8,10,13,16,21,24,29,32,37,40,48], "EC 12.0 SP": [0,5,8,10,13,16,21,24,29,32,37,40,48] }, "three_phase": { "EC 5.0 TP": [0,5,8,10,13,16], "EC 10.0 TP": [0,5,8,10,13,16,21,24,29,32,37,40,48], "EC 15.0 TP": [0,5,8,10,13,16,21,24,29,32,37,40,48], "EC 20.0 TP": [0,5,8,10,13,16,21,24,29,32,37,40,48], "EC 25.0 TP": [0,5,8,10,13,16,21,24,29,32,37,40,48], "EC 30.0 TP": [0,5,8,10,13,16,21,24,29,32,37,40,48] } }
         },
         "solax": {
-            "label": "SolaX", "default_battery_type_idx": 1, "default_inverter_kw": 10, "inverter_label": "Inverter/Energy Controller", "pv_oversizing": { "single_phase": 2.0, "three_phase": 2.0 },
+            "label": "SolaX", "default_battery_type_idx": 1, "default_inverter_kw": 10, "inverter_label": "Inverter/Energy Controller",
             "inverters": { "single_phase": [{ "sku": "X1-HYBRID-5.0D", "kw": 5, "price": 1416, "max_pv_kw": 10, "solar_only": true, "supplier_code": "SOLAX:X1-HYBRID-5.0D" },{ "sku": "X1-HYBRID-6.0D", "kw": 6, "price": 1440, "max_pv_kw": 12, "solar_only": true, "supplier_code": "SOLAX:X1-HYBRID-6.0D" },{ "sku": "X1-HYBRID-7.5D", "kw": 7.5, "price": 1500, "max_pv_kw": 15, "solar_only": true, "supplier_code": "SOLAX:X1-HYBRID-7.5D" },{ "sku": "X1-VAST-5K", "kw": 5, "price": 1738, "max_pv_kw": 10, "supplier_code": "SOLAX:X1-VAST-5K" },{ "sku": "X1-VAST-8K", "kw": 8, "price": 2258, "max_pv_kw": 16, "supplier_code": "SOLAX:X1-VAST-8K" },{ "sku": "X1-VAST-10K", "kw": 10, "price": 2500, "max_pv_kw": 20, "supplier_code": "SOLAX:X1-VAST-10K" }], "three_phase": [{ "sku": "X3-HYBRID-5.0D", "kw": 5, "price": 1810, "max_pv_kw": 10, "supplier_code": "SOLAX:X3-HYB-5D" },{ "sku": "X3-HYBRID-8.0D", "kw": 8, "price": 2100, "max_pv_kw": 16, "supplier_code": "SOLAX:X3-HYB-8D" },{ "sku": "X3-HYBRID-10.0D", "kw": 10, "price": 2450, "max_pv_kw": 20, "supplier_code": "SOLAX:X3-HYB-10D" },{ "sku": "X3-HYBRID-15.0D", "kw": 15, "price": 2688, "max_pv_kw": 30, "supplier_code": "SOLAX:X3-HYB-15D" },{ "sku": "X3-ULT-15KP", "kw": 15, "price": 3655, "max_pv_kw": 30, "supplier_code": "SOLAX:X3-ULT-15KP" },{ "sku": "X3-ULT-20KP", "kw": 20, "price": 3910, "max_pv_kw": 40, "supplier_code": "SOLAX:X3-ULT-20KP" },{ "sku": "X3-ULT-25K", "kw": 25, "price": 4751, "max_pv_kw": 50, "supplier_code": "SOLAX:X3-ULT-25K" },{ "sku": "X3-ULT-30K", "kw": 30, "price": 4900, "max_pv_kw": 60, "supplier_code": "SOLAX:X3-ULT-30K" }] },
             "battery_types": [{ "id": "tp_hs36", "label": "T-BAT TP-HS36 (3.6 kWh modules)", "use_package_pricing": true, "modules": [{ "kwh": 3.6, "usable_kwh": 3.25, "price": 1140, "label": "3.6 kWh", "supplier_code": "SOLAX-BAT-TP-HS36" }], "packages": [{ "modules": 2, "kwh": 7.2, "price": 3130, "sku": "SOLAX-T-BAT-HS7.2", "includes": "2x TP-HS36 + BMS" },{ "modules": 3, "kwh": 10.8, "price": 4270, "sku": "SOLAX-T-BAT-HS10.8", "includes": "3x TP-HS36 + BMS" },{ "modules": 4, "kwh": 14.4, "price": 5410, "sku": "SOLAX-T-BAT-HS14.4", "includes": "4x TP-HS36 + BMS" },{ "modules": 5, "kwh": 18.0, "price": 6550, "sku": "SOLAX-T-BAT-HS18.0", "includes": "5x TP-HS36 + BMS" },{ "modules": 6, "kwh": 21.6, "price": 7690, "sku": "SOLAX-T-BAT-HS21.6", "includes": "6x TP-HS36 + BMS" },{ "modules": 7, "kwh": 25.2, "price": 8830, "sku": "SOLAX-T-BAT-HS25.2", "includes": "7x TP-HS36 + BMS" },{ "modules": 8, "kwh": 28.8, "price": 9970, "sku": "SOLAX-T-BAT-HS28.8", "includes": "8x TP-HS36 + BMS" },{ "modules": 9, "kwh": 32.4, "price": 11110, "sku": "SOLAX-T-BAT-HS32.4", "includes": "9x TP-HS36 + BMS + Series Box" },{ "modules": 10, "kwh": 36.0, "price": 12800, "sku": "SOLAX-T-BAT-HS36", "includes": "10x TP-HS36 + BMS + Series Box" },{ "modules": 11, "kwh": 39.6, "price": 13940, "sku": "SOLAX-T-BAT-HS39.6", "includes": "11x TP-HS36 + BMS + Series Box" },{ "modules": 12, "kwh": 43.2, "price": 15080, "sku": "SOLAX-T-BAT-HS43.2", "includes": "12x TP-HS36 + BMS + Series Box" },{ "modules": 13, "kwh": 46.8, "price": 16220, "sku": "SOLAX-T-BAT-HS46.8", "includes": "13x TP-HS36 + BMS + Series Box" }], "can_mix": false, "bms_cost": 850, "bms_code": "SOLAX-TBMS-MCS0800", "series_box_cost": 550, "series_box_code": "SOLAX-HS36-SERIES-BOX", "series_box_threshold": 9, "rules": { "max_modules": 13, "max_kwh": 46.8, "min_modules_single": 2, "min_modules_three": 3, "max_modules_single": 8, "max_modules_three": 13 } },{ "id": "tb_hs51", "label": "T-BAT TB-HS51 (5.1 kWh modules)", "use_package_pricing": false, "modules": [{ "kwh": 5.1, "usable_kwh": 5.1, "price": 1850, "label": "5.1 kWh", "supplier_code": "SOLAX-BAT-TB-HS510" }], "can_mix": false, "bms_cost": 1100, "bms_code": "SOLAX-TBMS-S51-80", "series_box_cost": 740, "series_box_code": "SOLAX-BAT-TB-HS510-SERIES-BOX", "series_box_threshold": 9, "rules": { "max_modules": 13, "max_kwh": 66.3, "min_modules_single": 2, "min_modules_three": 3, "max_modules_single": 8, "max_modules_three": 13 } }],
             "gateways": { "single_phase": [{ "sku": "SolaX EPS Box SP", "price": 250, "desc": "EPS Box - Single Phase Backup", "supplier_code": "SOLAX-EPS-1P" }], "three_phase": [{ "sku": "SolaX EPS Box TP", "price": 358, "desc": "EPS Box - Three Phase Backup", "supplier_code": "SOLAX-EPS-3P" }] },
