@@ -580,14 +580,8 @@ function updateGatewayBackupUI() {
 
     // On manufacturer switch only, remove all backup-related addons and reset toggles
     if (_lastBackupManufacturer !== null && _lastBackupManufacturer !== currentManufacturer) {
-        var _sbReset = currentRateCardItems.find(function(i) { return i.label && i.label.toLowerCase().indexOf('switchboard upgrade') !== -1; });
         var _gwInstReset = currentRateCardItems.find(function(i) { return i.label && i.label.toLowerCase().indexOf('gateway install') !== -1; });
-        var _partialReset = currentRateCardItems.find(function(i) { return i.label && i.label.toLowerCase().indexOf('partial board upgrade') !== -1; });
-        var _meterReset = currentRateCardItems.find(function(i) { return i.label && i.label.toLowerCase().indexOf('meter board upgrade') !== -1; });
-        if (_sbReset && installationAddons.addonItems[_sbReset.id]) delete installationAddons.addonItems[_sbReset.id];
         if (_gwInstReset && installationAddons.addonItems[_gwInstReset.id]) delete installationAddons.addonItems[_gwInstReset.id];
-        if (_partialReset && installationAddons.addonItems[_partialReset.id]) delete installationAddons.addonItems[_partialReset.id];
-        if (_meterReset && installationAddons.addonItems[_meterReset.id]) delete installationAddons.addonItems[_meterReset.id];
         // Reset SolaX backup toggle
         var sbtSwitch = document.getElementById('solaxBackupType');
         if (sbtSwitch) { sbtSwitch.value = 'none'; syncSegmentedFromSelect('solaxBackupType'); }
@@ -626,39 +620,18 @@ function updateGatewayBackupUI() {
                 if (wasDisabled) onBackupScopeChange();
             } else {
                 scopeGroup.classList.add('disabled');
-                // Remove all backup addons when gateway deselected
-                var sbClean = currentRateCardItems.find(function(i) { return i.label && i.label.toLowerCase().indexOf('switchboard upgrade') !== -1; });
+                // Remove gateway install addon when gateway deselected
                 var gwInstClean = currentRateCardItems.find(function(i) { return i.label && i.label.toLowerCase().indexOf('gateway install') !== -1; });
-                var partialClean = currentRateCardItems.find(function(i) { return i.label && i.label.toLowerCase().indexOf('partial board upgrade') !== -1; });
-                var meterClean = currentRateCardItems.find(function(i) { return i.label && i.label.toLowerCase().indexOf('meter board upgrade') !== -1; });
-                if (sbClean && installationAddons.addonItems[sbClean.id]) delete installationAddons.addonItems[sbClean.id];
                 if (gwInstClean && installationAddons.addonItems[gwInstClean.id]) delete installationAddons.addonItems[gwInstClean.id];
-                if (partialClean && installationAddons.addonItems[partialClean.id]) delete installationAddons.addonItems[partialClean.id];
-                if (meterClean && installationAddons.addonItems[meterClean.id]) delete installationAddons.addonItems[meterClean.id];
             }
         }
     }
 }
 
 function onBackupScopeChange() {
-    var scope = document.getElementById('backupScope')?.value || 'partial';
     // Set backup circuits to 0 — board upgrades handle backup, no per-circuit charge
     var bcInput = document.getElementById('backupCircuitCount');
     if (bcInput) bcInput.value = 0;
-    // Find switchboard upgrade rate card item by label
-    var sbItem = currentRateCardItems.find(function(i) { return i.label && i.label.toLowerCase().indexOf('switchboard upgrade') !== -1; });
-    // Remove old board upgrade addons (backwards compat)
-    var partialItem = currentRateCardItems.find(function(i) { return i.label && i.label.toLowerCase().indexOf('partial board upgrade') !== -1; });
-    var meterItem = currentRateCardItems.find(function(i) { return i.label && i.label.toLowerCase().indexOf('meter board upgrade') !== -1; });
-    if (partialItem && installationAddons.addonItems[partialItem.id]) delete installationAddons.addonItems[partialItem.id];
-    if (meterItem && installationAddons.addonItems[meterItem.id]) delete installationAddons.addonItems[meterItem.id];
-    // Switchboard upgrade for full home, partial board upgrade for partial
-    if (sbItem && installationAddons.addonItems[sbItem.id]) delete installationAddons.addonItems[sbItem.id];
-    if (scope === 'full' && sbItem) {
-        installationAddons.addonItems[sbItem.id] = { quantity: 1, value: 0, quotedAmount: 0 };
-    } else if (scope === 'partial' && partialItem) {
-        installationAddons.addonItems[partialItem.id] = { quantity: 1, value: 0, quotedAmount: 0 };
-    }
     // Always add gateway install
     var gwInstallItem = currentRateCardItems.find(function(i) { return i.label && i.label.toLowerCase().indexOf('gateway install') !== -1; });
     if (gwInstallItem) {
@@ -670,24 +643,8 @@ function onBackupScopeChange() {
 }
 
 function onSolaxBackupChange() {
-    var val = document.getElementById('solaxBackupType')?.value || 'none';
     var bcInput = document.getElementById('backupCircuitCount');
-    var partialItem = currentRateCardItems.find(function(i) { return i.label && i.label.toLowerCase().indexOf('partial board upgrade') !== -1; });
-    var meterItem = currentRateCardItems.find(function(i) { return i.label && i.label.toLowerCase().indexOf('meter board upgrade') !== -1; });
-    var sbItem = currentRateCardItems.find(function(i) { return i.label && i.label.toLowerCase().indexOf('switchboard upgrade') !== -1; });
-    // Remove any existing board/switchboard upgrade addon
-    if (partialItem && installationAddons.addonItems[partialItem.id]) delete installationAddons.addonItems[partialItem.id];
-    if (meterItem && installationAddons.addonItems[meterItem.id]) delete installationAddons.addonItems[meterItem.id];
-    if (sbItem && installationAddons.addonItems[sbItem.id]) delete installationAddons.addonItems[sbItem.id];
-    if (val === 'partial') {
-        if (bcInput) bcInput.value = 0;
-        if (partialItem) installationAddons.addonItems[partialItem.id] = { quantity: 1, value: 0, quotedAmount: 0 };
-    } else if (val === 'full') {
-        if (bcInput) bcInput.value = 0;
-        if (sbItem) installationAddons.addonItems[sbItem.id] = { quantity: 1, value: 0, quotedAmount: 0 };
-    } else {
-        if (bcInput) bcInput.value = 0;
-    }
+    if (bcInput) bcInput.value = 0;
     updateBackupCircuitsVisibility();
     renderInstallationCostsUI();
 }
