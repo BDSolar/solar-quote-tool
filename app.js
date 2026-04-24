@@ -66,23 +66,31 @@ async function signOutUser() {
 async function updateAuthUI() {
     var userBtn = document.getElementById('authUserBtn');
     var signInBtn = document.getElementById('authSignInBtn');
-    if (!userBtn || !signInBtn) return;
-    if (!supabaseClient) { signInBtn.style.display = ''; userBtn.style.display = 'none'; return; }
+    var loginOverlay = document.getElementById('loginOverlay');
+    var appContainer = document.getElementById('appContainer');
+    if (!supabaseClient) {
+        if (loginOverlay) loginOverlay.style.display = 'flex';
+        if (appContainer) appContainer.style.display = 'none';
+        return;
+    }
     try {
         var { data } = await supabaseClient.auth.getSession();
         if (data && data.session) {
             var name = data.session.user.user_metadata?.full_name || data.session.user.email;
-            userBtn.textContent = name;
-            userBtn.style.display = '';
-            signInBtn.style.display = 'none';
+            if (userBtn) { userBtn.textContent = name; userBtn.style.display = ''; }
+            if (signInBtn) signInBtn.style.display = 'none';
+            if (loginOverlay) loginOverlay.style.display = 'none';
+            if (appContainer) appContainer.style.display = '';
             console.log('[OK] Signed in as ' + name);
         } else {
-            userBtn.style.display = 'none';
-            signInBtn.style.display = '';
+            if (userBtn) userBtn.style.display = 'none';
+            if (signInBtn) signInBtn.style.display = '';
+            if (loginOverlay) loginOverlay.style.display = 'flex';
+            if (appContainer) appContainer.style.display = 'none';
         }
     } catch (e) {
-        userBtn.style.display = 'none';
-        signInBtn.style.display = '';
+        if (loginOverlay) loginOverlay.style.display = 'flex';
+        if (appContainer) appContainer.style.display = 'none';
     }
 }
 
