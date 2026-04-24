@@ -3600,6 +3600,19 @@ function showBOM() {
     siteHtml += '<div><span style="color:var(--gray-400);">Rows:</span> ' + esc(rowsVal) + '</div>';
     siteHtml += '<div><span style="color:var(--gray-400);">Arrays:</span> ' + esc(arraysVal) + '</div>';
     siteHtml += '<div><span style="color:var(--gray-400);">Phase:</span> ' + esc(phaseLabel) + '</div>';
+    var backupLabel = 'None';
+    if (currentManufacturer === 'solax') {
+        var solaxBk = document.getElementById('solaxBackupType')?.value || 'none';
+        if (solaxBk === 'full') backupLabel = 'Full Home';
+        else if (solaxBk === 'partial') backupLabel = 'Partial';
+    } else {
+        var gwSel = document.getElementById('gatewaySelect');
+        if (gwSel && gwSel.selectedIndex > 0 && gwSel.value !== 'none') {
+            var sigBk = document.getElementById('backupScope')?.value || 'partial';
+            backupLabel = sigBk === 'full' ? 'Full Home' : 'Partial';
+        }
+    }
+    siteHtml += '<div><span style="color:var(--gray-400);">Backup:</span> ' + esc(backupLabel) + '</div>';
     siteHtml += '</div>';
     document.getElementById('bomSiteDetails').innerHTML = siteHtml;
 
