@@ -23,6 +23,9 @@
             <button type="button" class="toolbar-pill toolbar-pill-uniform" onclick="toggleSearch()">Search</button>
             <a href="guide.html" class="toolbar-pill toolbar-pill-uniform" style="text-decoration:none;" title="User Guide">Guide</a>
             <a href="admin.html" class="toolbar-pill toolbar-pill-uniform" style="text-decoration:none;" title="Contractor Admin">Admin</a>
+            <span class="toolbar-divider"></span>
+            <button type="button" class="toolbar-pill toolbar-pill-uniform" id="authSignInBtn" onclick="signInWithGoogle()" style="display:none;">Sign In</button>
+            <button type="button" class="toolbar-pill toolbar-pill-uniform" id="authUserBtn" onclick="signOutUser()" style="display:none;" title="Click to sign out"></button>
         </div>
         <div class="search-overlay" id="searchOverlay">
             <input type="text" id="quoteSearchInput" placeholder="Search by name, address, or phone...">

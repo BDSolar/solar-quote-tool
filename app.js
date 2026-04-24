@@ -44,17 +44,46 @@ try {
 }
 
 // ====================
-// ADMIN SESSION CHECK (shows BOM button for authenticated users)
+// GOOGLE AUTH
 // ====================
-async function checkAdminSession() {
+async function signInWithGoogle() {
     if (!supabaseClient) return;
+    await supabaseClient.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+            queryParams: { hd: 'blackdiamondsolar.com.au' },
+            redirectTo: window.location.origin + window.location.pathname
+        }
+    });
+}
+
+async function signOutUser() {
+    if (!supabaseClient) return;
+    await supabaseClient.auth.signOut();
+    updateAuthUI();
+}
+
+async function updateAuthUI() {
+    var userBtn = document.getElementById('authUserBtn');
+    var signInBtn = document.getElementById('authSignInBtn');
+    if (!userBtn || !signInBtn) return;
+    if (!supabaseClient) { signInBtn.style.display = ''; userBtn.style.display = 'none'; return; }
     try {
         var { data } = await supabaseClient.auth.getSession();
         if (data && data.session) {
-            var btn = document.getElementById('bomBtn');
-            if (btn) btn.style.display = '';
+            var name = data.session.user.user_metadata?.full_name || data.session.user.email;
+            userBtn.textContent = name;
+            userBtn.style.display = '';
+            signInBtn.style.display = 'none';
+            console.log('[OK] Signed in as ' + name);
+        } else {
+            userBtn.style.display = 'none';
+            signInBtn.style.display = '';
         }
-    } catch (e) { /* silent */ }
+    } catch (e) {
+        userBtn.style.display = 'none';
+        signInBtn.style.display = '';
+    }
 }
 
 // ====================
@@ -1240,7 +1269,7 @@ function getMountingKitItems(panelCount, roofType, orientation, numRows, numArra
 // CONFIG LOADING
 // ====================
 
-document.addEventListener('DOMContentLoaded', () => { loadConfig(); loadReps(); loadContractors(); initAutocomplete(); });
+document.addEventListener('DOMContentLoaded', () => { loadConfig(); loadReps(); loadContractors(); initAutocomplete(); updateAuthUI(); });
 
 function validateConfig(cfg) {
     if (!cfg.panels) throw new Error('Config missing: panels');
