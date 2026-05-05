@@ -21,7 +21,7 @@ let currentRateCardItems = []; // rate card items for selected contractor
 let currentContractorRecord = null; // full contractor row
 let rateCardResult = null; // result of calculateInstallationCosts()
 let installationAddons = { standardItems: {}, checkboxItems: {}, addonItems: {} };
-var liveFixedOverhead, liveZeroBillBase, liveZeroBillPct;
+var liveFixedOverhead, liveZeroBillBase, liveZeroBillPct, livePromotionAmount;
 
 // ====================
 // DEBOUNCE UTILITY
@@ -1337,9 +1337,11 @@ function reconstructConfig(baseConfig, tables, batteryPackages, bmsParts, busine
     cfg.fixed_overhead = Number(businessParams.fixed_overhead) || 0;
     cfg.zero_bill_base = Number(businessParams.zero_bill_base) || 0;
     cfg.zero_bill_pct = Number(businessParams.zero_bill_pct) || 0;
+    cfg.promotion_amount = Number(businessParams.promotion_amount) || 2160;
     liveFixedOverhead = cfg.fixed_overhead;
     liveZeroBillBase = cfg.zero_bill_base;
     liveZeroBillPct = cfg.zero_bill_pct;
+    livePromotionAmount = cfg.promotion_amount;
     var surcharges = businessParams.roof_surcharges || {};
     Object.keys(cfg.installation.roof_types).forEach(function(rt) {
         if (surcharges[rt] !== undefined) cfg.installation.roof_types[rt].surcharge = Number(surcharges[rt]);
@@ -3137,9 +3139,13 @@ function calculateQuote() {
         state.pvStcCount = pvStcCount;
         const finalPrice = priceBeforeRebates - pvReb - batReb;
         const discountAmt = parseFloat(document.getElementById('discountAmount')?.value) || 0;
+        const promoActive = document.getElementById('promotionToggle')?.checked || false;
+        const promoAmt = promoActive ? (CONFIG.promotion_amount || 0) : 0;
+        var promoLabel = document.getElementById('promotionAmountLabel');
+        if (promoLabel) promoLabel.textContent = '-$' + Math.round(CONFIG.promotion_amount || 0).toLocaleString('en-AU');
         const zeroBillPremium = getZeroBillPremium(priceBeforeRebates * GST);
         state.zeroBillPremium = zeroBillPremium;
-        const customerPriceNum = Math.round(priceBeforeRebates * GST - pvReb - batReb - discountAmt + (CONFIG.fixed_overhead || 0) + zeroBillPremium);
+        const customerPriceNum = Math.round(priceBeforeRebates * GST - pvReb - batReb - discountAmt - promoAmt + (CONFIG.fixed_overhead || 0) + zeroBillPremium);
         var customerPriceVal = '$' + customerPriceNum.toLocaleString('en-AU');
 
         document.getElementById('priceBeforeRebates').textContent = fmtIncGst(priceBeforeRebates);
@@ -3185,7 +3191,7 @@ function calculateQuote() {
                 var batRebFuture = solarOnly ? 0 : calcBatteryRebateTiered(Math.min(usableKwh, 50), futureFactor, state.stcPrice);
                 var commAmtFuture = (baseIncGst - pvRebFuture - batRebFuture) * commRate / (1 - commRate * GST) / GST;
                 var priceBeforeRebatesFuture = priceBeforeCommission + commAmtFuture;
-                var futurePriceNum = Math.round(priceBeforeRebatesFuture * GST - pvRebFuture - batRebFuture - discountAmt + (CONFIG.fixed_overhead || 0) + getZeroBillPremium(priceBeforeRebatesFuture * GST));
+                var futurePriceNum = Math.round(priceBeforeRebatesFuture * GST - pvRebFuture - batRebFuture - discountAmt - promoAmt + (CONFIG.fixed_overhead || 0) + getZeroBillPremium(priceBeforeRebatesFuture * GST));
                 var increaseNum = futurePriceNum - customerPriceNum;
                 if (increaseNum > 0) {
                     urgBanner.style.display = 'flex';
@@ -3695,6 +3701,8 @@ function showBOM() {
     if (batReb > 0) totHtml += totRow('Battery STC Rebate', '-' + fmtExGst(batReb), 'color:var(--green);');
     var bomDiscount = parseFloat(document.getElementById('discountAmount')?.value) || 0;
     if (bomDiscount > 0) totHtml += totRow('Discount', '-$' + Math.round(bomDiscount).toLocaleString('en-AU'), 'color:var(--green);');
+    var bomPromo = document.getElementById('promotionToggle')?.checked || false;
+    if (bomPromo) totHtml += totRow('Battery Promotion', '-$' + Math.round(CONFIG.promotion_amount || 0).toLocaleString('en-AU'), 'color:var(--green);');
     var custPrice = document.getElementById('customerPriceDisplay').textContent;
     totHtml += totRow('Customer Price (inc GST)', custPrice, 'border-top:2px solid var(--blue); font-weight:700; font-size:16px; color:var(--blue);');
     totHtml += '</table>';
@@ -3781,6 +3789,10 @@ function collectQuoteData() {
             sysKw: state.sysKw,
             batteryKwh: bat.totalKwh,
             discount: parseFloat(document.getElementById('discountAmount')?.value) || 0,
+            promotion: {
+                active: document.getElementById('promotionToggle')?.checked || false,
+                amount: CONFIG.promotion_amount || 0
+            },
             fixedOverhead: CONFIG.fixed_overhead || 0,
             zeroBillPremium: state.zeroBillPremium || 0,
             zeroBillBase: CONFIG.zero_bill_base || 0,
@@ -4169,6 +4181,12 @@ async function loadQuote(quoteId) {
         var discEl = document.getElementById('discountAmount');
         if (discEl) discEl.value = (data.totals?.discount) || 0;
 
+        // Restore promotion
+        var promoEl = document.getElementById('promotionToggle');
+        var savedPromo = data.totals?.promotion;
+        if (promoEl) promoEl.checked = !!(savedPromo?.active);
+        if (savedPromo?.amount !== undefined) CONFIG.promotion_amount = Number(savedPromo.amount);
+
         // Hide search results
         document.getElementById('quoteSearchResults').style.display = 'none';
         document.getElementById('quoteSearchInput').value = '';
@@ -4216,6 +4234,7 @@ function clearQuote() {
     CONFIG.fixed_overhead = liveFixedOverhead ?? CONFIG.fixed_overhead;
     CONFIG.zero_bill_base = liveZeroBillBase ?? CONFIG.zero_bill_base;
     CONFIG.zero_bill_pct = liveZeroBillPct ?? CONFIG.zero_bill_pct;
+    CONFIG.promotion_amount = livePromotionAmount ?? CONFIG.promotion_amount;
     var discBanner = document.getElementById('discountExpiredBanner'); if (discBanner) discBanner.remove();
     // Keep rep selection (sticky) — don't reset repSelect
     document.getElementById('customerName').value = '';
@@ -4233,6 +4252,7 @@ function clearQuote() {
     selectedAccessories = []; renderSelectedAccessories();
     customAddonCount = 0; document.getElementById('customAddons').innerHTML = '';
     var discEl = document.getElementById('discountAmount'); if (discEl) discEl.value = 0;
+    var promoEl = document.getElementById('promotionToggle'); if (promoEl) promoEl.checked = false;
     userChangedInverter = false; dualStackResult = null; dualStackEcOverride = { stack1: null, stack2: null }; parallelResult = null;
     batteryQtys = {};
     // Reset installation addons but keep contractor selection (sticky like rep)
@@ -4509,11 +4529,14 @@ function generateQuote() {
     if (batReb > 0) drawTotalRow('Battery STC Rebate', '-' + fmtPdf(batReb), { valueColor: [52, 211, 153] });
     var pdfDiscount = parseFloat(document.getElementById('discountAmount')?.value) || 0;
     if (pdfDiscount > 0) drawTotalRow('Discount', '-$' + Math.round(pdfDiscount).toLocaleString('en-AU'), { valueColor: [52, 211, 153] });
+    var pdfPromoActive = document.getElementById('promotionToggle')?.checked || false;
+    var pdfPromoAmt = pdfPromoActive ? (CONFIG.promotion_amount || 0) : 0;
+    if (pdfPromoActive) drawTotalRow('Battery Promotion', '-$' + Math.round(pdfPromoAmt).toLocaleString('en-AU'), { valueColor: [52, 211, 153] });
     var pdfZeroBillPremium = getZeroBillPremium(priceBeforeRebates * GST);
     if (pdfZeroBillPremium > 0) drawTotalRow('Zero Bill Premium', '+$' + Math.round(pdfZeroBillPremium).toLocaleString('en-AU'));
 
     y += 2;
-    var customerPrice = '$' + Math.round(priceBeforeRebates * GST - pvReb - batReb - pdfDiscount + (CONFIG.fixed_overhead || 0) + pdfZeroBillPremium).toLocaleString('en-AU');
+    var customerPrice = '$' + Math.round(priceBeforeRebates * GST - pvReb - batReb - pdfDiscount - pdfPromoAmt + (CONFIG.fixed_overhead || 0) + pdfZeroBillPremium).toLocaleString('en-AU');
     drawTotalRow('Customer Price (inc GST)', customerPrice, {
         divider: true, dividerColor: magenta, dividerWidth: 0.8,
         fontSize: 12, fontStyle: 'bold', labelColor: magenta, valueColor: magenta, spacing: 8

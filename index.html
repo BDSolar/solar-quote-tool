@@ -296,6 +296,16 @@
                     <input type="number" id="discountAmount" min="0" step="1" value="0" oninput="calculateQuote()">
                 </div>
             </div>
+            <div class="pc-promotion" id="promotionRow">
+                <div class="pc-disc-left">
+                    <label class="pc-disc-label" for="promotionToggle" style="cursor:pointer;">Battery Promotion</label>
+                    <div class="pc-disc-sub">Tick to deduct from final price</div>
+                </div>
+                <div class="pc-disc-right">
+                    <span class="pc-promo-amount" id="promotionAmountLabel">-$2,160</span>
+                    <input type="checkbox" id="promotionToggle" onchange="calculateQuote()">
+                </div>
+            </div>
         </div>
     </div>
 </div>

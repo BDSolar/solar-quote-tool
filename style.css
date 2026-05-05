@@ -1218,6 +1218,38 @@ select option {
     background: rgba(255,255,255,0.7);
 }
 
+/* Promotion row (under discount) */
+.pc-promotion {
+    background: var(--green-light);
+    padding: 12px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-radius: var(--radius-sm);
+    margin-top: 6px;
+}
+
+.pc-promotion .pc-disc-right {
+    gap: 10px;
+}
+
+.pc-promo-amount {
+    font-family: var(--font-display);
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--green);
+    letter-spacing: -0.02em;
+}
+
+.pc-promotion input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: var(--green);
+    flex-shrink: 0;
+    margin: 0;
+}
+
 /* Invoice breakdown */
 .pc-invoice {
     padding: 20px 24px;

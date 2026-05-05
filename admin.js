@@ -1502,6 +1502,7 @@ function renderBusinessParams() {
         '<div class="form-group"><label>Default Battery kWh</label><input type="number" id="bpDefBattery" value="' + bp.default_battery_kwh + '"></div>' +
         '<div class="form-group"><label>Split Array Labour ($)</label><input type="number" id="bpSplitLabour" value="' + bp.split_array_labour + '" step="0.01"></div>' +
         '<div class="form-group"><label>Fixed Overhead ($)</label><input type="number" id="bpFixedOverhead" value="' + (bp.fixed_overhead || 0) + '" step="1"></div>' +
+        '<div class="form-group"><label>Promotion Amount ($)</label><input type="number" id="bpPromotionAmount" value="' + (bp.promotion_amount ?? 2160) + '" step="1"></div>' +
         '<div class="form-group"><label>Zero Bill Base Premium ($)</label><input type="number" id="bpZeroBillBase" value="' + (bp.zero_bill_base || 0) + '" step="1"></div>' +
         '<div class="form-group"><label>Zero Bill Premium (%)</label><input type="number" id="bpZeroBillPct" value="' + (bp.zero_bill_pct || 0) + '" step="0.01"></div>' +
         '</div>' +
@@ -1546,6 +1547,7 @@ async function saveBusinessParams() {
         default_battery_kwh: val('bpDefBattery'),
         split_array_labour: val('bpSplitLabour'),
         fixed_overhead: val('bpFixedOverhead'),
+        promotion_amount: val('bpPromotionAmount'),
         zero_bill_base: val('bpZeroBillBase'),
         zero_bill_pct: val('bpZeroBillPct'),
         roof_surcharges: {
